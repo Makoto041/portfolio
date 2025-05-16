@@ -1,18 +1,24 @@
-import { headers as getHeaders } from 'next/headers.js'
-import Image from 'next/image'
-import { getPayload } from 'payload'
+// import { headers } from 'next/headers'
 import React from 'react'
 import { fileURLToPath } from 'url'
 
 import config from '@/payload.config'
 import './styles.css'
 
-export default async function HomePage() {
-  const headers = await getHeaders()
-  const payloadConfig = await config
-  const payload = await getPayload({ config: payloadConfig })
-  const { user } = await payload.auth({ headers })
+type User = {
+  email: string
+  firstName: string
+  lastName: string
+}
 
+export default async function HomePage() {
+  // const headers = await headers()
+  const payloadConfig = await config
+  const user: User | null = {
+    email: 'test@example.com',
+    firstName: 'Makoto',
+    lastName: 'Iwabuchi',
+  }
   const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
 
   return (
@@ -20,7 +26,7 @@ export default async function HomePage() {
       <div className="content">
         <picture>
           <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
+          <img
             alt="Payload Logo"
             height={65}
             src="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg"
@@ -28,7 +34,11 @@ export default async function HomePage() {
           />
         </picture>
         {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
+        {user && (
+          <h1>
+            Welcome back, {user.firstName} {user.lastName}
+          </h1>
+        )}
         <div className="links">
           <a
             className="admin"
