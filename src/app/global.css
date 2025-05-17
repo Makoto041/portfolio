@@ -1,0 +1,65 @@
+/* ------------------------------------------------------------------
+   Tailwind v4 – 2025 Pastel-Neo Glassmorphism (simplified)
+------------------------------------------------------------------ */
+@import "tailwindcss";
+
+/* ========== 1) DESIGN-TOKENS ==================================== */
+@theme {
+  /* ◽ OKLCH brand palette (Display-P3) */
+  --brand-50  : oklch(95% 0.05 210);
+  --brand-300 : oklch(88% 0.09 212);
+  --brand-600 : oklch(70% 0.20 212);
+
+  /* ◽ Glass */
+  --glass-surface : hsl(0 0% 100% / 0.10);
+  --glass-border  : hsl(0 0% 100% / 0.22);
+
+  /* ◽ Radius / Blur / Gap */
+  --radius-m   : 0.9rem;
+  --blur-m     : 14px;
+  --gap-section: 6rem;
+}
+
+/* ========== 2) GLOBAL UTILITIES ================================= */
+@layer utilities {
+  /* ▶ “標準” ガラスカード */
+  .glass {
+    @apply bg-[color:var(--glass-surface)]
+           backdrop-blur-[var(--blur-m)]
+           border border-[color:var(--glass-border)]
+           rounded-[var(--radius-m)]
+           shadow-[0_6px_28px_rgba(0,0,0,0.12)];
+  }
+
+  /* ▶ オプション：斜線ハイライト（必要カードだけに付ける） */
+  .stripe-mask {
+    mask-image: repeating-linear-gradient(
+      135deg,
+      #000 0 8px,
+      transparent 8px 12px
+    );
+    -webkit-mask-image: repeating-linear-gradient(
+      135deg,
+      #000 0 8px,
+      transparent 8px 12px
+    );
+  }
+
+  /* ▶ レイアウト補助 */
+  .section-pad { padding-block: var(--gap-section) }
+  .rail-width  { width: min(22rem,100%) }
+}
+
+/* ========== 3) BASE BACKGROUND ================================== */
+body {
+  @apply text-zinc-900 dark:text-zinc-100
+         selection:bg-[color:var(--brand-300)/40];
+
+  background:
+    url("/noise.png") repeat,
+    radial-gradient(circle at 50% -10%,
+      var(--brand-50) 0%,
+      transparent 60%);
+  background-size: auto, 100% 100%;
+  background-attachment: fixed;
+}
