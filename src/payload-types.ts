@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     timeline: Timeline;
+    blogPosts: BlogPost;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -79,6 +80,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     timeline: TimelineSelect<false> | TimelineSelect<true>;
+    blogPosts: BlogPostsSelect<false> | BlogPostsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -165,6 +167,35 @@ export interface Timeline {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blogPosts".
+ */
+export interface BlogPost {
+  id: number;
+  title: string;
+  slug: string;
+  author?: (number | null) | User;
+  body: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  coverImage?: (number | null) | Media;
+  publishedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -181,6 +212,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'timeline';
         value: number | Timeline;
+      } | null)
+    | ({
+        relationTo: 'blogPosts';
+        value: number | BlogPost;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -264,6 +299,20 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface TimelineSelect<T extends boolean = true> {
   text?: T;
+  publishedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blogPosts_select".
+ */
+export interface BlogPostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  author?: T;
+  body?: T;
+  coverImage?: T;
   publishedAt?: T;
   updatedAt?: T;
   createdAt?: T;
