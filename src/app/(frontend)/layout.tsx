@@ -5,8 +5,8 @@ import SideNav from '@/components/SideNav'
 import MobileHeader from '@/components/MobileHeader'
 
 export const metadata: Metadata = {
-  title: 'Iwabuchi – Timeline',
-  description: 'Personal timeline powered by Payload & Next.js',
+  title: 'いわぶち',
+  description: 'いわぶちの個人サイト',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

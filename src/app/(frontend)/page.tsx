@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import Link from 'next/link'
+import { Analytics } from '@vercel/analytics/next'
 import WeatherWidget from '@/components/WeatherWidget'
 import { fetchLatest } from '@/lib/payload'
 import type { TimelineDoc, MediaDoc, BlogPost } from '@/lib/payloadTypes'
@@ -28,11 +29,12 @@ export default async function Home() {
     <main className="min-h-screen bg-[color:var(--bg)] text-[color:var(--text)]">
       <div className="mt-10 text-gray-400 text-left">
         <Breadcrumb />
+        <Analytics />
       </div>
       {/* Timeline */}
       <section className={`${WRAP} py-12`}>
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-semibold">Timeline</h1>
+         
           <WeatherWidget />
         </div>
         <ul className="space-y-4">

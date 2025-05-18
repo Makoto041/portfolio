@@ -145,7 +145,7 @@ export interface User {
  */
 export interface Media {
   id: number;
-  alt: string;
+  alt?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -224,7 +224,7 @@ export interface BlogMedia {
 export interface Letter {
   id: number;
   name: string;
-  email: string;
+  email?: string | null;
   message: string;
   createdAt: string;
   updatedAt: string;
