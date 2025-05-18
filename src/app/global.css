@@ -1,65 +1,83 @@
-/* ------------------------------------------------------------------
-   Tailwind v4 – 2025 Pastel-Neo Glassmorphism (simplified)
------------------------------------------------------------------- */
+/* ──────────────────────────────────────────────
+   Framer-like “Cream-Glass” 2025
+   Tailwind v4  ― CSS-first (@theme / @layer)
+─────────────────────────────────────────────── */
 @import "tailwindcss";
 
-/* ========== 1) DESIGN-TOKENS ==================================== */
+/* === TOKENS ================================== */
 @theme {
-  /* ◽ OKLCH brand palette (Display-P3) */
-  --brand-50  : oklch(95% 0.05 210);
-  --brand-300 : oklch(88% 0.09 212);
-  --brand-600 : oklch(70% 0.20 212);
+  /* ベース色 */
+  --bg-light: #fdfdfd;
+  --bg-dark: #0f1117;
+  --fg-light: #111;
+  --fg-dark: #f5f7fa;
 
-  /* ◽ Glass */
-  --glass-surface : hsl(0 0% 100% / 0.10);
-  --glass-border  : hsl(0 0% 100% / 0.22);
+  /* アクセント（リンク等） */
+  --accent: #1d4aab;
 
-  /* ◽ Radius / Blur / Gap */
-  --radius-m   : 0.9rem;
-  --blur-m     : 14px;
-  --gap-section: 6rem;
+  /* ガラス面 */
+  --glass-surface-light: hsl(0 0% 100% / 0.14);
+  --glass-border-light: hsl(215 15% 15% / 0.08);
+  --glass-surface-dark: hsl(220 20% 16% / 0.3);
+  --glass-border-dark: hsl(0 0% 100% / 0.12);
+
+  /* radius / blur */
+  --radius-m: 1rem;
+  --blur-m: clamp(8px, 2vw, 16px);
 }
 
-/* ========== 2) GLOBAL UTILITIES ================================= */
+/* light / dark 切替 */
+@media (prefers-color-scheme: light) {
+  :root {
+    --glass-surface: var(--glass-surface-light);
+    --glass-border: var(--glass-border-light);
+    --bg-base: var(--bg-light);
+    --fg-base: var(--fg-light);
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --glass-surface: var(--glass-surface-dark);
+    --glass-border: var(--glass-border-dark);
+    --bg-base: var(--bg-dark);
+    --fg-base: var(--fg-dark);
+  }
+}
+
+/* === UTILITIES ================================= */
 @layer utilities {
-  /* ▶ “標準” ガラスカード */
+  /* 全ページのセクション上下余白用ユーティリティ */
+  .section-pad {
+    @apply py-8 sm:py-12 lg:py-16;
+  }
+
   .glass {
-    @apply bg-[color:var(--glass-surface)]
+    @apply rounded-[var(--radius-m)]
            backdrop-blur-[var(--blur-m)]
+           bg-[color:var(--glass-surface)]
            border border-[color:var(--glass-border)]
-           rounded-[var(--radius-m)]
-           shadow-[0_6px_28px_rgba(0,0,0,0.12)];
+           shadow-[0_6px_26px_rgba(0,0,0,.12)];
   }
-
-  /* ▶ オプション：斜線ハイライト（必要カードだけに付ける） */
-  .stripe-mask {
-    mask-image: repeating-linear-gradient(
-      135deg,
-      #000 0 8px,
-      transparent 8px 12px
-    );
-    -webkit-mask-image: repeating-linear-gradient(
-      135deg,
-      #000 0 8px,
-      transparent 8px 12px
-    );
-  }
-
-  /* ▶ レイアウト補助 */
-  .section-pad { padding-block: var(--gap-section) }
-  .rail-width  { width: min(22rem,100%) }
 }
 
-/* ========== 3) BASE BACKGROUND ================================== */
+/* === BASE ===================================== */
 body {
-  @apply text-zinc-900 dark:text-zinc-100
-         selection:bg-[color:var(--brand-300)/40];
-
+  @apply bg-[color:var(--bg-base)]
+         text-[color:var(--fg-base)]
+         antialiased selection:bg-[color:var(--accent)/.35];
   background:
     url("/noise.png") repeat,
-    radial-gradient(circle at 50% -10%,
-      var(--brand-50) 0%,
-      transparent 60%);
-  background-size: auto, 100% 100%;
-  background-attachment: fixed;
+    var(--bg-base);
+  background-size: auto;
+}
+
+/* ノイズと同系色を軽く被せる */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url("/noise.png") repeat;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: -1;
 }

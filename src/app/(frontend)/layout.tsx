@@ -1,18 +1,37 @@
-import React from 'react'
 import '../global.css'
+import type { Metadata } from 'next'
+import React from 'react'
+import SideNav from '@/components/SideNav'
+import MobileHeader from '@/components/MobileHeader'
 
-export const metadata = {
-  description: 'A blank template using Payload in a Next.js app.',
-  title: 'Payload Blank Template',
+export const metadata: Metadata = {
+  title: 'Iwabuchi – Timeline',
+  description: 'Personal timeline powered by Payload & Next.js',
 }
 
-export default async function RootLayout(props: { children: React.ReactNode }) {
-  const { children } = props
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
-        <main>{children}</main>
+    <html lang="ja" suppressHydrationWarning className="dark:text-zinc-50">
+      <head>
+        <meta name="color-scheme" content="light dark" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{try{if(matchMedia('(prefers-color-scheme:dark)').matches)
+              document.documentElement.classList.add('dark')}catch(e){}})()`,
+          }}
+        />
+      </head>
+
+      <body className="antialiased overflow-x-hidden bg-[color:var(--bg)] text-[color:var(--text)]">
+        {/* ── Mobile header ─────────────────── */}
+        <MobileHeader />
+
+        {/* ── Desktop layout ― side + main ── */}
+        <div className="flex">
+          <SideNav />
+
+          <main className="flex-1 min-h-screen">{children}</main>
+        </div>
       </body>
     </html>
   )

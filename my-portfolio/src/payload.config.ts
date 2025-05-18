@@ -1,11 +1,11 @@
-import { buildConfig } from 'payload'
+import {} from 'payload'
 import path from 'path'
 import { Users } from './collections/Users.js'
 import { Media } from './collections/Media.js'
 import { TimelinePosts } from './collections/TimelinePosts.js'
 import { vercelPostgresAdapter } from '@payloadcms/db-vercel-postgres'
 
-export default buildConfig({
+export default {
   serverURL: process.env.NEXT_PUBLIC_SERVER_URL || '',
   collections: [Users, Media, TimelinePosts],
   typescript: {
@@ -20,4 +20,4 @@ export default buildConfig({
     },
   }),
   secret: process.env.PAYLOAD_SECRET || '',
-})
+}
