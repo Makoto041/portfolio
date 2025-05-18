@@ -1,4 +1,4 @@
-import { CollectionConfig } from 'payload/types'
+import { CollectionConfig } from 'payload'
 
 export const BlogPosts: CollectionConfig = {
   slug: 'blogPosts',
@@ -21,7 +21,7 @@ export const BlogPosts: CollectionConfig = {
         beforeValidate: [
           ({ data }) => {
             // Auto‑generate slug from title if empty
-            if (!data.slug && data.title)
+            if (data && !data.slug && data.title)
               data.slug = data.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
@@ -43,7 +43,7 @@ export const BlogPosts: CollectionConfig = {
     {
       name: 'coverImage',
       type: 'upload',
-      relationTo: 'media',
+      relationTo: 'blogMedia',
     },
     {
       name: 'publishedAt',

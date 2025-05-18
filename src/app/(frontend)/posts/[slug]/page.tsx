@@ -1,0 +1,63 @@
+// src/app/(frontend)/posts/[slug]/page.tsx
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+import Image from 'next/image'
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { getPayloadClient } from '@/lib/payloadClient'
+import type { BlogPost } from '@/lib/payloadTypes'
+import { renderRichText } from '@/lib/renderRichText'
+import Breadcrumb from '@/components/Breadcrumb'
+
+const WRAP = 'mx-auto w-full max-w-[78rem] px-5 sm:px-8 section-pad'
+
+export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
+  // Next.js v15+: params は Promise になっているので await して展開
+  const { slug } = await params
+
+  const client = await getPayloadClient()
+  const result = await client.find({
+    collection: 'blogPosts',
+    where: { slug: { equals: slug } },
+    depth: 2,
+  })
+  const docs = result.docs as BlogPost[]
+  const post = docs[0]
+  if (!post) return notFound()
+
+  return (
+
+      <main className="min-h-screen flex flex-col bg-[color:var(--bg)] text-[color:var(--text)]">
+      <div className="mt-10 text-gray-400 text-left">
+            <Breadcrumb />
+    </div> 
+      <section className={WRAP}>
+          {post.coverImage?.url && (
+            <div className="relative w-full h-64 mb-6">
+              <Image
+                src={post.coverImage.url}
+                alt={post.title}
+                fill
+                className="object-cover rounded-md"
+              />
+            </div>
+          )}
+
+          <h1 className="text-3xl font-semibold mb-2">{post.title}</h1>
+          <time className="text-xs opacity-60 mb-6 block">
+            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
+          </time>
+
+          {/* renderRichText で Lexical の JSON を React 要素に変換 */}
+          <div className="prose max-w-none mb-8">
+            {renderRichText((post.body as any)?.root?.children)}
+          </div>
+
+          <Link href="/posts" className="underline">
+            ← 一覧に戻る
+          </Link>
+        </section>
+      </main>
+  )
+}

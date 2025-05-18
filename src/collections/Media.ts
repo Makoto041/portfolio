@@ -5,12 +5,17 @@ export const Media: CollectionConfig = {
   access: {
     read: () => true,
   },
+  upload: {
+    staticDir: 'media',
+    mimeTypes: ['image/*'],
+    // bulkUpload: true はデフォルトで有効
+  },
   fields: [
     {
       name: 'alt',
       type: 'text',
-      required: true,
+      required: false, // 任意フィールドに
+      // defaultValue を外す
     },
   ],
-  upload: true,
 }
