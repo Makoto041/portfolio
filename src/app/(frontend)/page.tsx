@@ -16,7 +16,7 @@ const CARD = 'glass rounded-lg overflow-hidden'
 export default async function Home() {
   const { timeline, posts, gallery } = await fetchLatest({
     timelineLimit: 5,
-    mediaLimit: 20,
+    mediaLimit: 10,
   })
   const latestPost: BlogPost | null = posts.length > 0 ? posts[0] : null
   const filteredGallery = gallery.filter((g: MediaDoc) => {
@@ -45,11 +45,7 @@ export default async function Home() {
                 const formatted = isThisYear
                   ? `${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
                   : `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
-                return (
-                  <time className="block text-xs opacity-60 mb-1">
-                    {formatted}
-                  </time>
-                )
+                return <time className="block text-xs opacity-60 mb-1">{formatted}</time>
               })()}
               <p className="text-sm leading-relaxed">{t.text}</p>
             </li>

@@ -1,3 +1,4 @@
+// src/components/MemoGrid.tsx
 'use client'
 
 import Link from 'next/link'
@@ -6,12 +7,22 @@ import { useState } from 'react'
 import type { BlogPost } from '@/lib/payloadTypes'
 
 export default function MemoGrid({ posts }: { posts: BlogPost[] }) {
+  const latest = [...posts]
+    .sort((a, b) => {
+      const aTime = a.publishedAt ? new Date(a.publishedAt).getTime() : 0
+      const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : 0
+      return bTime - aTime
+    })
+    .slice(0, 4)
+
   return (
     <div className="glass rounded-lg overflow-hidden p-4 flex flex-col">
       <h2 className="text-xl font-medium mb-2">Memo</h2>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 flex-1">
-        {posts.map((p) => (
-          <MemoImageLink key={p.id} p={p} />
+        {latest.map((p, idx) => (
+          <div key={p.id} className={idx === 3 ? 'hidden sm:block' : ''}>
+            <MemoImageLink p={p} />
+          </div>
         ))}
       </div>
       <Link
@@ -27,6 +38,7 @@ export default function MemoGrid({ posts }: { posts: BlogPost[] }) {
 function MemoImageLink({ p }: { p: BlogPost }) {
   const [loaded, setLoaded] = useState(false)
   const imgUrl = p.coverImage?.url ?? '/default.jpg'
+
   return (
     <Link href={`/posts/${p.slug}`} className="flex flex-col group">
       <div className="relative w-full h-32 overflow-hidden rounded">
@@ -35,7 +47,9 @@ function MemoImageLink({ p }: { p: BlogPost }) {
           src={imgUrl}
           alt={p.title}
           fill
-          className={`object-cover transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          className={`object-cover transition-opacity duration-500 ${
+            loaded ? 'opacity-100' : 'opacity-0'
+          }`}
           onLoad={() => setLoaded(true)}
           onLoadingComplete={() => setLoaded(true)}
         />

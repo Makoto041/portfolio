@@ -24,7 +24,7 @@ const Letter: CollectionConfig = {
       name: 'email',
       label: 'メールアドレス',
       type: 'email',
-      required: true,
+      required: false,
     },
     {
       name: 'message',

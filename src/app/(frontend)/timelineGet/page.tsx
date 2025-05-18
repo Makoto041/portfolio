@@ -25,19 +25,13 @@ export default function TimelinePage() {
     setLoading(true)
     fetch(`/api/timeline?page=${page}&limit=${limit}`)
       .then((res) => res.json())
-      .then((data) => {
-        // APIレスポンスの形式を確認し、適切なデータを抽出
-        const newDocs = Array.isArray(data) ? data : data.docs || []
-
+      .then((newDocs: TimelineDoc[]) => {
         setTimeline((prev) => {
           // 重複を除いて追加
-          const seen = new Set(prev.map((d: TimelineDoc) => d.id))
-          return [...prev, ...newDocs.filter((d: TimelineDoc) => !seen.has(d.id))]
+          const seen = new Set(prev.map((d) => d.id))
+          return [...prev, ...newDocs.filter((d) => !seen.has(d.id))]
         })
         setHasMore(newDocs.length === limit)
-      })
-      .catch((error) => {
-        console.error('タイムラインの取得に失敗しました:', error)
       })
       .finally(() => setLoading(false))
   }, [page])
