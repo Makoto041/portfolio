@@ -65,9 +65,6 @@ body {
   @apply bg-[color:var(--bg-base)]
          text-[color:var(--fg-base)]
          antialiased selection:bg-[color:var(--accent)/.35];
-  background:
-    url("/noise.png") repeat,
-    var(--bg-base);
   background-size: auto;
 }
 
@@ -76,7 +73,6 @@ body::after {
   content: "";
   position: fixed;
   inset: 0;
-  background: url("/noise.png") repeat;
   opacity: 0.05;
   pointer-events: none;
   z-index: -1;
