@@ -29,7 +29,6 @@ export default async function Home() {
     <main className="min-h-screen bg-[color:var(--bg)] text-[color:var(--text)]">
       <div className="mt-10 text-gray-400 text-left">
         <Breadcrumb />
-        <Analytics />
       </div>
       {/* Timeline */}
       <section className={`${WRAP} py-12`}>
