@@ -1,3 +1,36 @@
+/* ── ここから追加 ── */
+@font-face {
+  font-family: 'Higure Gothic';
+  src: url('/fonts/HigureGothic-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Higure Gothic';
+  src: url('/fonts/HigureGothic-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Higure Gothic';
+  src: url('/fonts/HigureGothic-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Higure Gothic';
+  src: url('/fonts/HigureGothic-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Higure Gothic';
+  src: url('/fonts/HigureGothic-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+}
+/* ── ここまで追加 ── */
+
 /* ──────────────────────────────────────────────
    Framer-like “Cream-Glass” 2025
    Tailwind v4  ― CSS-first (@theme / @layer)
@@ -11,6 +44,9 @@
   --bg-dark: #0f1117;
   --fg-light: #111;
   --fg-dark: #f5f7fa;
+  /* フォント定義をトークン化しておくと、後で var() で使いやすいです */
+  --font-body: 'Higure Gothic', sans-serif;
+
 
   /* アクセント（リンク等） */
   --accent: #1d4aab;
