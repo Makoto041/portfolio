@@ -8,13 +8,8 @@ import { FaSpinner } from 'react-icons/fa'
 import Link from 'next/link'
 
 // ──────────── ヘルパー関数 ────────────
-function formatLocalDate(dateStr: string) {
-  return new Intl.DateTimeFormat(undefined, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date(dateStr))
-}
+import LocalDate from '@/components/LocalDate'
+
 
 function formatLocalTime(dateStr: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -63,7 +58,8 @@ export default function TimelinePage() {
 
   // 日付ごとにグループ化
   const groups = timeline.reduce<Record<string, TimelineDoc[]>>((acc, doc) => {
-    const dateKey = formatLocalDate(doc.publishedAt ?? doc.createdAt)
+    const dateObj = new Date(doc.publishedAt ?? doc.createdAt)
+    const dateKey = dateObj.toISOString().slice(0, 10)
     if (!acc[dateKey]) acc[dateKey] = []
     acc[dateKey].push(doc)
     return acc
@@ -99,7 +95,7 @@ export default function TimelinePage() {
 
         {sortedDates.map((date) => (
           <div key={date} className="mb-6">
-            <div className={DATE_SEPARATOR}>{date}</div>
+            <div className={DATE_SEPARATOR}><LocalDate dateStr={date + 'T00:00:00.000Z'} /></div>
             {groups[date].map((t) => (
               <div key={t.id} className={CARD}>
                 <time className="block text-xs opacity-60 mb-2">
