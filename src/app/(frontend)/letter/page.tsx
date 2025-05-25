@@ -70,7 +70,13 @@ export default function LetterPage() {
           />
           <button
             type="submit"
-            className="mt-4 py-2 rounded bg-gray-500 text-white hover:bg-gray-700 transition"
+            className="
+              mt-4 py-2 rounded 
+              bg-gray-200 text-gray-700 
+              hover:bg-gray-300 
+              transition 
+              disabled:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed
+            "
             disabled={loading}
           >
             {loading ? '送信中...' : '送信'}

@@ -43,6 +43,9 @@ export default buildConfig({
   db: vercelPostgresAdapter({
     pool: {
       connectionString: process.env.POSTGRES_URL!,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 2000,
     },
   }),
 
@@ -59,8 +62,8 @@ export default buildConfig({
 
   // プラグインをひとつにまとめる
   plugins: [
-    // Payload Cloud (もし不要ならコメントアウト)
-    payloadCloudPlugin(),
+    // Payload Cloud (必要なときのみ有効化)
+    ...(process.env.PAYLOAD_CLOUD === 'true' ? [payloadCloudPlugin()] : []),
 
     // S3 ストレージアダプター
     s3Storage({

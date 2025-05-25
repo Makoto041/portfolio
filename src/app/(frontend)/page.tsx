@@ -10,6 +10,7 @@ import type { TimelineDoc, MediaDoc, BlogPost } from '@/lib/payloadTypes'
 import Breadcrumb from '@/components/Breadcrumb'
 import MemoGrid from '@/components/MemoGrid'
 import GalleryGrid from '@/components/GalleryGrid'
+import LocalDate from '@/components/LocalDate'
 
 const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8'
 const CARD = 'glass rounded-lg overflow-hidden'
@@ -39,15 +40,9 @@ export default async function Home() {
         <ul className="space-y-4">
           {timeline.map((t: TimelineDoc) => (
             <li key={t.id} className={`${CARD} p-4`}>
-              {(() => {
-                const dateObj = new Date(t.publishedAt ?? t.createdAt)
-                const now = new Date()
-                const isThisYear = dateObj.getFullYear() === now.getFullYear()
-                const formatted = isThisYear
-                  ? `${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
-                  : `${dateObj.getFullYear()}年${dateObj.getMonth() + 1}月${dateObj.getDate()}日 ${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}`
-                return <time className="block text-xs opacity-60 mb-1">{formatted}</time>
-              })()}
+              <time className="block text-xs opacity-60 mb-1">
+  <LocalDate dateStr={t.publishedAt ?? t.createdAt} formatType="auto" />
+</time>
               <p className="text-sm leading-relaxed">{t.text}</p>
             </li>
           ))}
