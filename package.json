@@ -12,7 +12,8 @@
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
-    "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "postbuild": "next-sitemap"
   },
   "dependencies": {
     "@payloadcms/db-vercel-postgres": "3.38.0",
@@ -32,6 +33,7 @@
     "graphql": "^16.8.1",
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
+    "next-sitemap": "^4.2.3",
     "nodemailer": "^7.0.3",
     "payload": "3.38.0",
     "pg": "^8.16.0",

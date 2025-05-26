@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { useState } from 'react'
 import type { MediaDoc } from '@/lib/payloadTypes'
 
+const CARD = 'glass rounded-lg overflow-hidden p-4 flex flex-col'
+
 export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
   // 1) id で重複除去
   const unique = Array.from(new Map(gallery.map((item) => [item.id, item])).values())
@@ -21,7 +23,7 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
   const latest = unique.sort((a, b) => toTime(b) - toTime(a)).slice(0, 4)
 
   return (
-    <div className="bg-white/90 rounded-lg overflow-hidden shadow-sm p-4 flex flex-col">
+    <div className={`${CARD}`}>
       <h2 className="text-xl font-medium mb-2">Gallery</h2>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 flex-1">
         {latest.map((item, idx) => (

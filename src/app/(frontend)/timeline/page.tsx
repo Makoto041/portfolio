@@ -193,7 +193,7 @@ export default function TimelinePage() {
           <div className="flex justify-center mt-8">
             <button
               onClick={() => setPage((p) => p + 1)}
-              className="bg-white/90 p-3 w-32 flex items-center justify-center rounded-lg shadow-sm hover:bg-white transition"
+              className="glass p-3 w-32 flex items-center justify-center rounded-lg shadow-sm hover:bg-white transition"
               disabled={loading}
             >
               {loading && <FaSpinner className="animate-spin mr-2" />}
