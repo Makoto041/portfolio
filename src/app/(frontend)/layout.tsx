@@ -25,6 +25,12 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  // サイトアイコンの設定
+  icons: {
+    icon: '/myicon.png',
+    apple: '/myicon.png',
+    shortcut: '/myicon.png',
+  },
   openGraph: {
     title: 'いわぶち | 個人ポートフォリオサイト',
     description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
@@ -34,9 +40,9 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.jpg', // OGP画像を追加してください
+        url: '/myicon.png', // サイトの代表写真として使用
         width: 1200,
-        height: 630,
+        height: 1200,
         alt: 'いわぶちポートフォリオ',
       },
     ],
@@ -46,7 +52,7 @@ export const metadata: Metadata = {
     title: 'いわぶち | 個人ポートフォリオサイト',
     description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
     creator: '@iwabuchi', // 実際のTwitterアカウントに変更してください
-    images: ['/og-image.jpg'], // OGP画像を追加してください
+    images: ['/myicon.png'], // サイトの代表写真を使用
   },
 }
 
