@@ -6,8 +6,48 @@ import SideNav from '@/components/SideNav'
 import MobileHeader from '@/components/MobileHeader'
 
 export const metadata: Metadata = {
-  title: 'いわぶち',
-  description: 'いわぶちの個人サイト',
+  title: 'いわぶち | 個人ポートフォリオサイト',
+  description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
+  keywords: ['いわぶち', 'ポートフォリオ', '写真', 'ブログ', 'ギャラリー'],
+  authors: [{ name: 'いわぶち' }],
+  creator: 'いわぶち',
+  publisher: 'いわぶち',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://iwabuchi-portfolio.vercel.app'), // 実際のドメインに変更してください
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    title: 'いわぶち | 個人ポートフォリオサイト',
+    description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
+    url: 'https://iwabuchi-portfolio.vercel.app', // 実際のドメインに変更してください
+    siteName: 'いわぶち',
+    locale: 'ja_JP',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.jpg', // OGP画像を追加してください
+        width: 1200,
+        height: 630,
+        alt: 'いわぶちポートフォリオ',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'いわぶち | 個人ポートフォリオサイト',
+    description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
+    creator: '@iwabuchi', // 実際のTwitterアカウントに変更してください
+    images: ['/og-image.jpg'], // OGP画像を追加してください
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
