@@ -1,4 +1,4 @@
-// src/app/api/timeline/route.ts
+// src/app/api/timelineGET/route.ts
 import { NextResponse } from 'next/server'
 import { getPayloadClient } from '@/lib/payloadClient'
 import type { TimelineDoc } from '@/lib/payloadTypes'

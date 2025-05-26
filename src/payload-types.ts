@@ -146,6 +146,10 @@ export interface User {
 export interface Media {
   id: number;
   alt?: string | null;
+  /**
+   * チェックを入れるとギャラリーには表示されず、タイムラインのみに表示される画像になります
+   */
+  isTimelineOnly?: boolean | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -166,6 +170,13 @@ export interface Timeline {
   id: number;
   text: string;
   publishedAt?: string | null;
+  images?:
+    | {
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  likes?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -224,7 +235,6 @@ export interface BlogMedia {
 export interface Letter {
   id: number;
   name: string;
-  email?: string | null;
   message: string;
   createdAt: string;
   updatedAt: string;
@@ -324,6 +334,7 @@ export interface UsersSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  isTimelineOnly?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -343,6 +354,13 @@ export interface MediaSelect<T extends boolean = true> {
 export interface TimelineSelect<T extends boolean = true> {
   text?: T;
   publishedAt?: T;
+  images?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  likes?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -384,7 +402,6 @@ export interface BlogMediaSelect<T extends boolean = true> {
  */
 export interface LetterSelect<T extends boolean = true> {
   name?: T;
-  email?: T;
   message?: T;
   createdAt?: T;
   updatedAt?: T;

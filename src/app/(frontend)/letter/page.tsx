@@ -19,7 +19,7 @@ export default function LetterPage() {
     const form = e.currentTarget
     const data = {
       name: (form.elements.namedItem('name') as HTMLInputElement).value,
-      email: (form.elements.namedItem('email') as HTMLInputElement).value,
+
       message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
     }
     try {
@@ -51,13 +51,6 @@ export default function LetterPage() {
             name="name"
             type="text"
             placeholder="お名前"
-            required
-            className="p-2 rounded border border-zinc-300"
-          />
-          <input
-            name="email"
-            type="email"
-            placeholder="メールアドレス"
             required
             className="p-2 rounded border border-zinc-300"
           />

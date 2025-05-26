@@ -16,7 +16,7 @@ export default function MemoGrid({ posts }: { posts: BlogPost[] }) {
     .slice(0, 4)
 
   return (
-    <div className="glass rounded-lg overflow-hidden p-4 flex flex-col">
+    <div className="bg-white/90 rounded-lg overflow-hidden shadow-sm p-4 flex flex-col">
       <h2 className="text-xl font-medium mb-2">Memo</h2>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 flex-1">
         {latest.map((p, idx) => (

@@ -15,10 +15,12 @@ const NAV = [
 export default function SideNav() {
   return (
     <aside
-      className="hidden md:flex flex-col justify-between
-                 w-56 p-10 glass backdrop-saturate-150 sticky top-0 h-screen"
+      className="hidden md:flex flex-col justify-between w-56 p-10 sticky top-0 h-screen glass backdrop-saturate-150 text-[color:var(--fg-base)]"
     >
-      <Link href="/" className="font-semibold tracking-[0.14em] text-lg">
+      <Link
+        href="/"
+        className="font-semibold tracking-[0.14em] text-lg text-[color:var(--fg-base)] hover:opacity-90 transition-opacity"
+      >
         IWABUCHI
       </Link>
       {/* Weather & Date Widget */}
@@ -28,7 +30,7 @@ export default function SideNav() {
           <Link
             key={n.href}
             href={n.href}
-            className="block opacity-70 hover:opacity-100 transition-colors"
+            className="block opacity-70 hover:opacity-100 transition-colors text-[color:var(--fg-base)]"
           >
             {n.label}
           </Link>
@@ -36,7 +38,7 @@ export default function SideNav() {
       </nav>
     
 
-      <div className="flex gap-5 opacity-70">
+      <div className="flex gap-5 opacity-70 text-[color:var(--fg-base)]">
         
         <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
           X

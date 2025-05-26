@@ -1,7 +1,7 @@
 // src/components/LocalDate.tsx
 'use client'
 
-type Props = { dateStr: string; formatType?: 'auto' | 'full' }
+type Props = { dateStr: string; formatType?: 'auto' | 'full' | 'dateOnly' }
 export default function LocalDate({ dateStr, formatType = 'auto' }: Props) {
   // 受け取った値をDateとして解釈
   const utcDate = new Date(dateStr)
@@ -15,7 +15,12 @@ export default function LocalDate({ dateStr, formatType = 'auto' }: Props) {
   const now = new Date()
   const thisYear = now.getFullYear()
   let formatted = ''
-  if (formatType === 'full' || year !== thisYear) {
+  if (formatType === 'dateOnly') {
+    // 日付のみ表示（時刻なし）
+    formatted = year !== thisYear
+      ? `${year}年${month}月${day}日`
+      : `${month}月${day}日`
+  } else if (formatType === 'full' || year !== thisYear) {
     formatted = `${year}年${month}月${day}日 ${hour}:${minute}`
   } else {
     formatted = `${month}月${day}日 ${hour}:${minute}`

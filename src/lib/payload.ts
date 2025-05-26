@@ -6,22 +6,37 @@ import type { TimelineDoc, MediaDoc, BlogPost } from './payloadTypes'
 
 type LatestOpts = {
   timelineLimit?: number
-  blogLimit?: number // ← 追加
+  blogLimit?: number
   mediaLimit?: number
+  /** タイムライン専用画像を取得するかどうか */
+  includeTimelineOnly?: boolean
 }
 
 export async function fetchLatest({
   timelineLimit = 5,
   blogLimit = 5,
-   // ← 追加
   mediaLimit = 1,
+  includeTimelineOnly = false, // デフォルトでタイムライン専用画像を除外
 }: LatestOpts = {}) {
   const payload = await getPayloadClient()
 
+  // タイムライン専用画像を除外するクエリ条件を構築
+  const mediaWhere: any = {}
+  
+  // includeTimelineOnlyがfalseの場合、タイムライン専用画像を除外
+  if (!includeTimelineOnly) {
+    mediaWhere.isTimelineOnly = { equals: false }
+  }
+  
   const [tRes, bRes, mRes] = await Promise.all([
     payload.find({ collection: 'timeline', limit: timelineLimit, sort: '-publishedAt' }),
-    payload.find({ collection: 'blogPosts', limit: blogLimit, sort: '-publishedAt' }), // ← blogLimit
-    payload.find({ collection: 'media', limit: mediaLimit, sort: '-publishedAt' }),
+    payload.find({ collection: 'blogPosts', limit: blogLimit, sort: '-publishedAt' }),
+    payload.find({ 
+      collection: 'media', 
+      limit: mediaLimit, 
+      sort: '-publishedAt',
+      where: mediaWhere,
+    }),
   ])
 
   /* ──── timeline ───────────────────────── */

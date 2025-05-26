@@ -7,16 +7,15 @@ const pool = new Pool({
 })
 
 export async function POST(req: NextRequest) {
-  const { name, email, message } = await req.json()
+  const { name, message } = await req.json()
 
-  if (!name || !email || !message) {
+  if (!name || !message) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
   try {
-    await pool.query('INSERT INTO letter (name, email, message) VALUES ($1, $2, $3)', [
+    await pool.query('INSERT INTO letter (name, message) VALUES ($1, $2)', [
       name,
-      email,
       message,
     ])
     return NextResponse.json({ ok: true })

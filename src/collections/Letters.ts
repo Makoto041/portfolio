@@ -49,7 +49,6 @@ ${message}`,
   },
   fields: [
     { name: 'name', label: 'お名前', type: 'text', required: true },
-    { name: 'email', label: 'メールアドレス', type: 'email' },
     { name: 'message', label: 'メッセージ', type: 'textarea', required: true },
     {
       name: 'createdAt',

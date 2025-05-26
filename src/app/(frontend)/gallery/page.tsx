@@ -11,8 +11,12 @@ export const revalidate = 0
 
 export default async function GalleryPage() {
   // サーバーコンポーネント内でデータ取得
-  const { gallery } = await fetchLatest({ mediaLimit: 20 })
-
+  // includeTimelineOnly=falseでタイムライン専用画像をサーバー側で除外
+  const { gallery } = await fetchLatest({ 
+    mediaLimit: 100, 
+    includeTimelineOnly: false 
+  })
+  
   return (
     <main className="min-h-screen flex flex-col">
       {/* パンくず */}
@@ -25,8 +29,8 @@ export default async function GalleryPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-semibold">Gallery</h1>
         </div>
-
-        {/* Client Component を呼び出し */}
+        
+        {/* サーバーサイドでフィルタリング済みのギャラリーデータを使用 */}
         <GalleryGrid gallery={gallery} />
       </section>
     </main>

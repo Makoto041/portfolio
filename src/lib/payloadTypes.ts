@@ -13,6 +13,8 @@ export interface BaseDoc {
 export interface TimelineDoc extends BaseDoc {
   text: string
   publishedAt?: string
+  images?: { id: string; image: { id: string; url: string } }[]
+  likes?: number
 }
 
 /** Gallery 用ドキュメント */
@@ -23,6 +25,8 @@ export interface MediaDoc extends BaseDoc {
   image?: { url?: string }
   /** alt テキスト */
   alt?: string
+  /** タイムライン専用フラグ */
+  isTimelineOnly?: boolean
 }
 
 /** BlogPost 用ドキュメント */
