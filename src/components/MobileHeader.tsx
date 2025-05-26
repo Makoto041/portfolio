@@ -21,10 +21,10 @@ export default function MobileHeader() {
     <>
       {/* ── Top bar ───────────────────────────── */}
       <header
-        className="md:hidden sticky top-0 z-40 h-14 px-4 flex items-center
-             justify-between rounded-b-[var(--radius-m)]
-             backdrop-blur-[var(--blur-m)] border-b border-[color:var(--glass-border)]
-             bg-gradient-to-br from-[color:var(--glass-surface)/.7] to-[color:var(--glass-surface)/.3]
+        className="md:hidden sticky top-0 z-40 h-14 px-4 flex items-center justify-between
+             rounded-b-[var(--radius-m)] backdrop-blur-[var(--blur-m)]
+             border-b border-[color:var(--glass-border)]
+             bg-[color:var(--bg-base)/.85] text-[color:var(--fg-base)]
              shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
       >
         <Link
@@ -67,7 +67,7 @@ export default function MobileHeader() {
       {open && (
         <nav
           className={clsx(
-            'fixed inset-0 z-40 bg-[color:var(--bg-base)/.6] backdrop-blur-sm',
+            'fixed inset-0 z-40 bg-[color:var(--bg-base)/.7] backdrop-blur-sm',
             'transition-opacity duration-300', // フェード
             open ? 'opacity-100' : 'pointer-events-none opacity-0',
           )}
@@ -86,7 +86,8 @@ export default function MobileHeader() {
               <li key={href}>
                 <Link
                   href={href}
-                  className="flex items-center text-lg py-1.5 font-medium tracking-wide hover:opacity-90 transition-opacity"
+                  className="flex items-center text-lg py-1.5 font-medium tracking-wide
+                             text-[color:var(--fg-base)] hover:opacity-90 transition-opacity"
                   onClick={() => setOpen(false)}
                 >
                   <Icon size={18} className="inline mr-2" />
