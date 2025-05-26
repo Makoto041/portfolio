@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://iwabuchi-portfolio.vercel.app'), // 実際のドメインに変更してください
+  metadataBase: new URL('https://iwabuchi-makoto.com'), // 実際のドメインに変更してください
   alternates: {
     canonical: '/',
   },
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'いわぶち | 個人ポートフォリオサイト',
     description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
-    url: 'https://iwabuchi-portfolio.vercel.app', // 実際のドメインに変更してください
+    url: 'https://iwabuchi-makoto.com', // 実際のドメインに変更してください
     siteName: 'いわぶち',
     locale: 'ja_JP',
     type: 'website',
