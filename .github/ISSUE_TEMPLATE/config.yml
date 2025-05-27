@@ -1,0 +1,14 @@
+blank_issues_enabled: false # “New issue” を空白フォームにするか
+contact_links:
+  - name: ドキュメントで質問する
+    url: https://your-docs.example.com
+    about: “まずはドキュメントをご確認ください”
+issue_templates:
+  - path: bug_report.md
+    labels: ['bug']
+    name: バグ報告 (Bug report)
+    description: “不具合を報告するときのテンプレート”
+  - path: feature_request.md
+    labels: ['enhancement']
+    name: 機能要望 (Feature request)
+    description: “新機能を提案するときのテンプレート”
