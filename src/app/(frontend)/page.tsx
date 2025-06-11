@@ -1,6 +1,6 @@
 // src/app/(frontend)/page.tsx
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const dynamic = 'auto'
+export const revalidate = 60
 
 import Link from 'next/link'
 import { Analytics } from '@vercel/analytics/next'
@@ -11,7 +11,6 @@ import Breadcrumb from '@/components/Breadcrumb'
 import MemoGrid from '@/components/MemoGrid'
 import GalleryGrid from '@/components/GalleryGrid'
 import HomeTimeline from '@/components/HomeTimeline'
-
 
 // src/app/(frontend)/page.tsx
 
@@ -40,33 +39,42 @@ export const metadata = {
     description: 'Web制作・開発・UI/UXが得意な岩渕誠のポートフォリオサイトです。',
     images: ['https://iwabuchi-makoto.com/myicon.png'],
   },
+  alternates: {
+    canonical: 'https://iwabuchi-makoto.com/',
+  },
+  keywords: ['いわぶちまこと', '岩渕誠', 'Web制作', '開発', 'UI/UX', 'ポートフォリオ'],
 }
 
 const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8'
 const CARD = 'glass rounded-lg overflow-hidden'
 
 // サーバーコンポーネント内のUI部分
-function HomeUI({ timeline, posts, gallery }: {
-  timeline: TimelineDoc[],
-  posts: BlogPost[],
+function HomeUI({
+  timeline,
+  posts,
+  gallery,
+}: {
+  timeline: TimelineDoc[]
+  posts: BlogPost[]
   gallery: MediaDoc[]
 }) {
   return (
     <main className="min-h-screen bg-[color:var(--bg)] text-[color:var(--text)]">
+      <h1 className="sr-only">いわぶちまことポートフォリオ</h1>
       <div className="mt-10 text-gray-400 text-left">
         <Breadcrumb />
         <Analytics />
       </div>
-      
+
       {/* Timeline - クライアントコンポーネントを使用 */}
       <section className={`${WRAP} py-12`}>
         <div className="flex items-center justify-between mb-6">
           <WeatherWidget />
         </div>
-        
+
         {/* クライアントコンポーネントとしてHomeTimelineを使用 */}
         <HomeTimeline timelineData={timeline} cardClass={CARD} />
-        
+
         <Link
           href="/timeline"
           className="mt-10 inline-block text-sm text-gray-400 hover:text-gray-600 underline"
@@ -91,24 +99,20 @@ export default async function Home() {
     includeTimelineOnly: false, // タイムライン専用画像を除外
   })
   const latestPost: BlogPost | null = posts.length > 0 ? posts[0] : null
-  
+
   // ブログの表紙画像のみを除外するフィルタリング
   // （タイムライン専用画像は既にサーバーサイドで除外済み）
   const filteredGallery = gallery.filter((g: MediaDoc) => {
     const url = g.url ?? g.image?.url
-    
+
     // ブログの表紙画像を除外
     if (url && url === latestPost?.coverImage?.url) {
       return false
     }
-    
+
     return true
   })
 
   // データをサーバーコンポーネントに渡す
-  return <HomeUI 
-    timeline={timeline}
-    posts={posts}
-    gallery={filteredGallery}
-  />
+  return <HomeUI timeline={timeline} posts={posts} gallery={filteredGallery} />
 }
