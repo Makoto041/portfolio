@@ -16,26 +16,27 @@ import HomeTimeline from '@/components/HomeTimeline'
 // src/app/(frontend)/page.tsx
 
 export const metadata = {
-  title: 'Makoto Iwabuchi - ポートフォリオ',
+  title: 'いわぶちまこと - ポートフォリオ',
   description: 'Web制作・開発・UI/UXが得意な岩渕誠のポートフォリオサイトです。',
   openGraph: {
-    title: 'Makoto Iwabuchi - ポートフォリオ',
+    title: 'いわぶちまこと - ポートフォリオ',
     description: 'Web制作・開発・UI/UXが得意な岩渕誠のポートフォリオサイトです。',
     url: 'https://iwabuchi-makoto.com',
-    siteName: 'Makoto Iwabuchi',
+    siteName: 'いわぶちまこと',
+    locale: 'ja_JP',
     images: [
       {
         url: 'https://iwabuchi-makoto.com/myicon.png', // publicフォルダに配置した画像
         width: 1200,
         height: 630,
-        alt: 'OGP画像 - Makoto Iwabuchi',
+        alt: 'OGP画像 - いわぶちまこと',
       },
     ],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Makoto Iwabuchi - ポートフォリオ',
+    title: 'いわぶちまこと - ポートフォリオ',
     description: 'Web制作・開発・UI/UXが得意な岩渕誠のポートフォリオサイトです。',
     images: ['https://iwabuchi-makoto.com/myicon.png'],
   },
