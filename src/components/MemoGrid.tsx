@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 import type { BlogPost } from '@/lib/payloadTypes'
+import { toCFUrl } from '@/lib/cfUrl'
 
 const CARD = 'glass rounded-lg overflow-hidden p-4 flex flex-col'
 
@@ -39,7 +40,7 @@ export default function MemoGrid({ posts }: { posts: BlogPost[] }) {
 
 function MemoImageLink({ p }: { p: BlogPost }) {
   const [loaded, setLoaded] = useState(false)
-  const imgUrl = p.coverImage?.url ?? '/default.jpg'
+  const imgUrl = toCFUrl(p.coverImage?.url ?? '/default.jpg')
 
   return (
     <Link href={`/posts/${p.slug}`} className="flex flex-col group">
@@ -49,11 +50,11 @@ function MemoImageLink({ p }: { p: BlogPost }) {
           src={imgUrl}
           alt={p.title}
           fill
+          unoptimized
           className={`object-cover transition-opacity duration-500 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
-          onLoad={() => setLoaded(true)}
-          onLoadingComplete={() => setLoaded(true)}
+          onLoad={(e) => setLoaded(true)}
         />
       </div>
       <p className="mt-1 text-sm font-medium line-clamp-1 text-gray-400 group-hover:text-gray-600 transition">

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
 import type { MediaDoc } from '@/lib/payloadTypes'
+import { toCFUrl } from '@/lib/cfUrl'
 
 const CARD = 'glass rounded-lg overflow-hidden p-4 flex flex-col'
 
@@ -44,7 +45,7 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
 
 function GalleryImage({ item }: { item: MediaDoc }) {
   const [loaded, setLoaded] = useState(false)
-  const imgUrl = item.url ?? '/default.jpg'
+  const imgUrl = toCFUrl(item.sizes?.thumbnail?.url ?? item.url ?? '/default.jpg')
 
   return (
     <div className="flex flex-col group">
@@ -54,11 +55,11 @@ function GalleryImage({ item }: { item: MediaDoc }) {
           src={imgUrl}
           alt={item.alt || 'gallery image'}
           fill
+          unoptimized
           className={`object-cover transition-opacity duration-500 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
-          onLoad={() => setLoaded(true)}
-          onLoadingComplete={() => setLoaded(true)}
+          onLoad={(e) => setLoaded(true)}
         />
       </div>
     </div>

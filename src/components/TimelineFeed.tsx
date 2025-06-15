@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { TimelineDoc } from '@/lib/payloadTypes'
 import LocalDate from '@/components/LocalDate'
 import LikeButton from '@/components/LikeButton'
+import { toCFUrl } from '@/lib/cfUrl'
 
 type TimelineFeedProps = {
   timelineData: TimelineDoc[]
@@ -45,7 +46,7 @@ export default function TimelineFeed({ timelineData, cardClass }: TimelineFeedPr
       imgObj?.image?.url ? (
         <img
           key={imgObj.id || imgObj.image?.id}
-          src={imgObj.image.url}
+          src={toCFUrl(imgObj.image.sizes?.thumbnail?.url ?? imgObj.image.url)}
           alt="timeline-img"
           className="w-32 h-32 object-cover rounded cursor-pointer"
           onClick={() => setModalImg(imgObj.image.url)}
@@ -63,7 +64,7 @@ export default function TimelineFeed({ timelineData, cardClass }: TimelineFeedPr
   >
     <div className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]" onClick={e => e.stopPropagation()}>
       <img
-        src={modalImg}
+        src={toCFUrl(modalImg)}
         alt="timeline-modal-img"
         className="rounded-lg max-w-full max-h-[80vh] object-contain bg-white/30 backdrop-blur-sm p-1"
       />

@@ -4,6 +4,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toCFUrl } from '@/lib/cfUrl'
 import type { MediaDoc } from '@/lib/payloadTypes'
 
 export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
@@ -14,7 +15,7 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
       {/* Masonry レイアウト */}
       <div className="columns-2 gap-x-4 md:columns-3 lg:columns-4">
         {gallery.map((m) => {
-          const src = m.url ?? m.image?.url ?? '/fallback.jpg'
+          const src = toCFUrl(m.sizes?.thumbnail?.url ?? m.url ?? m.image?.url ?? '/fallback.jpg')
           return (
             <div
               key={m.id}
@@ -40,7 +41,7 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
           <div className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
             {/* 拡大画像 */}
             <img
-              src={selected.url ?? selected.image?.url ?? '/fallback.jpg'}
+              src={toCFUrl(selected.url ?? selected.image?.url ?? '/fallback.jpg')}
               alt={selected.alt ?? ''}
               className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain bg-white/5 backdrop-blur-lg p-1"
             />

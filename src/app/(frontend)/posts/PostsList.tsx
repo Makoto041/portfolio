@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { BlogPost } from '@/lib/payloadTypes'
+import { toCFUrl } from '@/lib/cfUrl'
 
 export default function PostsList({ posts }: { posts: BlogPost[] }) {
   if (!posts?.length) {
@@ -21,7 +22,7 @@ export default function PostsList({ posts }: { posts: BlogPost[] }) {
           {post.coverImage?.url && (
             <div className="relative w-full h-48 mb-4">
               <Image
-                src={post.coverImage.url}
+                src={toCFUrl(post.coverImage.url)}
                 alt={post.title}
                 fill
                 className="object-cover rounded-md"

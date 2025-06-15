@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayloadClient } from '@/lib/payloadClient'
+import { toCFUrl } from '@/lib/cfUrl'
 import type { BlogPost } from '@/lib/payloadTypes'
 import { renderRichText } from '@/lib/renderRichText'
 import Breadcrumb from '@/components/Breadcrumb'
@@ -36,7 +37,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           {post.coverImage?.url && (
             <div className="relative w-full h-64 mb-6">
               <Image
-                src={post.coverImage.url}
+                src={toCFUrl(post.coverImage.url)}
                 alt={post.title}
                 fill
                 className="object-cover rounded-md"

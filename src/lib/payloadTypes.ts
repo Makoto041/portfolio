@@ -13,7 +13,7 @@ export interface BaseDoc {
 export interface TimelineDoc extends BaseDoc {
   text: string
   publishedAt?: string
-  images?: { id: string; image: { id: string; url: string } }[]
+  images?: { id: string; image: { id: string; url: string; sizes?: Record<string, { url: string }> } }[]
   likes?: number
 }
 
@@ -22,7 +22,9 @@ export interface MediaDoc extends BaseDoc {
   /** upload フィールド直下 */
   url?: string
   /** ネスト upload 用 */
-  image?: { url?: string }
+  image?: { url?: string; sizes?: Record<string, { url: string }> }
+  /** 生成された各サイズのURL */
+  sizes?: Record<string, { url: string }>
   /** alt テキスト */
   alt?: string
   /** タイムライン専用フラグ */
