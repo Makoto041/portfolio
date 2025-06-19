@@ -62,23 +62,20 @@ export default buildConfig({
 
   // プラグインをひとつにまとめる
   plugins: [
-    // Payload Cloud (必要なときのみ有効化)
     ...(process.env.PAYLOAD_CLOUD === 'true' ? [payloadCloudPlugin()] : []),
 
-    // S3 ストレージアダプター
     s3Storage({
       bucket: process.env.S3_BUCKET!,
-      collections: {
-        [Media.slug]: true,
-        [BlogMedia.slug]: true,
-      },
-      // AWS SDK の S3ClientConfig をそのまま渡せます
       config: {
         region: process.env.S3_REGION!,
         credentials: {
           accessKeyId: process.env.S3_ACCESS_KEY_ID!,
           secretAccessKey: process.env.S3_SECRET_ACCESS_KEY!,
         },
+      },
+      collections: {
+        [Media.slug]: true,
+        [BlogMedia.slug]: true,
       },
     }),
   ],
