@@ -6,6 +6,7 @@ import { TimelineDoc } from '@/lib/payloadTypes'
 import LocalDate from '@/components/LocalDate'
 import LikeButton from '@/components/LikeButton'
 import { toCFUrl } from '@/lib/cfUrl'
+import Image from 'next/image'
 
 type HomeTimelineProps = {
   timelineData: TimelineDoc[]
@@ -58,13 +59,21 @@ export default function HomeTimeline({ timelineData, cardClass }: HomeTimelinePr
               <div className="flex gap-2">
                 {t.images.slice(0, 3).map((imgObj: any) =>
                   imgObj?.image?.url ? (
-                    <img
+                    <div
                       key={imgObj.id || imgObj.image?.id}
-                      src={toCFUrl(imgObj.image.sizes?.thumbnail?.url ?? imgObj.image.url)}
-                      alt="timeline-img"
-                      className="w-32 h-32 object-cover rounded cursor-pointer"
+                      className="w-32 h-32 relative rounded cursor-pointer overflow-hidden"
                       onClick={() => setModalImg(imgObj.image.url)}
-                    />
+                    >
+                      <Image
+                        src={toCFUrl(imgObj.image.sizes?.thumbnail?.url ?? imgObj.image.url)}
+                        alt="timeline-img"
+                        fill
+                        sizes="128px"
+                        className="object-cover"
+                        loading="lazy"
+                        unoptimized
+                      />
+                    </div>
                   ) : null,
                 )}
               </div>
