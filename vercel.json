@@ -1,5 +1,16 @@
 {
   "buildCommand": "pnpm run build",
+  "headers": [
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=600, stale-while-revalidate=59"
+        }
+      ]
+    }
+  ],
   "outputDirectory": ".next",
   "rewrites": [{ "source": "/api/(.*)", "destination": "/api/$1" }]
 }
