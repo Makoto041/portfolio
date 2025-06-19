@@ -10,6 +10,30 @@ const CF_DOMAIN = process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async headers() {
+    return [
+      // Long-term cache for Next.js static assets
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Allow bfcache by avoiding no-store on HTML; short cache for page data
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=600',
+          },
+        ],
+      },
+    ]
+  },
   // ① CloudFront 画像を許可
   images: {
     remotePatterns: CF_DOMAIN
