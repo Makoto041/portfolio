@@ -4,7 +4,7 @@ export const revalidate = 60
 
 import Link from 'next/link'
 import { Analytics } from '@vercel/analytics/next'
-import WeatherWidget from '@/components/WeatherWidget'
+import WeatherWidgetClient from '@/components/WeatherWidgetClient'
 import { fetchLatest } from '@/lib/payload'
 import type { TimelineDoc, MediaDoc, BlogPost } from '@/lib/payloadTypes'
 import Breadcrumb from '@/components/Breadcrumb'
@@ -69,7 +69,7 @@ function HomeUI({
       {/* Timeline - クライアントコンポーネントを使用 */}
       <section className={`${WRAP} py-12`}>
         <div className="flex items-center justify-between mb-6">
-          <WeatherWidget />
+          <WeatherWidgetClient />
         </div>
 
         {/* クライアントコンポーネントとしてHomeTimelineを使用 */}

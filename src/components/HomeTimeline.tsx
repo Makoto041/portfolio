@@ -68,10 +68,10 @@ export default function HomeTimeline({ timelineData, cardClass }: HomeTimelinePr
                         src={toCFUrl(imgObj.image.sizes?.thumbnail?.url ?? imgObj.image.url)}
                         alt="timeline-img"
                         fill
-                        sizes="128px"
+                        sizes="(max-width:640px) 33vw, 128px"
+                        quality={75}
                         className="object-cover"
                         loading="lazy"
-                        unoptimized
                       />
                     </div>
                   ) : null,

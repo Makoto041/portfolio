@@ -50,7 +50,8 @@ function MemoImageLink({ p }: { p: BlogPost }) {
           src={imgUrl}
           alt={p.title}
           fill
-          unoptimized
+          sizes="128px"
+          quality={75}
           className={`object-cover transition-opacity duration-500 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}

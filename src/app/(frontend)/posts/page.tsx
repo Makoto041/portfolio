@@ -12,7 +12,7 @@ import { Suspense } from 'react'
 import PostsList from './PostsList'
 import PostsListLoading from './PostsListLoading'
 
-const WRAP = 'mx-auto w-full max-w-[78rem] px-5 sm:px-8 section-pad'
+const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad'
 const CARD =
   'glass hover:shadow-[0_12px_32px_rgba(0,0,0,.18)] transition rounded-lg overflow-hidden'
 const MAINT = '/maintenance'

@@ -55,7 +55,8 @@ function GalleryImage({ item }: { item: MediaDoc }) {
           src={imgUrl}
           alt={item.alt || 'gallery image'}
           fill
-          unoptimized
+          sizes="128px"
+          quality={75}
           className={`object-cover transition-opacity duration-500 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}

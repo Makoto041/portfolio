@@ -1,7 +1,7 @@
 'use client' // クライアント実行を指定
 import { LocalTime } from '@/components/LocalTime'
 import React, { useState, useEffect } from 'react'
-import WeatherWidget from '@/components/WeatherWidget'
+import WeatherWidgetClient from '@/components/WeatherWidgetClient'
 import type { TimelineDoc } from '@/lib/payloadTypes'
 import Breadcrumb from '@/components/Breadcrumb'
 import { FaSpinner } from 'react-icons/fa'
@@ -117,7 +117,7 @@ export default function TimelinePage() {
       <section className={`${WRAP} py-12`}>
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-semibold">Timeline</h1>
-          <WeatherWidget />
+          <WeatherWidgetClient />
         </div>
 
         {loading && timeline.length === 0 && (

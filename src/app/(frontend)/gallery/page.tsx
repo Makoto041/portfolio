@@ -25,7 +25,7 @@ export default async function GalleryPage() {
       </div>
 
       {/* セクションラップ */}
-      <section className="mx-auto w-full max-w-[78rem] px-5 sm:px-8 section-pad">
+      <section className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad">
         <div className="mb-6">
           <h1 className="text-3xl font-semibold">Gallery</h1>
         </div>
