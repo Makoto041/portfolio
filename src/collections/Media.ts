@@ -1,18 +1,17 @@
+// src/collections/Media.ts
 import type { CollectionConfig } from 'payload'
 
 export const Media: CollectionConfig = {
   slug: 'media',
-  
   access: {
     read: () => true,
   },
-  upload: true,
+  upload: true, // ← S3 保存の紐付けは payload.config.ts 側のプラグイン設定で行うので、ここには不要です
   fields: [
     {
       name: 'alt',
       type: 'text',
-      required: false, // 任意フィールドに
-      // defaultValue を外す
+      required: false,
     },
     {
       name: 'isTimelineOnly',
