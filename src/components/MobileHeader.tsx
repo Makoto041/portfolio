@@ -8,7 +8,7 @@ import { BookText, StickyNote, Image as ImageIcon, User, Mail } from 'lucide-rea
 
 const NAV = [
   { label: '日記', href: '/timeline', icon: BookText },
-  { label: 'メモ', href: '/posts', icon: StickyNote },
+  { label: 'ブログ', href: '/posts', icon: StickyNote },
   { label: '写真', href: '/gallery', icon: ImageIcon },
   { label: 'プロフィール', href: '/profile', icon: User },
   { label: 'お便り', href: '/letter', icon: Mail },

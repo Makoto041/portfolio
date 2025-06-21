@@ -6,7 +6,7 @@ import WeatherWidget from '@/components/WeatherWidget'
 
 const NAV = [
   { label: '日記', href: '/timeline' },
-  { label: 'メモ', href: '/posts' },
+  { label: 'ブログ', href: '/posts' },
   { label: '写真', href: '/gallery' },
   { label: 'プロフィール', href: '/profile' },
   { label: 'お便り', href: '/letter' },

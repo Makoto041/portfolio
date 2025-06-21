@@ -7,7 +7,7 @@ import MobileHeader from '@/components/MobileHeader'
 
 export const metadata: Metadata = {
   title: 'いわぶち | 個人ポートフォリオサイト',
-  description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
+  description: 'いわぶちの個人ポートフォリオサイト。日記、ブログ、写真ギャラリーなど日々の活動や作品を公開しています。',
   keywords: ['いわぶち', 'ポートフォリオ', '写真', 'ブログ', 'ギャラリー'],
   authors: [{ name: 'いわぶち' }],
   creator: 'いわぶち',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'いわぶち | 個人ポートフォリオサイト',
-    description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
+    description: 'いわぶちの個人ポートフォリオサイト。日記、ブログ、写真ギャラリーなど日々の活動や作品を公開しています。',
     url: 'https://iwabuchi-makoto.com', // 実際のドメインに変更してください
     siteName: 'いわぶち',
     locale: 'ja_JP',
@@ -50,7 +50,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'いわぶち | 個人ポートフォリオサイト',
-    description: 'いわぶちの個人ポートフォリオサイト。日記、メモ、写真ギャラリーなど日々の活動や作品を公開しています。',
+    description: 'いわぶちの個人ポートフォリオサイト。日記、ブログ、写真ギャラリーなど日々の活動や作品を公開しています。',
     creator: '@iwabuchi', // 実際のTwitterアカウントに変更してください
     images: ['/myicon.png'], // サイトの代表写真を使用
   },
