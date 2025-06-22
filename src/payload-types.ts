@@ -73,6 +73,8 @@ export interface Config {
     blogPosts: BlogPost;
     blogMedia: BlogMedia;
     letter: Letter;
+    events: Event;
+    products: Product;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -85,6 +87,8 @@ export interface Config {
     blogPosts: BlogPostsSelect<false> | BlogPostsSelect<true>;
     blogMedia: BlogMediaSelect<false> | BlogMediaSelect<true>;
     letter: LetterSelect<false> | LetterSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -241,6 +245,39 @@ export interface Letter {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  title: string;
+  summary?: string | null;
+  platform?: ('twitch' | 'youtube' | 'nico' | 'offline' | 'other') | null;
+  externalUrl?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  thumbnail?: (number | null) | Media;
+  slug: string;
+  isPublic?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  name: string;
+  description?: string | null;
+  url?: string | null;
+  image?: (number | null) | Media;
+  tags?: string[] | null;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -269,6 +306,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'letter';
         value: number | Letter;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: number | Product;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -405,6 +450,37 @@ export interface LetterSelect<T extends boolean = true> {
   message?: T;
   createdAt?: T;
   updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  title?: T;
+  summary?: T;
+  platform?: T;
+  externalUrl?: T;
+  startDate?: T;
+  endDate?: T;
+  thumbnail?: T;
+  slug?: T;
+  isPublic?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  url?: T;
+  image?: T;
+  tags?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

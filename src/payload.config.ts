@@ -23,6 +23,8 @@ import { TimelinePosts } from './collections/TimelinePosts'
 import { BlogPosts } from './collections/BlogPosts'
 import { BlogMedia } from './collections/BlogMedia'
 import Letter from './collections/Letters'
+import { Events } from './collections/Events'
+import { Products } from './collections/Products'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -38,7 +40,7 @@ export default buildConfig({
   },
 
   // コレクション定義
-  collections: [Users, Media, TimelinePosts, BlogPosts, BlogMedia, Letter],
+  collections: [Users, Media, TimelinePosts, BlogPosts, BlogMedia, Letter, Events, Products],
   // DB 設定
   db: vercelPostgresAdapter({
     pool: {

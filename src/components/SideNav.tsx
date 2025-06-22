@@ -2,44 +2,32 @@
 'use client'
 
 import Link from 'next/link'
-import WeatherWidget from '@/components/WeatherWidget'
-
 const NAV = [
-  { label: '日記', href: '/timeline' },
-  { label: 'ブログ', href: '/posts' },
-  { label: '写真', href: '/gallery' },
-  { label: 'プロフィール', href: '/profile' },
-  { label: 'お便り', href: '/letter' },
+  { label: 'Timeline', href: '/timeline' },
+  { label: 'Blog', href: '/posts' },
+  { label: 'Gallery', href: '/gallery' },
+  { label: 'Events', href: '/in_event' }, // ★追加
+  { label: 'Products', href: '/products' }, // ★追加
+  { label: 'Profile', href: '/profile' },
+  { label: 'Letter', href: '/letter' },
 ] as const
 
 export default function SideNav() {
   return (
-    <aside
-      className="hidden md:flex flex-col justify-between w-56 p-10 sticky top-0 h-screen glass backdrop-saturate-150 text-[color:var(--fg-base)]"
-    >
-      <Link
-        href="/"
-        className="font-semibold tracking-[0.14em] text-lg text-[color:var(--fg-base)] hover:opacity-90 transition-opacity"
-      >
+    <aside className="hidden md:flex flex-col justify-between w-56 p-10 sticky top-0 h-screen glass backdrop-saturate-150 text-[color:var(--fg-base)]">
+      <Link href="/" className="font-semibold tracking-[0.14em] text-lg hover:opacity-90">
         IWABUCHI
       </Link>
-      {/* Weather & Date Widget */}
 
       <nav className="space-y-6 text-sm">
-        {NAV.map((n) => (
-          <Link
-            key={n.href}
-            href={n.href}
-            className="block opacity-70 hover:opacity-100 transition-colors text-[color:var(--fg-base)]"
-          >
-            {n.label}
+        {NAV.map(({ href, label }) => (
+          <Link key={href} href={href} className="block opacity-70 hover:opacity-100">
+            {label}
           </Link>
         ))}
       </nav>
-    
 
-      <div className="flex gap-5 opacity-70 text-[color:var(--fg-base)]">
-        
+      <div className="flex gap-5 opacity-70">
         <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
           X
         </a>

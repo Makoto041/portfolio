@@ -43,3 +43,26 @@ export interface BlogPost extends BaseDoc {
   publishedAt?: string // ← 追加
   body?: any // ← richText を受け取る
 }
+
+/** Event 用ドキュメント */
+export interface Event extends BaseDoc {
+  title: string
+  summary?: string
+  platform?: string
+  externalUrl?: string
+  startDate: string
+  endDate?: string
+  thumbnail?: { url?: string }
+  slug: string
+  isPublic?: boolean
+}
+
+/** Product 用ドキュメント */
+export interface Product extends BaseDoc {
+  name: string
+  description?: string
+  url?: string
+  image?: { url?: string }
+  tags?: string[]
+  order?: number
+}

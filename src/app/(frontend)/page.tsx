@@ -6,13 +6,13 @@ import Link from 'next/link'
 import { Analytics } from '@vercel/analytics/next'
 import WeatherWidgetClient from '@/components/WeatherWidgetClient'
 import { fetchLatest } from '@/lib/payload'
-import type { TimelineDoc, MediaDoc, BlogPost } from '@/lib/payloadTypes'
+import { getActiveEvent } from '@/lib/getActiveEvent'
+import ActiveEventCard from '@/components/ActiveEventCard'
+import type { TimelineDoc, MediaDoc, BlogPost, Event } from '@/lib/payloadTypes'
 import Breadcrumb from '@/components/Breadcrumb'
 import MemoGrid from '@/components/MemoGrid'
 import GalleryGrid from '@/components/GalleryGrid'
 import HomeTimeline from '@/components/HomeTimeline'
-
-// src/app/(frontend)/page.tsx
 
 export const metadata = {
   title: 'いわぶちまこと - ポートフォリオ',
@@ -25,7 +25,7 @@ export const metadata = {
     locale: 'ja_JP',
     images: [
       {
-        url: 'https://iwabuchi-makoto.com/myicon.png', // publicフォルダに配置した画像
+        url: 'https://iwabuchi-makoto.com/myicon.png',
         width: 1200,
         height: 630,
         alt: 'OGP画像 - いわぶちまこと',
@@ -48,15 +48,17 @@ export const metadata = {
 const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8'
 const CARD = 'glass rounded-lg overflow-hidden'
 
-// サーバーコンポーネント内のUI部分
+// ======================== UIコンポーネント =========================
 function HomeUI({
   timeline,
   posts,
   gallery,
+  activeEvent,
 }: {
   timeline: TimelineDoc[]
   posts: BlogPost[]
   gallery: MediaDoc[]
+  activeEvent: Event | null
 }) {
   return (
     <main className="min-h-screen bg-[color:var(--bg)] text-[color:var(--text)]">
@@ -66,13 +68,19 @@ function HomeUI({
         <Analytics />
       </div>
 
-      {/* Timeline - クライアントコンポーネントを使用 */}
+      {/* お知らせセクション（イベントがある場合のみ） */}
+      {activeEvent && (
+        <section className={`${WRAP} pt-6 md:pt-10`}>
+          <ActiveEventCard event={activeEvent} />
+        </section>
+      )}
+
+      {/* Timeline */}
       <section className={`${WRAP} py-12`}>
         <div className="flex items-center justify-between mb-6">
           <WeatherWidgetClient />
         </div>
 
-        {/* クライアントコンポーネントとしてHomeTimelineを使用 */}
         <HomeTimeline timelineData={timeline} cardClass={CARD} />
 
         <Link
@@ -83,7 +91,7 @@ function HomeUI({
         </Link>
       </section>
 
-      {/* Memo & Gallery部分 */}
+      {/* Blog & Gallery */}
       <section className={`${WRAP} grid gap-8 md:grid-cols-2 mb-16`}>
         <MemoGrid posts={posts} />
         <GalleryGrid gallery={gallery} />
@@ -92,27 +100,26 @@ function HomeUI({
   )
 }
 
+// ======================== ページ本体 =========================
 export default async function Home() {
-  const { timeline, posts, gallery } = await fetchLatest({
-    timelineLimit: 5,
-    mediaLimit: 10,
-    includeTimelineOnly: false, // タイムライン専用画像を除外
-  })
-  const latestPost: BlogPost | null = posts.length > 0 ? posts[0] : null
+  const [{ timeline, posts, gallery }, activeEvent] = await Promise.all([
+    fetchLatest({
+      timelineLimit: 5,
+      mediaLimit: 10,
+      includeTimelineOnly: false,
+    }),
+    getActiveEvent(),
+  ])
 
-  // ブログの表紙画像のみを除外するフィルタリング
-  // （タイムライン専用画像は既にサーバーサイドで除外済み）
+  const latestPost: BlogPost | null = posts[0] ?? null
+
+  // ブログの表紙画像を除外
   const filteredGallery = gallery.filter((g: MediaDoc) => {
     const url = g.url ?? g.image?.url
-
-    // ブログの表紙画像を除外
-    if (url && url === latestPost?.coverImage?.url) {
-      return false
-    }
-
-    return true
+    return url !== latestPost?.coverImage?.url
   })
 
-  // データをサーバーコンポーネントに渡す
-  return <HomeUI timeline={timeline} posts={posts} gallery={filteredGallery} />
+  return (
+    <HomeUI timeline={timeline} posts={posts} gallery={filteredGallery} activeEvent={activeEvent} />
+  )
 }
