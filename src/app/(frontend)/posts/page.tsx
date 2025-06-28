@@ -27,7 +27,7 @@ export default async function BlogPage() {
         <Breadcrumb />
       </div>
       <section className={WRAP}>
-        <h1 className="text-3xl font-semibold mb-2">ブログ</h1>
+        <h1 className="text-3xl font-semibold mb-2">Blog</h1>
         <p className="mb-8 opacity-80">考えていることを書き留めておく場所</p>
         {/* Suspense でラップ！ */}
         <Suspense fallback={<PostsListLoading />}>
