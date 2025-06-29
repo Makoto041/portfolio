@@ -1,17 +1,27 @@
+import { getPayload } from 'payload'
+import configPromise from '@/payload.config'
 import type { Event } from '@/payload-types'
 
 export async function fetchInEvent(): Promise<Event[]> {
-  const base = process.env.NEXT_PUBLIC_CMS_URL ?? ''
-  const url = base
-    ? `${base.replace(/\/$/, '')}/api/events?where[isPublic][equals]=true&sort=-startDate`
-    : '/api/events?where[isPublic][equals]=true&sort=-startDate'
   try {
-    const res = await fetch(url, { next: { revalidate: 60 } })
-    if (!res.ok) return []
-    const json = await res.json()
-    return json.docs as Event[]
+    const payload = await getPayload({ config: configPromise })
+    
+    console.log('fetchInEvent - using direct Payload API')
+    
+    const events = await payload.find({
+      collection: 'events',
+      where: {
+        isPublic: {
+          equals: true,
+        },
+      },
+      sort: '-startDate',
+    })
+
+    console.log('fetchInEvent - events found:', events.docs.length)
+    return events.docs
   } catch (e) {
-    console.error('fetchInEvent error', e)
+    console.error('fetchInEvent error:', e)
     return []
   }
 }
