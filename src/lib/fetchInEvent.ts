@@ -1,4 +1,4 @@
-import type { Event } from '@/lib/payloadTypes'
+import type { Event } from '@/payload-types'
 
 export async function fetchInEvent(): Promise<Event[]> {
   const base = process.env.NEXT_PUBLIC_CMS_URL ?? ''
