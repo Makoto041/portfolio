@@ -25,8 +25,27 @@ export const Events: CollectionConfig = {
       ],
     },
     { name: 'externalUrl', type: 'text', label: '配信 URL' },
-    { name: 'startDate', type: 'date', required: true, label: '開始日時' },
-    { name: 'endDate', type: 'date', label: '終了日時(任意)' },
+    { 
+      name: 'startDate', 
+      type: 'date', 
+      required: true, 
+      label: '開始日時',
+      admin: {
+        date: {
+          pickerAppearance: 'dayAndTime',
+        },
+      },
+    },
+    { 
+      name: 'endDate', 
+      type: 'date', 
+      label: '終了日時(任意)',
+      admin: {
+        date: {
+          pickerAppearance: 'dayAndTime',
+        },
+      },
+    },
     { name: 'thumbnail', type: 'upload', relationTo: 'media', label: 'サムネ' },
     { name: 'slug', type: 'text', required: true, unique: true },
     { name: 'isPublic', type: 'checkbox', defaultValue: true, label: '公開' },
