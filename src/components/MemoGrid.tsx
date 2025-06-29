@@ -20,7 +20,7 @@ export default function MemoGrid({ posts }: { posts: BlogPost[] }) {
 
   return (
     <div className={`${CARD}`}>
-      <h2 className="text-xl font-medium mb-2">ブログ</h2>
+      <h2 className="text-xl font-medium mb-2">Blog</h2>
       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 flex-1">
         {latest.map((p, idx) => (
           <div key={p.id} className={idx === 3 ? 'hidden sm:block' : ''}>
