@@ -38,27 +38,27 @@ const platformConfig = {
 
 function formatEventDate(startDate: string, endDate?: string | null) {
   const start = new Date(startDate)
-  const startTime = start.toLocaleTimeString('ja-JP', { 
-    hour: '2-digit', 
+  const startTime = start.toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'Asia/Tokyo'
+    timeZone: 'Asia/Tokyo',
   })
-  const startDateStr = start.toLocaleDateString('ja-JP', { 
-    month: 'short', 
+  const startDateStr = start.toLocaleDateString('ja-JP', {
+    month: 'short',
     day: 'numeric',
-    timeZone: 'Asia/Tokyo'
+    timeZone: 'Asia/Tokyo',
   })
-  
+
   if (endDate) {
     const end = new Date(endDate)
-    const endTime = end.toLocaleTimeString('ja-JP', { 
-      hour: '2-digit', 
+    const endTime = end.toLocaleTimeString('ja-JP', {
+      hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Asia/Tokyo'
+      timeZone: 'Asia/Tokyo',
     })
     return { date: startDateStr, time: `${startTime} - ${endTime}` }
   }
-  
+
   return { date: startDateStr, time: startTime }
 }
 
@@ -66,7 +66,7 @@ function getEventStatus(startDate: string, endDate?: string | null) {
   const now = new Date()
   const start = new Date(startDate)
   const end = endDate ? new Date(endDate) : null
-  
+
   if (now < start) {
     return 'upcoming' // 告知モード
   } else if (now >= start && (!end || now <= end)) {
@@ -80,37 +80,38 @@ type EventDoc = Event
 
 export default function ActiveEventCard({ event }: { event: EventDoc }) {
   const href = event.externalUrl || `/events/${event.slug}`
-  const platform = platformConfig[event.platform as keyof typeof platformConfig] || platformConfig.other
+  const platform =
+    platformConfig[event.platform as keyof typeof platformConfig] || platformConfig.other
   const { date, time } = formatEventDate(event.startDate, event.endDate)
   const status = getEventStatus(event.startDate, event.endDate)
-  
+
   // 終了したイベントは表示しない
   if (status === 'ended') {
     return null
   }
-  
+
   if (status === 'upcoming') {
     // 告知モード：控えめなカード
     return (
       <div className="mb-6 rounded-xl border border-gray-200/50 bg-white/60 backdrop-blur-sm shadow-sm relative overflow-hidden h-24 sm:h-32">
         <div className="flex h-full">
           {/* Thumbnail - カード全体サイズに合わせる */}
-          {event.thumbnail && typeof event.thumbnail === 'object' && 'url' in event.thumbnail && event.thumbnail.url && (
-            <div className="flex-shrink-0 w-20 sm:w-48 h-full relative">
-              <Image
-                src={event.thumbnail.url}
-                alt={event.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
-          
+          {event.thumbnail &&
+            typeof event.thumbnail === 'object' &&
+            'url' in event.thumbnail &&
+            event.thumbnail.url && (
+              <div className="flex-shrink-0 w-32 sm:w-48 h-full relative">
+                <Image src={event.thumbnail.url} alt={event.title} fill className="object-cover" />
+              </div>
+            )}
+
           <div className="flex-1 min-w-0 p-2 sm:p-4 flex flex-col justify-center">
             <div className="flex flex-wrap items-center gap-1 mb-1">
               <Bell size={10} className="text-blue-500" />
               <span className="text-xs text-blue-600 font-medium">予定</span>
-              <span className={`inline-flex items-center px-1 py-0.5 rounded text-xs font-medium ${platform.textColor} ${platform.bgColor}`}>
+              <span
+                className={`inline-flex items-center px-1 py-0.5 rounded text-xs font-medium ${platform.textColor} ${platform.bgColor}`}
+              >
                 {platform.name}
               </span>
             </div>
@@ -147,21 +148,19 @@ export default function ActiveEventCard({ event }: { event: EventDoc }) {
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0 bg-gradient-to-br from-red-500 via-pink-500 to-orange-500" />
       </div>
-      
+
       <div className="relative h-full">
         <div className="flex h-full">
           {/* Thumbnail - カード全体サイズに合わせる */}
-          {event.thumbnail && typeof event.thumbnail === 'object' && 'url' in event.thumbnail && event.thumbnail.url && (
-            <div className="flex-shrink-0 w-24 sm:w-64 h-full relative">
-              <Image
-                src={event.thumbnail.url}
-                alt={event.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
-          
+          {event.thumbnail &&
+            typeof event.thumbnail === 'object' &&
+            'url' in event.thumbnail &&
+            event.thumbnail.url && (
+              <div className="flex-shrink-0 w-24 sm:w-64 h-full relative">
+                <Image src={event.thumbnail.url} alt={event.title} fill className="object-cover" />
+              </div>
+            )}
+
           {/* Content */}
           <div className="flex-1 p-2 sm:p-5 flex flex-col justify-center">
             {/* Header */}
@@ -170,7 +169,9 @@ export default function ActiveEventCard({ event }: { event: EventDoc }) {
                 <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
                 配信中
               </div>
-              <span className={`inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium ${platform.textColor} ${platform.bgColor} border`}>
+              <span
+                className={`inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium ${platform.textColor} ${platform.bgColor} border`}
+              >
                 <div className={`w-1 h-1 rounded-full ${platform.color} mr-1`} />
                 {platform.name}
               </span>
