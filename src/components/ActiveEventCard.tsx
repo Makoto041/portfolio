@@ -1,7 +1,7 @@
 // src/components/ActiveEventCard.tsx
 import { Calendar, Clock, Play, Bell } from 'lucide-react'
 import Image from 'next/image'
-import type { Event } from '@/lib/payloadTypes'
+import type { Event } from '@/payload-types'
 
 const platformConfig = {
   twitch: {
@@ -36,7 +36,7 @@ const platformConfig = {
   },
 }
 
-function formatEventDate(startDate: string, endDate?: string) {
+function formatEventDate(startDate: string, endDate?: string | null) {
   const start = new Date(startDate)
   const startTime = start.toLocaleTimeString('ja-JP', { 
     hour: '2-digit', 
@@ -62,7 +62,7 @@ function formatEventDate(startDate: string, endDate?: string) {
   return { date: startDateStr, time: startTime }
 }
 
-function getEventStatus(startDate: string, endDate?: string) {
+function getEventStatus(startDate: string, endDate?: string | null) {
   const now = new Date()
   const start = new Date(startDate)
   const end = endDate ? new Date(endDate) : null
@@ -95,7 +95,7 @@ export default function ActiveEventCard({ event }: { event: EventDoc }) {
       <div className="mb-6 rounded-xl border border-gray-200/50 bg-white/60 backdrop-blur-sm shadow-sm relative overflow-hidden h-24 sm:h-32">
         <div className="flex h-full">
           {/* Thumbnail - カード全体サイズに合わせる */}
-          {event.thumbnail?.url && (
+          {event.thumbnail && typeof event.thumbnail === 'object' && 'url' in event.thumbnail && event.thumbnail.url && (
             <div className="flex-shrink-0 w-20 sm:w-48 h-full relative">
               <Image
                 src={event.thumbnail.url}
@@ -151,7 +151,7 @@ export default function ActiveEventCard({ event }: { event: EventDoc }) {
       <div className="relative h-full">
         <div className="flex h-full">
           {/* Thumbnail - カード全体サイズに合わせる */}
-          {event.thumbnail?.url && (
+          {event.thumbnail && typeof event.thumbnail === 'object' && 'url' in event.thumbnail && event.thumbnail.url && (
             <div className="flex-shrink-0 w-24 sm:w-64 h-full relative">
               <Image
                 src={event.thumbnail.url}

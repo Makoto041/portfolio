@@ -47,7 +47,7 @@ export interface BlogPost extends BaseDoc {
 /** Event 用ドキュメント */
 export interface Event extends BaseDoc {
   title: string
-  summary?: string
+  summary?: string | null
   platform?: string
   externalUrl?: string
   startDate: string

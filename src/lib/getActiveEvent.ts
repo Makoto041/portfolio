@@ -1,8 +1,9 @@
 // lib/getActiveEvent.ts
 import { getPayload } from 'payload'
 import configPromise from '@/payload.config'
+import type { Event } from '@/payload-types'
 
-export async function getActiveEvent() {
+export async function getActiveEvent(): Promise<Event | null> {
   try {
     const payload = await getPayload({ config: configPromise })
     const nowISO = new Date().toISOString()

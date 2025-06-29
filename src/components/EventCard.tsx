@@ -2,7 +2,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { ExternalLink, Calendar, Clock } from 'lucide-react'
-import type { Event } from '@/lib/payloadTypes'
+import type { Event } from '@/payload-types'
 
 const platformConfig = {
   twitch: {
@@ -37,7 +37,7 @@ const platformConfig = {
   },
 }
 
-function formatEventDate(startDate: string, endDate?: string) {
+function formatEventDate(startDate: string, endDate?: string | null) {
   const start = new Date(startDate)
   const startTime = start.toLocaleTimeString('ja-JP', { 
     hour: '2-digit', 
@@ -81,7 +81,7 @@ export default function EventCard({ e }: { e: Event }) {
         
         {/* Thumbnail */}
         <div className="relative h-52 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden">
-          {e.thumbnail?.url ? (
+          {e.thumbnail && typeof e.thumbnail === 'object' && 'url' in e.thumbnail && e.thumbnail.url ? (
             <Image
               src={e.thumbnail.url}
               alt={e.title}
