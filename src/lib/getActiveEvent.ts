@@ -6,73 +6,60 @@ import type { Event } from '@/payload-types'
 export async function getActiveEvent(): Promise<Event | null> {
   try {
     const payload = await getPayload({ config: configPromise })
-    const nowISO = new Date().toISOString()
+    const now = new Date()
+    const nowISO = now.toISOString()
     
     console.log('getActiveEvent - using direct Payload API')
     console.log('getActiveEvent - nowISO:', nowISO)
 
-    // まず未来のイベントを取得
-    const futureEvents = await payload.find({
+    // 全ての公開イベントを取得
+    const allEvents = await payload.find({
       collection: 'events',
       where: {
-        and: [
-          {
-            isPublic: {
-              equals: true,
-            },
-          },
-          {
-            startDate: {
-              greater_than: nowISO,
-            },
-          },
-        ],
+        isPublic: {
+          equals: true,
+        },
       },
       sort: 'startDate',
-      limit: 1,
     })
 
-    console.log('getActiveEvent - future events found:', futureEvents.docs.length)
-    
-    if (futureEvents.docs.length > 0) {
-      console.log('getActiveEvent - returning future event:', futureEvents.docs[0].title)
-      return futureEvents.docs[0]
+    console.log('getActiveEvent - all events found:', allEvents.docs.length)
+
+    if (allEvents.docs.length === 0) {
+      console.log('getActiveEvent - no events found')
+      return null
     }
 
-    // 未来のイベントがない場合は、現在進行中のイベントを取得
-    const currentEvents = await payload.find({
-      collection: 'events',
-      where: {
-        and: [
-          {
-            isPublic: {
-              equals: true,
-            },
-          },
-          {
-            startDate: {
-              less_than_equal: nowISO,
-            },
-          },
-          {
-            endDate: {
-              greater_than_equal: nowISO,
-            },
-          },
-        ],
-      },
-      sort: '-startDate',
-      limit: 1,
-    })
+    // 現在日時に最も近いイベントを見つける
+    let closestEvent: Event | null = null
+    let smallestTimeDiff = Infinity
 
-    console.log('getActiveEvent - current events found:', currentEvents.docs.length)
-    
-    if (currentEvents.docs.length > 0) {
-      console.log('getActiveEvent - returning current event:', currentEvents.docs[0].title)
-      return currentEvents.docs[0]
+    for (const event of allEvents.docs) {
+      const startDate = new Date(event.startDate)
+      const endDate = event.endDate ? new Date(event.endDate) : null
+      
+      // 進行中のイベントは最優先
+      if (startDate <= now && (!endDate || endDate >= now)) {
+        console.log('getActiveEvent - returning current event:', event.title)
+        return event
+      }
+      
+      // 未来のイベントの場合、現在時刻との差を計算
+      if (startDate > now) {
+        const timeDiff = startDate.getTime() - now.getTime()
+        if (timeDiff < smallestTimeDiff) {
+          smallestTimeDiff = timeDiff
+          closestEvent = event
+        }
+      }
     }
 
-    console.log('getActiveEvent - no events found')
+    if (closestEvent) {
+      console.log('getActiveEvent - returning closest future event:', closestEvent.title)
+      return closestEvent
+    }
+
+    console.log('getActiveEvent - no suitable events found')
     return null
   } catch (e) {
     console.error('getActiveEvent error:', e)
