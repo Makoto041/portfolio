@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { TimelineDoc } from '@/lib/payloadTypes'
 import LocalDate from '@/components/LocalDate'
 import LikeButton from '@/components/LikeButton'

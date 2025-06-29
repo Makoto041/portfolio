@@ -55,7 +55,7 @@ function MemoImageLink({ p }: { p: BlogPost }) {
           className={`object-cover transition-opacity duration-500 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
-          onLoad={(e) => setLoaded(true)}
+          onLoad={() => setLoaded(true)}
         />
       </div>
       <p className="mt-1 text-sm font-medium line-clamp-1 text-gray-400 group-hover:text-gray-600 transition">
