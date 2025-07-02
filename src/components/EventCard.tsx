@@ -52,35 +52,12 @@ const platformConfig = {
   },
 }
 
-function formatEventDate(startDate: string, endDate?: string | null) {
-  const start = new Date(startDate)
-  const startTime = start.toLocaleTimeString('ja-JP', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    timeZone: 'Asia/Tokyo'
-  })
-  const startDateStr = start.toLocaleDateString('ja-JP', { 
-    month: 'short', 
-    day: 'numeric',
-    timeZone: 'Asia/Tokyo'
-  })
-  
-  if (endDate) {
-    const end = new Date(endDate)
-    const endTime = end.toLocaleTimeString('ja-JP', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      timeZone: 'Asia/Tokyo'
-    })
-    return { date: startDateStr, time: `${startTime} - ${endTime}` }
-  }
-  
-  return { date: startDateStr, time: startTime }
-}
+import { formatEventDateWithExtendedHour } from './formatEventDateWithExtendedHour'
+
 
 export default function EventCard({ e }: { e: Event }) {
   const platform = platformConfig[e.platform as keyof typeof platformConfig] || platformConfig.other
-  const { date, time } = formatEventDate(e.startDate, e.endDate)
+  const { date, time } = formatEventDateWithExtendedHour(e.startDate, e.endDate)
   const isLive = e.externalUrl && new Date(e.startDate) <= new Date() && (!e.endDate || new Date(e.endDate) >= new Date())
 
   return (

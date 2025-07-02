@@ -55,31 +55,8 @@ const platformConfig = {
   },
 }
 
-function formatEventDate(startDate: string, endDate?: string | null) {
-  const start = new Date(startDate)
-  const startTime = start.toLocaleTimeString('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Asia/Tokyo',
-  })
-  const startDateStr = start.toLocaleDateString('ja-JP', {
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'Asia/Tokyo',
-  })
+import { formatEventDateWithExtendedHour } from './formatEventDateWithExtendedHour'
 
-  if (endDate) {
-    const end = new Date(endDate)
-    const endTime = end.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'Asia/Tokyo',
-    })
-    return { date: startDateStr, time: `${startTime} - ${endTime}` }
-  }
-
-  return { date: startDateStr, time: startTime }
-}
 
 function getEventStatus(startDate: string, endDate?: string | null) {
   const now = new Date()
@@ -105,7 +82,7 @@ export default function ActiveEventCard({ event, cardClass  }: ActiveEventCardPr
   const href = event.externalUrl || `/events/${event.slug}`
   const platform =
     platformConfig[event.platform as keyof typeof platformConfig] || platformConfig.other
-  const { date, time } = formatEventDate(event.startDate, event.endDate)
+  const { date, time } = formatEventDateWithExtendedHour(event.startDate, event.endDate)
   const status = getEventStatus(event.startDate, event.endDate)
 
   // 終了したイベントは表示しない
