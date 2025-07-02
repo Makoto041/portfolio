@@ -72,7 +72,7 @@ function HomeUI({
       {/* お知らせセクション（イベントがある場合のみ） */}
       {activeEvent && (
         <section className={`${WRAP} pt-6 md:pt-10`}>
-          <ActiveEventCard event={activeEvent} />
+          <ActiveEventCard event={activeEvent} cardClass={CARD} />
         </section>
       )}
 

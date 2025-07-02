@@ -26,12 +26,12 @@ export default function MobileHeader() {
         className="md:hidden sticky top-0 z-40 h-14 px-4 flex items-center justify-between
              rounded-b-[var(--radius-m)] backdrop-blur-[var(--blur-m)]
              border-b border-[color:var(--glass-border)]
-             bg-[color:var(--bg-base)/.85] text-white drop-shadow-lg
+             bg-[color:var(--bg-base)/.85] dark:bg-[color:var(--bg-base-dark)/.85] text-white drop-shadow-lg
              shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
       >
         <Link
           href="/"
-          className="font-semibold tracking-[0.14em] text-neutral-900 hover:opacity-90 transition-opacity"
+          className="font-semibold tracking-[0.14em] text-neutral-900 dark:text-neutral-100 hover:opacity-90 transition-opacity"
         >
           IWABUCHI
         </Link>
@@ -39,7 +39,7 @@ export default function MobileHeader() {
         <button
           aria-label="open menu"
           onClick={() => setOpen(!open)}
-          className="relative w-8 h-8 text-neutral-900"
+          className="relative w-8 h-8 text-neutral-900 dark:text-neutral-100"
         >
           {/* top line */}
           <span
@@ -78,7 +78,7 @@ export default function MobileHeader() {
           <ul
             className={clsx(
               'absolute top-14 left-0 w-64 h-[calc(100%-3.5rem)] p-8',
-              'bg-[color:var(--bg-base)/.9] rounded-r-2xl shadow-2xl flex flex-col gap-6',
+              'bg-[color:var(--bg-base)/.9] dark:bg-[color:var(--bg-base-dark)/.92] rounded-r-2xl shadow-2xl flex flex-col gap-6',
               'transition-transform duration-300', // スライド
               open ? 'translate-x-0' : '-translate-x-full',
             )}
@@ -88,7 +88,7 @@ export default function MobileHeader() {
               <li key={href}>
                 <Link
                   href={href}
-                  className="flex items-center text-lg py-1.5 font-medium tracking-wide text-neutral-700 text-thin-shadow hover:opacity-90 transition-opacity"
+                  className="flex items-center text-lg py-1.5 font-medium tracking-wide text-neutral-700 dark:text-neutral-100 text-thin-shadow hover:opacity-90 transition-opacity"
                   onClick={() => setOpen(false)}
                 >
                   <Icon size={18} className="inline mr-2" />
