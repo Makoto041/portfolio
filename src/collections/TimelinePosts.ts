@@ -42,7 +42,10 @@ export const TimelinePosts: CollectionConfig = {
   slug: 'timeline',
   labels: { singular: 'Timeline Post', plural: 'Timeline Posts' },
   admin: { useAsTitle: 'text', defaultColumns: ['text', 'publishedAt'] },
-  access: { read: () => true }, // 全員閲覧可
+  access: {
+    read: () => true, // 全員閲覧可
+    create: () => true, // 全員作成可
+  },
   hooks: {
     // タイムライン投稿時に自動的に画像に「タイムライン専用」フラグを設定
     beforeChange: [beforeChangeHook],
