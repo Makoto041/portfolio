@@ -26,8 +26,18 @@ export async function POST(request: Request) {
     
     const data: any = {}
     for (const [key, value] of formData.entries()) {
-      data[key] = value
+      if (key === 'images' && typeof value === 'string') {
+        try {
+          data[key] = JSON.parse(value)
+        } catch {
+          data[key] = value
+        }
+      } else {
+        data[key] = value
+      }
     }
+    
+    console.log('Timeline POST data:', data)
     
     const doc = await payload.create({
       collection: 'timeline',
@@ -38,7 +48,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error creating timeline post:', error)
     return NextResponse.json(
-      { error: 'Failed to create timeline post' },
+      { error: 'Failed to create timeline post', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
