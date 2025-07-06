@@ -14,30 +14,62 @@ export default function WeatherWidget({ className = '' }: { className?: string }
     return () => clearInterval(id)
   }, [])
 
-  /* 位置情報 → Open-Meteo */
+  /* IP位置情報 → Open-Meteo (ポップアップなし) */
   useEffect(() => {
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude.toFixed(
+    const getWeatherByIP = async () => {
+      try {
+        // ipinfo.io を使用（より安定したサービス）
+        const locationResponse = await fetch('https://ipinfo.io/json?token=')
+        if (!locationResponse.ok) throw new Error('IP location failed')
+        
+        const locationData = await locationResponse.json()
+        
+        if (locationData.loc) {
+          const [lat, lon] = locationData.loc.split(',')
+          const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${parseFloat(lat).toFixed(
             4,
-          )}&longitude=${coords.longitude.toFixed(
+          )}&longitude=${parseFloat(lon).toFixed(
             4,
           )}&current=temperature_2m,weather_code&timezone=auto`
-          const { current } = await fetch(url).then((r) => r.json())
+          
+          const weatherResponse = await fetch(weatherUrl)
+          if (!weatherResponse.ok) throw new Error('Weather API failed')
+          
+          const weatherData = await weatherResponse.json()
+          
           setWx({
-            temp: Math.round(current.temperature_2m) + '°C',
-            icon: codeToIcon(current.weather_code),
+            temp: Math.round(weatherData.current.temperature_2m) + '°C',
+            icon: codeToIcon(weatherData.current.weather_code),
           })
-        } catch {
-          /* ignore */
+        } else {
+          throw new Error('No location data')
         }
-      },
-      () => {
-        /* user denied */
-      },
-    )
+      } catch (error) {
+        console.warn('IP-based weather failed, using fallback:', error)
+        await getFallbackWeather()
+      }
+    }
+    
+    const getFallbackWeather = async () => {
+      try {
+        // 東京の座標 (35.6762, 139.6503) - 日本のユーザー向けのデフォルト
+        const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=35.6762&longitude=139.6503&current=temperature_2m,weather_code&timezone=Asia/Tokyo`
+        const weatherResponse = await fetch(weatherUrl)
+        
+        if (weatherResponse.ok) {
+          const weatherData = await weatherResponse.json()
+          setWx({
+            temp: Math.round(weatherData.current.temperature_2m) + '°C',
+            icon: codeToIcon(weatherData.current.weather_code),
+          })
+        }
+      } catch (error) {
+        console.warn('Fallback weather also failed:', error)
+        // 完全にフェイルした場合は時刻のみ表示
+      }
+    }
+    
+    getWeatherByIP()
   }, [])
 
   return (
