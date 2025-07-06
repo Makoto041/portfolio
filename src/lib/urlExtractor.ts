@@ -6,14 +6,26 @@ export function extractUrlsFromText(text: string): string[] {
   return matches || []
 }
 
-export function extractUrlsFromRichText(richTextData: any): string[] {
+interface RichTextNode {
+  type?: string
+  text?: string
+  children?: RichTextNode[]
+}
+
+interface RichTextData {
+  root?: {
+    children?: RichTextNode[]
+  }
+}
+
+export function extractUrlsFromRichText(richTextData: RichTextData): string[] {
   if (!richTextData || !richTextData.root || !richTextData.root.children) {
     return []
   }
 
   const urls: string[] = []
 
-  function traverse(node: any) {
+  function traverse(node: RichTextNode) {
     if (node.type === 'text' && node.text) {
       urls.push(...extractUrlsFromText(node.text))
     }

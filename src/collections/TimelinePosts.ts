@@ -1,28 +1,43 @@
 import { CollectionConfig } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionAfterChangeHook } from 'payload'
 import { fetchUrlMetadata } from '@/lib/urlMetadata'
 import { extractUrlsFromRichText } from '@/lib/urlExtractor'
 
+interface TimelineData {
+  text?: unknown
+  images?: Array<{ image?: string }>
+  embedUrl?: string
+  urlMetadata?: {
+    title?: string
+    description?: string
+    image?: string
+    siteName?: string
+    url?: string
+  }
+}
+
 // タイムライン投稿の前処理
-const beforeChangeHook = async ({ req, data, operation }: { req: any; data: any; operation: string }) => {
+const beforeChangeHook: CollectionBeforeChangeHook = async ({ req, data, operation }) => {
   try {
     console.log('Timeline beforeChange hook - operation:', operation)
     console.log('Timeline beforeChange hook - data:', data)
     
     // 新規作成または更新時に画像IDを収集
-    if (data?.images && Array.isArray(data.images) && data.images.length > 0) {
-      const imageIds = data.images
-        .filter((img: any) => img?.image)
-        .map((img: any) => img.image)
+    const timelineData = data as TimelineData
+    if (timelineData?.images && Array.isArray(timelineData.images) && timelineData.images.length > 0) {
+      const imageIds = timelineData.images
+        .filter((img) => img?.image)
+        .map((img) => img.image)
 
       // タイムライン用の画像IDを一時保存
-      req.timelineImageIds = imageIds
+      ;(req as any).timelineImageIds = imageIds
       console.log('Timeline beforeChange hook - imageIds:', imageIds)
     }
 
     // リッチテキストからURLを自動検出してメタデータを取得
-    if (data?.text && !data?.embedUrl) {
+    if (timelineData?.text && !timelineData?.embedUrl) {
       try {
-        const urls = extractUrlsFromRichText(data.text)
+        const urls = extractUrlsFromRichText(timelineData.text as any)
         console.log('Extracted URLs from rich text:', urls)
         
         if (urls.length > 0) {
@@ -32,8 +47,8 @@ const beforeChangeHook = async ({ req, data, operation }: { req: any; data: any;
           
           const metadata = await fetchUrlMetadata(firstUrl)
           if (metadata) {
-            data.embedUrl = firstUrl
-            data.urlMetadata = {
+            timelineData.embedUrl = firstUrl
+            timelineData.urlMetadata = {
               title: metadata.title,
               description: metadata.description,
               image: metadata.image,
@@ -56,17 +71,17 @@ const beforeChangeHook = async ({ req, data, operation }: { req: any; data: any;
 }
 
 // タイムライン投稿の後処理
-const afterChangeHook = async ({ req, operation, doc }: { req: any; operation: string; doc: any }) => {
+const afterChangeHook: CollectionAfterChangeHook = async ({ req, operation, doc }) => {
   try {
     console.log('Timeline afterChange hook - operation:', operation)
     console.log('Timeline afterChange hook - doc:', doc)
     
     // 保存した画像IDがあれば、それらの画像にフラグを設定
-    if (req.timelineImageIds && req.timelineImageIds.length > 0) {
+    if ((req as any).timelineImageIds && (req as any).timelineImageIds.length > 0) {
       const payload = req.payload
 
       // 各画像に対してisTimelineOnlyフラグをtrueに設定
-      for (const imageId of req.timelineImageIds) {
+      for (const imageId of (req as any).timelineImageIds) {
         try {
           await payload.update({
             collection: 'media',
@@ -114,7 +129,7 @@ export const TimelinePosts: CollectionConfig = {
       },
       hooks: {
         beforeChange: [
-          async ({ value, req, data }) => {
+          async ({ value, data }) => {
             if (value && value.startsWith('http')) {
               try {
                 console.log('URL detected for metadata extraction:', value)

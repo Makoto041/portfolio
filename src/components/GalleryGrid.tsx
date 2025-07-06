@@ -60,7 +60,7 @@ function GalleryImage({ item }: { item: MediaDoc }) {
           className={`object-cover transition-opacity duration-500 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
-          onLoad={(e) => setLoaded(true)}
+          onLoad={() => setLoaded(true)}
         />
       </div>
     </div>

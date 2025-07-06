@@ -1,6 +1,6 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-vercel-postgres'
 
-export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
+export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    CREATE TYPE "public"."enum_timeline_priority" AS ENUM('normal', 'important', 'pinned');
   CREATE TYPE "public"."enum_events_platform" AS ENUM('twitch', 'youtube', 'nico', 'offline', 'other');
@@ -202,7 +202,7 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   CREATE INDEX IF NOT EXISTS "payload_locked_documents_rels_products_id_idx" ON "payload_locked_documents_rels" USING btree ("products_id");`)
 }
 
-export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+export async function down({ db }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
    ALTER TABLE "timeline_images" DISABLE ROW LEVEL SECURITY;
   ALTER TABLE "timeline_texts" DISABLE ROW LEVEL SECURITY;

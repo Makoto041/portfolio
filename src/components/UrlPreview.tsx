@@ -51,7 +51,7 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
           <div className="flex-shrink-0">
             <div className="w-16 h-16 relative rounded overflow-hidden bg-gray-100 dark:bg-gray-800">
               <Image
-                src={metadata.image}
+                src={metadata.image!}
                 alt={metadata.title || 'Link preview'}
                 fill
                 sizes="64px"
