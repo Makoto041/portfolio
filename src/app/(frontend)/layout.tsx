@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import React from 'react'
 import SideNav from '@/components/SideNav'
 import MobileHeader from '@/components/MobileHeader'
+import { toCFUrl } from '@/lib/cfUrl'
 
 export const metadata: Metadata = {
   title: 'いわぶち | 個人ポートフォリオサイト',
@@ -78,7 +79,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "jobTitle": "ウェブエンジニア",
               "description": "ウェブエンジニア・フロントエンド開発者として活動する岩渕誠のポートフォリオサイト",
               "url": "https://iwabuchi-makoto.com",
-              "image": "https://iwabuchi-makoto.com/profile.jpg",
+              "image": "https://iwabuchi-makoto.com" + toCFUrl('/profile.jpg'),
               "sameAs": [
                 "https://github.com/Makoto041",
                 "https://instagram.com/makoto0140"

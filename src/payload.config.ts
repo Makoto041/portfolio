@@ -25,6 +25,9 @@ import { BlogMedia } from './collections/BlogMedia'
 import Letter from './collections/Letters'
 import { Events } from './collections/Events'
 import { Products } from './collections/Products'
+
+// Globals
+import { SiteSettings } from './globals/SiteSettings'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -41,6 +44,9 @@ export default buildConfig({
 
   // コレクション定義
   collections: [Users, Media, TimelinePosts, BlogPosts, BlogMedia, Letter, Events, Products],
+  
+  // グローバル設定
+  globals: [SiteSettings],
   // DB 設定
   db: vercelPostgresAdapter({
     pool: {

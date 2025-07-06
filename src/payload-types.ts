@@ -96,8 +96,12 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'site-settings': SiteSetting;
+  };
+  globalsSelect: {
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+  };
   locale: null;
   user: User & {
     collection: 'users';
@@ -555,6 +559,70 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  profile: {
+    name: string;
+    nameJapanese: string;
+    title: string;
+    description: string;
+    profileImage: number | Media;
+    socialLinks?:
+      | {
+          platform: 'twitter' | 'instagram' | 'github' | 'linkedin' | 'youtube' | 'other';
+          url: string;
+          displayName?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  seo: {
+    siteTitle: string;
+    siteDescription: string;
+    siteUrl: string;
+    twitterHandle?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  profile?:
+    | T
+    | {
+        name?: T;
+        nameJapanese?: T;
+        title?: T;
+        description?: T;
+        profileImage?: T;
+        socialLinks?:
+          | T
+          | {
+              platform?: T;
+              url?: T;
+              displayName?: T;
+              id?: T;
+            };
+      };
+  seo?:
+    | T
+    | {
+        siteTitle?: T;
+        siteDescription?: T;
+        siteUrl?: T;
+        twitterHandle?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
