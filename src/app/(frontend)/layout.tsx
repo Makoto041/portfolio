@@ -136,6 +136,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           <main className="flex-1 min-h-screen">{children}</main>
         </div>
+        
+        {/* Portal root for modals */}
+        <div id="modal-root"></div>
       </body>
     </html>
   )

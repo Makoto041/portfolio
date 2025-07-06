@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { TimelineDoc } from '@/lib/payloadTypes'
 import LocalDate from '@/components/LocalDate'
 import LikeButton from '@/components/LikeButton'
+import RichTextRenderer from '@/components/RichTextRenderer'
 import { toCFUrl } from '@/lib/cfUrl'
 
 type TimelineFeedProps = {
@@ -36,7 +37,13 @@ export default function TimelineFeedClient({ timelineData, cardClass }: Timeline
           <time className="block text-xs opacity-60 mb-1">
             <LocalDate dateStr={t.publishedAt ?? t.createdAt} formatType="auto" />
           </time>
-          <p className="text-sm leading-relaxed whitespace-pre-line">{t.text}</p>
+          <div className="text-sm leading-relaxed">
+            {t.text ? (
+              <RichTextRenderer data={t.text} />
+            ) : (
+              <span className="text-gray-500 italic">テキストがありません</span>
+            )}
+          </div>
           {/* 画像がある場合のみ余白を追加 */}
           {t.images?.length ? <div className="h-4"></div> : null}
           {/* 画像最大3枚表示 */}

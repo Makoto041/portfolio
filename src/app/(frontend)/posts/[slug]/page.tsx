@@ -9,7 +9,7 @@ import { notFound } from 'next/navigation'
 import { getPayloadClient } from '@/lib/payloadClient'
 import { toCFUrl } from '@/lib/cfUrl'
 import type { BlogPost } from '@/lib/payloadTypes'
-import { renderRichText } from '@/lib/renderRichText'
+import { RenderRichTextWithModal } from '@/lib/renderRichTextWithModal'
 import Breadcrumb from '@/components/Breadcrumb'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -142,7 +142,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
           {/* renderRichText で Lexical の JSON を React 要素に変換 */}
           <div className="prose max-w-none mb-8">
-            {renderRichText((post.body as any)?.root?.children)}
+            <RenderRichTextWithModal nodes={(post.body as any)?.root?.children || []} />
           </div>
 
           <Link href="/posts" className="underline">

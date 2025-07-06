@@ -1,8 +1,9 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
 import { toCFUrl } from '@/lib/cfUrl'
+import ImageModal from './ImageModal'
 
 interface RichTextNode {
   children?: RichTextNode[]
@@ -21,6 +22,15 @@ interface RichTextNode {
   alt?: string
   width?: number
   height?: number
+  // For upload nodes from rich text editor
+  value?: {
+    id?: string | number
+    url?: string
+    alt?: string
+    width?: number
+    height?: number
+    [key: string]: any
+  }
 }
 
 interface RichTextRoot {
@@ -32,6 +42,8 @@ interface RichTextRoot {
 type RichTextData = RichTextRoot | string | number | boolean | null | undefined
 
 export default function RichTextRenderer({ data }: { data: RichTextData }) {
+  const [modalImage, setModalImage] = useState<{ src: string; alt: string; width?: number; height?: number } | null>(null)
+  
   if (!data) return null
   
   // 文字列の場合はそのまま表示
@@ -50,7 +62,19 @@ export default function RichTextRenderer({ data }: { data: RichTextData }) {
     if (data && typeof data === 'object' && 'root' in data) {
       const content = data.root?.children || []
       if (Array.isArray(content)) {
-        return <div className="rich-text">{renderNodes(content)}</div>
+        return (
+          <div className="rich-text">
+            {renderNodes(content, setModalImage)}
+            <ImageModal
+              src={modalImage?.src || ''}
+              alt={modalImage?.alt || ''}
+              width={modalImage?.width}
+              height={modalImage?.height}
+              isOpen={!!modalImage}
+              onClose={() => setModalImage(null)}
+            />
+          </div>
+        )
       }
     }
     
@@ -67,7 +91,7 @@ export default function RichTextRenderer({ data }: { data: RichTextData }) {
   }
 }
 
-function renderNodes(nodes: RichTextNode[]): React.ReactNode {
+function renderNodes(nodes: RichTextNode[], setModalImage?: (image: { src: string; alt: string; width?: number; height?: number } | null) => void): React.ReactNode {
   if (!Array.isArray(nodes)) {
     console.warn('renderNodes: nodes is not an array:', nodes)
     return null
@@ -94,7 +118,7 @@ function renderNodes(nodes: RichTextNode[]): React.ReactNode {
       }
       
       // 要素ノード
-      const children = node.children ? renderNodes(node.children) : null
+      const children = node.children ? renderNodes(node.children, setModalImage) : null
       
       switch (node.type) {
         case 'paragraph':
@@ -149,15 +173,48 @@ function renderNodes(nodes: RichTextNode[]): React.ReactNode {
         
         case 'image':
           if (node.src) {
+            const imageSrc = toCFUrl(node.src)
             return (
               <div key={index} className="my-4">
                 <Image
-                  src={toCFUrl(node.src)}
+                  src={imageSrc}
                   alt={node.alt || ''}
-                  width={node.width || 800}
-                  height={node.height || 600}
-                  sizes="(max-width: 768px) 100vw, 800px"
-                  className="rounded-lg max-w-full h-auto"
+                  width={160}
+                  height={120}
+                  sizes="(max-width: 768px) 100vw, 160px"
+                  className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
+                  onClick={() => setModalImage?.({ 
+                    src: imageSrc, 
+                    alt: node.alt || '', 
+                    width: node.width || 800, 
+                    height: node.height || 600 
+                  })}
+                />
+              </div>
+            )
+          }
+          return null
+        
+        case 'upload':
+          // Handle upload nodes (images from rich text editor)
+          if (node.value && typeof node.value === 'object' && node.value.url) {
+            const uploadData = node.value as any
+            const imageSrc = toCFUrl(uploadData.url)
+            return (
+              <div key={index} className="my-4">
+                <Image
+                  src={imageSrc}
+                  alt={uploadData.alt || ''}
+                  width={160}
+                  height={120}
+                  sizes="(max-width: 768px) 100vw, 160px"
+                  className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
+                  onClick={() => setModalImage?.({ 
+                    src: imageSrc, 
+                    alt: uploadData.alt || '', 
+                    width: uploadData.width || 800, 
+                    height: uploadData.height || 600 
+                  })}
                 />
               </div>
             )
