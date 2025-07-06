@@ -61,17 +61,26 @@ const nextConfig = {
       },
     ]
   },
-  // ① CloudFront 画像を許可
+  // ① CloudFront 画像を許可 + 外部ドメイン
   images: {
-    remotePatterns: CF_DOMAIN
-      ? [
-          {
-            protocol: 'https',
-            hostname: CF_DOMAIN,
-            pathname: '/**',
-          },
-        ]
-      : [],
+    remotePatterns: [
+      // CloudFront ドメイン
+      ...(CF_DOMAIN
+        ? [
+            {
+              protocol: 'https',
+              hostname: CF_DOMAIN,
+              pathname: '/**',
+            },
+          ]
+        : []),
+      // URLメタデータ用の外部ドメイン
+      {
+        protocol: 'https',
+        hostname: '**',
+        pathname: '/**',
+      },
+    ],
     domains: CF_DOMAIN ? [CF_DOMAIN] : [],
     // ② WebP / AVIF を自動切替（AVIF優先でより高圧縮）
     formats: ['image/avif', 'image/webp'],

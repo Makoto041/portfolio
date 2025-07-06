@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { toCFUrl } from '@/lib/cfUrl'
 
 interface UrlMetadata {
   title?: string
@@ -20,44 +19,71 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
   const url = embedUrl || metadata.url
   if (!url) return null
 
+  // コンテンツの有無をチェック
+  const hasImage = !!metadata.image
+  const hasTitle = !!metadata.title
+  const hasDescription = !!metadata.description
+  const hasSiteName = !!metadata.siteName
+
+  // 最小幅とコンテンツに応じた幅を計算（レスポンシブ対応）
+  const getWidthClass = () => {
+    if (!hasTitle && !hasDescription) {
+      // URLのみの場合は最小幅
+      return 'w-fit min-w-[180px] sm:min-w-[200px] max-w-full'
+    }
+    if (hasImage) {
+      // 画像ありの場合はより広めに
+      return 'w-fit min-w-[250px] sm:min-w-[280px] max-w-[350px] sm:max-w-[400px]'
+    }
+    // 画像なし、テキストありの場合
+    return 'w-fit min-w-[200px] sm:min-w-[240px] max-w-[300px] sm:max-w-[350px]'
+  }
+
   return (
     <a
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="block border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors mt-3"
+      className={`inline-block border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 mt-3 ${getWidthClass()}`}
     >
-      <div className="flex gap-3">
-        {metadata.image && (
+      <div className="flex gap-3 min-w-0">
+        {hasImage && (
           <div className="flex-shrink-0">
-            <div className="w-16 h-16 relative rounded overflow-hidden">
+            <div className="w-16 h-16 relative rounded overflow-hidden bg-gray-100 dark:bg-gray-800">
               <Image
-                src={toCFUrl(metadata.image)}
+                src={metadata.image}
                 alt={metadata.title || 'Link preview'}
                 fill
                 sizes="64px"
                 className="object-cover"
                 loading="lazy"
+                onError={(e) => {
+                  // 画像読み込みエラー時は非表示
+                  e.currentTarget.style.display = 'none'
+                }}
               />
             </div>
           </div>
         )}
-        <div className="flex-1 min-w-0">
-          {metadata.title && (
-            <h3 className="font-medium text-sm text-gray-900 line-clamp-2 mb-1">
+        <div className="min-w-0 flex-1">
+          {hasTitle && (
+            <h3 className="font-medium text-sm text-gray-900 dark:text-gray-100 leading-tight mb-1 break-words">
               {metadata.title}
             </h3>
           )}
-          {metadata.description && (
-            <p className="text-xs text-gray-600 line-clamp-2 mb-1">
+          {hasDescription && (
+            <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight mb-2 break-words line-clamp-2">
               {metadata.description}
             </p>
           )}
-          <div className="flex items-center text-xs text-gray-500">
-            {metadata.siteName && (
-              <span className="mr-2">{metadata.siteName}</span>
+          <div className="flex items-start text-xs text-gray-500 dark:text-gray-500 flex-wrap gap-1">
+            {hasSiteName && (
+              <span className="font-medium text-gray-600 dark:text-gray-400">
+                {metadata.siteName}
+              </span>
             )}
-            <span className="text-blue-500 hover:text-blue-700">
+            {hasSiteName && <span>•</span>}
+            <span className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 break-all">
               {new URL(url).hostname}
             </span>
           </div>

@@ -1,5 +1,6 @@
 import { CollectionConfig } from 'payload'
 import { fetchUrlMetadata } from '@/lib/urlMetadata'
+import { extractUrlsFromRichText } from '@/lib/urlExtractor'
 
 // タイムライン投稿の前処理
 const beforeChangeHook = async ({ req, data, operation }: { req: any; data: any; operation: string }) => {
@@ -16,6 +17,35 @@ const beforeChangeHook = async ({ req, data, operation }: { req: any; data: any;
       // タイムライン用の画像IDを一時保存
       req.timelineImageIds = imageIds
       console.log('Timeline beforeChange hook - imageIds:', imageIds)
+    }
+
+    // リッチテキストからURLを自動検出してメタデータを取得
+    if (data?.text && !data?.embedUrl) {
+      try {
+        const urls = extractUrlsFromRichText(data.text)
+        console.log('Extracted URLs from rich text:', urls)
+        
+        if (urls.length > 0) {
+          // 最初のURLを使用してメタデータを取得
+          const firstUrl = urls[0]
+          console.log('Fetching metadata for URL:', firstUrl)
+          
+          const metadata = await fetchUrlMetadata(firstUrl)
+          if (metadata) {
+            data.embedUrl = firstUrl
+            data.urlMetadata = {
+              title: metadata.title,
+              description: metadata.description,
+              image: metadata.image,
+              siteName: metadata.siteName,
+              url: metadata.url
+            }
+            console.log('Auto-extracted URL metadata:', metadata)
+          }
+        }
+      } catch (error) {
+        console.error('Error auto-extracting URL metadata:', error)
+      }
     }
 
     return data

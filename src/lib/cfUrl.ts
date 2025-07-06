@@ -13,13 +13,8 @@ export const toCFUrl = (path?: string | null): string => {
     // すでに CloudFront ならそのまま
     if (path.includes(CF)) return path
 
-    // ほかのドメイン → CloudFront へ書き換え（パスはそのまま）
-    try {
-      const url = new URL(path)
-      return `https://${CF}${url.pathname}`
-    } catch {
-      return path // URL パース失敗時はそのまま
-    }
+    // 外部URLの場合はそのまま返す（メタデータ画像など）
+    return path
   }
 
   // 2. 相対パスの場合（先頭を `/` に正規化）
