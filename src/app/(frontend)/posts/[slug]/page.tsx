@@ -4,12 +4,71 @@ export const revalidate = 0
 
 import Image from 'next/image'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayloadClient } from '@/lib/payloadClient'
 import { toCFUrl } from '@/lib/cfUrl'
 import type { BlogPost } from '@/lib/payloadTypes'
 import { renderRichText } from '@/lib/renderRichText'
 import Breadcrumb from '@/components/Breadcrumb'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const client = await getPayloadClient()
+  const result = await client.find({
+    collection: 'blogPosts',
+    where: { slug: { equals: slug } },
+    depth: 2,
+  })
+  const docs = result.docs as BlogPost[]
+  const post = docs[0]
+
+  if (!post) {
+    return {
+      title: 'ページが見つかりません | いわぶちまこと',
+      description: 'お探しのページは見つかりませんでした。',
+    }
+  }
+
+  const title = `${post.title} | いわぶちまこと`
+  const description = post.excerpt || `${post.title}についての記事です。岩渕誠のブログより。`
+  const imageUrl = post.coverImage?.url ? toCFUrl(post.coverImage.url) : '/myicon.png'
+  const url = `https://iwabuchi-makoto.com/posts/${slug}`
+
+  return {
+    title,
+    description,
+    keywords: ['ブログ', '岩渕誠', 'いわぶちまこと', post.title],
+    authors: [{ name: 'いわぶちまこと' }],
+    openGraph: {
+      title,
+      description,
+      url,
+      siteName: 'いわぶちまこと',
+      locale: 'ja_JP',
+      type: 'article',
+      publishedTime: post.publishedAt || post.createdAt,
+      authors: ['いわぶちまこと'],
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: post.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [imageUrl],
+    },
+    alternates: {
+      canonical: url,
+    },
+  }
+}
 
 const WRAP = 'mx-auto w-full max-w-[78rem] px-5 sm:px-8 section-pad'
 
@@ -27,8 +86,39 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const post = docs[0]
   if (!post) return notFound()
 
-  return (
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": post.title,
+    "description": post.excerpt || `${post.title}についての記事です。`,
+    "image": post.coverImage?.url ? toCFUrl(post.coverImage.url) : "https://iwabuchi-makoto.com/myicon.png",
+    "author": {
+      "@type": "Person",
+      "name": "岩渕誠",
+      "alternateName": "いわぶちまこと",
+      "url": "https://iwabuchi-makoto.com"
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "岩渕誠",
+      "alternateName": "いわぶちまこと"
+    },
+    "datePublished": post.publishedAt || post.createdAt,
+    "dateModified": post.updatedAt || post.publishedAt || post.createdAt,
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": `https://iwabuchi-makoto.com/posts/${slug}`
+    },
+    "url": `https://iwabuchi-makoto.com/posts/${slug}`,
+    "inLanguage": "ja-JP"
+  }
 
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <main className="min-h-screen flex flex-col bg-[color:var(--bg)] text-[color:var(--text)]">
       <div className="mt-10 text-gray-400 text-left">
             <Breadcrumb />
@@ -60,5 +150,6 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </Link>
         </section>
       </main>
+    </>
   )
 }

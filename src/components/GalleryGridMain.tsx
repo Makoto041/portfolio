@@ -47,9 +47,12 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
         >
           <div className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
             {/* 拡大画像 */}
-            <img
+            <Image
               src={toCFUrl(selected.url ?? selected.image?.url ?? '/fallback.jpg')}
               alt={selected.alt ?? ''}
+              width={800}
+              height={600}
+              sizes="92vw"
               className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain bg-white/5 backdrop-blur-lg p-1"
             />
 

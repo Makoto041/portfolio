@@ -67,6 +67,62 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               document.documentElement.classList.add('dark')}catch(e){}})()`,
           }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              "name": "岩渕誠",
+              "alternateName": "いわぶちまこと",
+              "jobTitle": "ウェブエンジニア",
+              "description": "ウェブエンジニア・フロントエンド開発者として活動する岩渕誠のポートフォリオサイト",
+              "url": "https://iwabuchi-makoto.com",
+              "image": "https://iwabuchi-makoto.com/profile.jpg",
+              "sameAs": [
+                "https://github.com/Makoto041",
+                "https://instagram.com/makoto0140"
+              ],
+              "knowsAbout": [
+                "Web Development",
+                "Frontend Development",
+                "JavaScript",
+                "TypeScript",
+                "React",
+                "Next.js",
+                "UI/UX Design"
+              ],
+              "worksFor": {
+                "@type": "Organization",
+                "name": "フリーランス"
+              }
+            })
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "いわぶちまこと | 個人ポートフォリオサイト",
+              "alternateName": "岩渕誠 ポートフォリオ",
+              "url": "https://iwabuchi-makoto.com",
+              "description": "岩渕誠のポートフォリオサイト。日記、ブログ、写真ギャラリーなど日々の活動や作品を公開しています。",
+              "inLanguage": "ja-JP",
+              "author": {
+                "@type": "Person",
+                "name": "岩渕誠",
+                "alternateName": "いわぶちまこと"
+              },
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://iwabuchi-makoto.com/posts?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            })
+          }}
+        />
       </head>
 
       <body className="antialiased overflow-x-hidden bg-[color:var(--bg)] text-[color:var(--text)]">

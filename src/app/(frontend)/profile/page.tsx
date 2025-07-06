@@ -6,11 +6,43 @@ export const revalidate = 0
 
 import Image from 'next/image'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import Breadcrumb from '@/components/Breadcrumb'
+
+export const metadata: Metadata = {
+  title: 'プロフィール | いわぶちまこと',
+  description: '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。',
+  keywords: ['プロフィール', '岩渕誠', 'いわぶちまこと', 'ウェブエンジニア', 'フロントエンド', '開発者'],
+  authors: [{ name: 'いわぶちまこと' }],
+  openGraph: {
+    title: 'プロフィール | いわぶちまこと',
+    description: '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。',
+    url: 'https://iwabuchi-makoto.com/profile',
+    siteName: 'いわぶちまこと',
+    locale: 'ja_JP',
+    type: 'profile',
+    images: [
+      {
+        url: '/profile.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'いわぶちまこと プロフィール写真',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'プロフィール | いわぶちまこと',
+    description: '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。',
+    images: ['/profile.jpg'],
+  },
+  alternates: {
+    canonical: 'https://iwabuchi-makoto.com/profile',
+  },
+}
 const WRAP =
   'mx-auto w-full max-w-[28rem] px-5 sm:px-8 section-pad flex flex-col items-center text-center'
 const CARD = 'glass p-8 flex flex-col items-center'
-const MAINT = '/maintenance'
 
 export default function ProfilePage() {
   return (

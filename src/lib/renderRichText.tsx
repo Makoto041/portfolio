@@ -1,5 +1,6 @@
 // src/lib/renderRichText.tsx
 import React, { ReactNode, ElementType } from 'react'
+import Image from 'next/image'
 
 export interface LexicalNode {
   type?: string
@@ -92,7 +93,17 @@ export function renderRichText(nodes: LexicalNode[] = [], keyPrefix = 'rt'): Rea
 
     // 画像
     if (node.tag === 'img' && node.src) {
-      return <img key={key} src={node.src} alt={node.alt || ''} className={defaultClassNames.img} />
+      return (
+        <Image 
+          key={key} 
+          src={node.src} 
+          alt={node.alt || ''} 
+          width={800}
+          height={600}
+          sizes="(max-width: 768px) 100vw, 800px"
+          className={defaultClassNames.img} 
+        />
+      )
     }
 
     // リンク

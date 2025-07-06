@@ -3,19 +3,46 @@
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-import Image from 'next/image'
-import Link from 'next/link'
+import type { Metadata } from 'next'
 import { fetchLatest } from '@/lib/payload'
-import type { BlogPost } from '@/lib/payloadTypes'
 import Breadcrumb from '@/components/Breadcrumb'
 import { Suspense } from 'react'
 import PostsList from './PostsList'
 import PostsListLoading from './PostsListLoading'
 
+export const metadata: Metadata = {
+  title: 'ブログ | いわぶちまこと',
+  description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
+  keywords: ['ブログ', '岩渕誠', 'いわぶちまこと', '技術', '学習', '考え'],
+  authors: [{ name: 'いわぶちまこと' }],
+  openGraph: {
+    title: 'ブログ | いわぶちまこと',
+    description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
+    url: 'https://iwabuchi-makoto.com/posts',
+    siteName: 'いわぶちまこと',
+    locale: 'ja_JP',
+    type: 'website',
+    images: [
+      {
+        url: '/myicon.png',
+        width: 1200,
+        height: 630,
+        alt: 'いわぶちまこと ブログ',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ブログ | いわぶちまこと',
+    description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
+    images: ['/myicon.png'],
+  },
+  alternates: {
+    canonical: 'https://iwabuchi-makoto.com/posts',
+  },
+}
+
 const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad'
-const CARD =
-  'glass hover:shadow-[0_12px_32px_rgba(0,0,0,.18)] transition rounded-lg overflow-hidden'
-const MAINT = '/maintenance'
 
 export default async function BlogPage() {
   // blogLimit: 10 件取得

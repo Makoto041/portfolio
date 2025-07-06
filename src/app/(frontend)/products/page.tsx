@@ -1,8 +1,40 @@
+import type { Metadata } from 'next'
 import { fetchProducts } from '@/lib/fetchProducts'
 import ProductCard from '@/components/ProductCard'
 import Breadcrumb from '@/components/Breadcrumb'
 
-export const metadata = { title: 'Products - いわぶちまこと' }
+export const metadata: Metadata = {
+  title: 'プロダクト | いわぶちまこと',
+  description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
+  keywords: ['プロダクト', '制作物', '岩渕誠', 'いわぶちまこと', 'Webアプリ', 'ツール', 'サービス'],
+  authors: [{ name: 'いわぶちまこと' }],
+  openGraph: {
+    title: 'プロダクト | いわぶちまこと',
+    description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
+    url: 'https://iwabuchi-makoto.com/products',
+    siteName: 'いわぶちまこと',
+    locale: 'ja_JP',
+    type: 'website',
+    images: [
+      {
+        url: '/myicon.png',
+        width: 1200,
+        height: 630,
+        alt: 'いわぶちまこと プロダクト',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'プロダクト | いわぶちまこと',
+    description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
+    images: ['/myicon.png'],
+  },
+  alternates: {
+    canonical: 'https://iwabuchi-makoto.com/products',
+  },
+}
+
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad'

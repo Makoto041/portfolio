@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { TimelineDoc } from '@/lib/payloadTypes'
 import LocalDate from '@/components/LocalDate'
 import LikeButton from '@/components/LikeButton'
@@ -43,10 +44,13 @@ export default function TimelineFeedClient({ timelineData, cardClass }: Timeline
   <div className="flex gap-2">
     {t.images.slice(0, 3).map((imgObj: any) =>
       imgObj?.image?.url ? (
-        <img
+        <Image
           key={imgObj.id || imgObj.image?.id}
           src={toCFUrl(imgObj.image.sizes?.thumbnail?.url ?? imgObj.image.url)}
           alt="timeline-img"
+          width={128}
+          height={128}
+          sizes="128px"
           className="w-32 h-32 object-cover rounded cursor-pointer"
           onClick={() => setModalImg(imgObj.image.url)}
         />
@@ -62,9 +66,12 @@ export default function TimelineFeedClient({ timelineData, cardClass }: Timeline
     onClick={() => setModalImg(null)}
   >
     <div className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]" onClick={e => e.stopPropagation()}>
-      <img
+      <Image
         src={toCFUrl(modalImg)}
         alt="timeline-modal-img"
+        width={800}
+        height={600}
+        sizes="92vw"
         className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain bg-white/5 backdrop-blur-lg p-1"
       />
       {/* PC表示ではモーダル右上に、スマホでは画像から十分離して表示 */}
