@@ -172,7 +172,37 @@ export interface Media {
  */
 export interface Timeline {
   id: number;
-  text: string;
+  text: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * URLを入力すると自動的にメタデータを取得してプレビューが生成されます
+   */
+  embedUrl?: string | null;
+  urlMetadata?: {
+    title?: string | null;
+    description?: string | null;
+    image?: string | null;
+    siteName?: string | null;
+    url?: string | null;
+  };
+  /**
+   * タグを追加（カンマ区切り）
+   */
+  tags?: string[] | null;
+  priority?: ('normal' | 'important' | 'pinned') | null;
   publishedAt?: string | null;
   images?:
     | {
@@ -398,6 +428,18 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface TimelineSelect<T extends boolean = true> {
   text?: T;
+  embedUrl?: T;
+  urlMetadata?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        siteName?: T;
+        url?: T;
+      };
+  tags?: T;
+  priority?: T;
   publishedAt?: T;
   images?:
     | T

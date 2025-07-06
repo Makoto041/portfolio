@@ -3,7 +3,8 @@
     "allow": [
       "Bash(curl:*)",
       "Bash(echo:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npx payload migrate:fresh:*)"
     ],
     "deny": []
   }

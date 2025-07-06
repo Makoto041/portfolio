@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload'
+import { fetchUrlMetadata } from '@/lib/urlMetadata'
 
 // タイムライン投稿の前処理
 const beforeChangeHook = async ({ req, data, operation }: { req: any; data: any; operation: string }) => {
@@ -72,9 +73,75 @@ export const TimelinePosts: CollectionConfig = {
   fields: [
     { 
       name: 'text', 
-      type: 'textarea', 
-      required: true, 
-      maxLength: 280
+      type: 'richText', 
+      required: true
+    },
+    {
+      name: 'embedUrl',
+      type: 'text',
+      admin: {
+        description: 'URLを入力すると自動的にメタデータを取得してプレビューが生成されます'
+      },
+      hooks: {
+        beforeChange: [
+          async ({ value, req, data }) => {
+            if (value && value.startsWith('http')) {
+              try {
+                console.log('URL detected for metadata extraction:', value)
+                const metadata = await fetchUrlMetadata(value)
+                if (metadata) {
+                  // URLメタデータを同じドキュメントに保存
+                  if (data) {
+                    data.urlMetadata = {
+                      title: metadata.title,
+                      description: metadata.description,
+                      image: metadata.image,
+                      siteName: metadata.siteName,
+                      url: metadata.url
+                    }
+                  }
+                  console.log('URL metadata extracted:', metadata)
+                }
+              } catch (error) {
+                console.error('Error fetching URL metadata:', error)
+              }
+            }
+            return value
+          }
+        ]
+      }
+    },
+    {
+      name: 'urlMetadata',
+      type: 'group',
+      admin: {
+        condition: (data) => !!data.embedUrl
+      },
+      fields: [
+        { name: 'title', type: 'text' },
+        { name: 'description', type: 'textarea' },
+        { name: 'image', type: 'text' },
+        { name: 'siteName', type: 'text' },
+        { name: 'url', type: 'text' }
+      ]
+    },
+    {
+      name: 'tags',
+      type: 'text',
+      hasMany: true,
+      admin: {
+        description: 'タグを追加（カンマ区切り）'
+      }
+    },
+    {
+      name: 'priority',
+      type: 'select',
+      defaultValue: 'normal',
+      options: [
+        { label: '通常', value: 'normal' },
+        { label: '重要', value: 'important' },
+        { label: 'ピン留め', value: 'pinned' }
+      ]
     },
     { name: 'publishedAt', type: 'date', defaultValue: () => new Date() },
     {
