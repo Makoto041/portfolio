@@ -78,7 +78,7 @@ export default async function ProfilePage() {
     nameJapanese: 'いわぶちまこと',
     title: 'ウェブエンジニア',
     description: 'ウェブエンジニア／フロントエンド好き。Payload CMS × Next.jsでポートフォリオサイトを構築しています。',
-    profileImage: null,
+    profileImage: null as any,
     socialLinks: [
       { platform: 'twitter', url: '#', displayName: 'X' },
       { platform: 'instagram', url: 'https://instagram.com/makoto0140', displayName: 'Instagram' },
