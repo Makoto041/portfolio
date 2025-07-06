@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-type Wx = { temp: string; icon: string } | null
+type Wx = { temp: string; icon: string; location: string } | null
 
 export default function WeatherWidget({ className = '' }: { className?: string }) {
   const [wx, setWx] = useState<Wx>(null)
@@ -37,9 +37,13 @@ export default function WeatherWidget({ className = '' }: { className?: string }
           
           const weatherData = await weatherResponse.json()
           
+          // 都市名を取得（英語）
+          const locationName = locationData.city || locationData.region || 'Unknown'
+          
           setWx({
             temp: Math.round(weatherData.current.temperature_2m) + '°C',
             icon: codeToIcon(weatherData.current.weather_code),
+            location: locationName,
           })
         } else {
           throw new Error('No location data')
@@ -61,6 +65,7 @@ export default function WeatherWidget({ className = '' }: { className?: string }
           setWx({
             temp: Math.round(weatherData.current.temperature_2m) + '°C',
             icon: codeToIcon(weatherData.current.weather_code),
+            location: 'Tokyo',
           })
         }
       } catch (error) {
@@ -81,11 +86,13 @@ export default function WeatherWidget({ className = '' }: { className?: string }
         <>
           <span>{wx.icon}</span>
           <span>{wx.temp}</span>
+          <span className="text-gray-500 dark:text-gray-400">in {wx.location}</span>
         </>
       ) : (
         <>
           <span className="opacity-0">☀️</span>
           <span className="animate-pulse">--°C</span>
+          <span className="opacity-0">in --</span>
         </>
       )}
       <span className="whitespace-nowrap">{now}</span>
@@ -99,6 +106,7 @@ const fmt = () =>
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   })
 
 const codeToIcon = (c: number) => {
