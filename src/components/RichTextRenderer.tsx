@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react'
+import Image from 'next/image'
+import { toCFUrl } from '@/lib/cfUrl'
 
 interface RichTextNode {
   children?: RichTextNode[]
@@ -15,6 +17,10 @@ interface RichTextNode {
   indent?: number
   direction?: string
   url?: string
+  src?: string
+  alt?: string
+  width?: number
+  height?: number
 }
 
 interface RichTextRoot {
@@ -140,6 +146,23 @@ function renderNodes(nodes: RichTextNode[]): React.ReactNode {
         
         case 'linebreak':
           return <br key={index} />
+        
+        case 'image':
+          if (node.src) {
+            return (
+              <div key={index} className="my-4">
+                <Image
+                  src={toCFUrl(node.src)}
+                  alt={node.alt || ''}
+                  width={node.width || 800}
+                  height={node.height || 600}
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  className="rounded-lg max-w-full h-auto"
+                />
+              </div>
+            )
+          }
+          return null
         
         default:
           // 不明なタイプの場合はそのまま子要素を表示

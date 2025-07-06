@@ -83,7 +83,7 @@ export default async function ProfilePage() {
       { platform: 'twitter', url: '#', displayName: 'X' },
       { platform: 'instagram', url: 'https://instagram.com/makoto0140', displayName: 'Instagram' },
       { platform: 'github', url: 'https://github.com/Makoto041', displayName: 'GitHub' },
-    ],
+    ] as any,
   }
 
   try {

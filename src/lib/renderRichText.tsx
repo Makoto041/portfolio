@@ -92,17 +92,18 @@ export function renderRichText(nodes: LexicalNode[] = [], keyPrefix = 'rt'): Rea
     }
 
     // 画像
-    if (node.tag === 'img' && node.src) {
+    if ((node.tag === 'img' && node.src) || (node.type === 'image' && node.src)) {
       return (
-        <Image 
-          key={key} 
-          src={node.src} 
-          alt={node.alt || ''} 
-          width={800}
-          height={600}
-          sizes="(max-width: 768px) 100vw, 800px"
-          className={defaultClassNames.img} 
-        />
+        <div key={key} className="my-4">
+          <Image 
+            src={node.src.startsWith('http') ? node.src : `https://iwabuchi-makoto.com${node.src}`}
+            alt={node.alt || ''} 
+            width={800}
+            height={600}
+            sizes="(max-width: 768px) 100vw, 800px"
+            className="rounded-lg max-w-full h-auto" 
+          />
+        </div>
       )
     }
 
