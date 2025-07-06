@@ -11,10 +11,20 @@ export interface BaseDoc {
 
 /** Timeline 用ドキュメント */
 export interface TimelineDoc extends BaseDoc {
-  text: string
+  text: any // richText JSON または文字列
   publishedAt?: string
   images?: { id: string; image: { id: string; url: string; sizes?: Record<string, { url: string }> } }[]
   likes?: number
+  embedUrl?: string
+  urlMetadata?: {
+    title?: string
+    description?: string
+    image?: string
+    siteName?: string
+    url?: string
+  }
+  tags?: string[]
+  priority?: 'normal' | 'important' | 'pinned'
 }
 
 /** Gallery 用ドキュメント */

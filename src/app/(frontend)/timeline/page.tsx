@@ -6,10 +6,14 @@ import type { TimelineDoc } from '@/lib/payloadTypes'
 import Breadcrumb from '@/components/Breadcrumb'
 import { FaSpinner } from 'react-icons/fa'
 import Link from 'next/link'
+import Image from 'next/image'
 
 // ──────────── ヘルパー関数 ────────────
 import LocalDate from '@/components/LocalDate'
 import LikeButton from '@/components/LikeButton'
+import RichTextRenderer from '@/components/RichTextRenderer'
+import UrlPreview from '@/components/UrlPreview'
+import { toCFUrl } from '@/lib/cfUrl'
 
 function formatLocalTime(dateStr: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -95,10 +99,13 @@ export default function TimelinePage() {
             className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={modalImg}
+            <Image
+              src={toCFUrl(modalImg)}
               alt="timeline-modal-img"
+              width={800}
+              height={600}
               className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain bg-white/5 backdrop-blur-lg p-1"
+              style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '80vh' }}
             />
             {/* PC表示ではモーダル右上に、スマホでは画像から十分離して表示 */}
             <button
@@ -159,17 +166,40 @@ export default function TimelinePage() {
                         <time className="block text-xs opacity-60 mb-1">
                           <LocalTime dateString={t.publishedAt ?? t.createdAt} />
                         </time>
-                        <p className="text-sm leading-relaxed whitespace-pre-line">{t.text}</p>
+                        <div className="text-sm leading-relaxed">
+                          {t.text ? (
+                            <RichTextRenderer data={t.text} />
+                          ) : (
+                            <span className="text-gray-500 italic">テキストがありません</span>
+                          )}
+                        </div>
+                        
+                        {/* URLプレビュー */}
+                        {(t.embedUrl || t.urlMetadata) && (
+                          <UrlPreview 
+                            metadata={{
+                              title: t.urlMetadata?.title,
+                              description: t.urlMetadata?.description,
+                              image: t.urlMetadata?.image,
+                              siteName: t.urlMetadata?.siteName,
+                              url: t.urlMetadata?.url
+                            }}
+                            embedUrl={t.embedUrl}
+                          />
+                        )}
+                        
                         {/* 画像がある場合のみ余白を追加 */}
                         {t.images?.length ? <div className="h-4"></div> : null}
                         {t.images
                           ?.slice(0, 3)
                           .map((imgObj: any) =>
                             imgObj?.image?.url ? (
-                              <img
+                              <Image
                                 key={imgObj.id || imgObj.image?.id}
-                                src={imgObj.image.url}
+                                src={toCFUrl(imgObj.image.url)}
                                 alt="timeline-img"
+                                width={128}
+                                height={128}
                                 className="w-32 h-32 object-cover rounded mr-2 inline-block cursor-pointer"
                                 onClick={() => setModalImg(imgObj.image.url)}
                               />

@@ -2,6 +2,7 @@
 import { Calendar, Clock, Bell } from 'lucide-react'
 import Image from 'next/image'
 import type { Event } from '@/payload-types'
+import { toCFUrl } from '@/lib/cfUrl'
 
 
 
@@ -105,7 +106,7 @@ export default function ActiveEventCard({ event, cardClass  }: ActiveEventCardPr
             'url' in event.thumbnail &&
             event.thumbnail.url && (
               <div className="flex-shrink-0 w-32 sm:w-48 h-full relative">
-                <Image src={event.thumbnail.url} alt={event.title} fill className="object-cover" />
+                <Image src={toCFUrl(event.thumbnail.url)} alt={event.title} fill className="object-cover" />
               </div>
             )}
 
@@ -170,7 +171,7 @@ export default function ActiveEventCard({ event, cardClass  }: ActiveEventCardPr
             'url' in event.thumbnail &&
             event.thumbnail.url && (
               <div className="flex-shrink-0 w-24 sm:w-64 h-full relative">
-                <Image src={event.thumbnail.url} alt={event.title} fill className="object-cover" />
+                <Image src={toCFUrl(event.thumbnail.url)} alt={event.title} fill className="object-cover" />
               </div>
           )}
 

@@ -4,7 +4,8 @@
       "Bash(curl:*)",
       "Bash(echo:*)",
       "Bash(node:*)",
-      "Bash(npx payload migrate:fresh:*)"
+      "Bash(npx payload migrate:fresh:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": []
   }

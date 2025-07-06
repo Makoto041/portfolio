@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ExternalLink, Calendar, Clock } from 'lucide-react'
 import type { Event } from '@/payload-types'
+import { toCFUrl } from '@/lib/cfUrl'
 
 const platformConfig = {
   twitch: {
@@ -87,7 +88,7 @@ export default function EventCard({ e }: { e: Event }) {
         <div className="relative h-52 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 overflow-hidden">
           {e.thumbnail && typeof e.thumbnail === 'object' && 'url' in e.thumbnail && e.thumbnail.url ? (
             <Image
-              src={e.thumbnail.url}
+              src={toCFUrl(e.thumbnail.url)}
               alt={e.title}
               fill
               className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"

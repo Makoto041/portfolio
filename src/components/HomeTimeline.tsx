@@ -6,6 +6,8 @@ import LocalDate from '@/components/LocalDate'
 import LikeButton from '@/components/LikeButton'
 import { toCFUrl } from '@/lib/cfUrl'
 import Image from 'next/image'
+import RichTextRenderer from '@/components/RichTextRenderer'
+import UrlPreview from '@/components/UrlPreview'
 
 type HomeTimelineProps = {
   timelineData: TimelineDoc[]
@@ -25,10 +27,13 @@ export default function HomeTimeline({ timelineData, cardClass }: HomeTimelinePr
           onClick={() => setModalImg(null)}
         >
           <div className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <img
+            <Image
               src={toCFUrl(modalImg)}
               alt="timeline-modal-img"
+              width={800}
+              height={600}
               className="rounded-lg max-w-full max-h-[80vh] object-contain bg-white/30 backdrop-blur-sm p-1"
+              style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '80vh' }}
             />
             {/* PC表示ではモーダル右上に、スマホでは画像から十分離して表示 */}
             <button
@@ -48,7 +53,27 @@ export default function HomeTimeline({ timelineData, cardClass }: HomeTimelinePr
             <time className="block text-xs opacity-60 mb-1">
               <LocalDate dateStr={t.publishedAt ?? t.createdAt} formatType="auto" />
             </time>
-            <p className="text-sm leading-relaxed whitespace-pre-line">{t.text}</p>
+            <div className="text-sm leading-relaxed">
+              {t.text ? (
+                <RichTextRenderer data={t.text} />
+              ) : (
+                <span className="text-gray-500 italic">テキストがありません</span>
+              )}
+            </div>
+            
+            {/* URLプレビュー */}
+            {(t.embedUrl || t.urlMetadata) && (
+              <UrlPreview 
+                metadata={{
+                  title: t.urlMetadata?.title,
+                  description: t.urlMetadata?.description,
+                  image: t.urlMetadata?.image,
+                  siteName: t.urlMetadata?.siteName,
+                  url: t.urlMetadata?.url
+                }}
+                embedUrl={t.embedUrl}
+              />
+            )}
             
             {/* 画像がある場合のみ余白を追加 */}
             {t.images?.length ? <div className="h-4"></div> : null}
