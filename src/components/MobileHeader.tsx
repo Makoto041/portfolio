@@ -69,7 +69,7 @@ export default function MobileHeader() {
       {open && (
         <nav
           className={clsx(
-            'fixed inset-0 z-40 bg-[color:var(--bg-base)/.7] backdrop-blur-sm',
+            'fixed inset-0 z-40 bg-gray-600/30 backdrop-blur-md',
             'transition-opacity duration-300', // フェード
             open ? 'opacity-100' : 'pointer-events-none opacity-0',
           )}
@@ -78,7 +78,7 @@ export default function MobileHeader() {
           <ul
             className={clsx(
               'absolute top-14 left-0 w-64 h-[calc(100%-3.5rem)] p-8',
-              'bg-[color:var(--bg-base)/.9] dark:bg-[color:var(--bg-base-dark)/.92] rounded-r-2xl shadow-2xl flex flex-col gap-6',
+              'bg-gray-700/75 backdrop-blur-lg dark:bg-[color:var(--bg-base-dark)/.92] rounded-r-2xl shadow-2xl flex flex-col gap-6',
               'transition-transform duration-300', // スライド
               open ? 'translate-x-0' : '-translate-x-full',
             )}
@@ -88,7 +88,7 @@ export default function MobileHeader() {
               <li key={href}>
                 <Link
                   href={href}
-                  className="flex items-center text-lg py-1.5 font-medium tracking-wide text-neutral-700 dark:text-neutral-100 text-thin-shadow hover:opacity-90 transition-opacity"
+                  className="flex items-center text-lg py-1.5 font-medium tracking-wide text-white dark:text-neutral-100 text-thin-shadow hover:opacity-90 transition-opacity"
                   onClick={() => setOpen(false)}
                 >
                   <Icon size={18} className="inline mr-2" />
@@ -102,7 +102,7 @@ export default function MobileHeader() {
                 href="https://x.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:opacity-100"
+                className="text-white dark:text-neutral-100 hover:opacity-100"
               >
                 X
               </a>
@@ -110,7 +110,7 @@ export default function MobileHeader() {
                 href="https://instagram.com/makoto0140"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:opacity-100"
+                className="text-white dark:text-neutral-100 hover:opacity-100"
               >
                 IG
               </a>

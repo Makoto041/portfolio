@@ -78,26 +78,39 @@ export default function TimelinePageClient() {
       {/* モーダルは全体の一番上で一度だけ表示 */}
       {modalImg && (
         <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center"
+          className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4"
           onClick={() => setModalImg(null)}
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0,
+            zIndex: 9999,
+            transform: 'none',
+            zoom: 1
+          }}
         >
           <div
-            className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]"
+            className="relative flex flex-col items-center max-w-[90vw] max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
+            style={{ transform: 'none', zoom: 1 }}
           >
             <Image
               src={toCFUrl(modalImg)}
               alt="timeline-modal-img"
               width={800}
               height={600}
-              sizes="92vw"
-              className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain bg-white/5 backdrop-blur-lg p-1"
+              sizes="90vw"
+              className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain"
+              style={{ transform: 'none', zoom: 1 }}
             />
             <button
-              className="md:absolute md:top-3 md:right-3 w-10 h-10 flex items-center justify-center border-0 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 text-xl font-light cursor-pointer select-none focus:outline-none transition z-50 mt-8 md:mt-0 shadow-md"
+              className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/75 text-white text-lg cursor-pointer focus:outline-none transition"
               onClick={() => setModalImg(null)}
+              style={{ transform: 'none', zoom: 1 }}
             >
-              ×
+              ✕
             </button>
           </div>
         </div>
