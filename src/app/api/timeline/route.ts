@@ -22,22 +22,69 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const payload = await getPayloadClient()
-    const formData = await request.formData()
     
-    const data: any = {}
-    for (const [key, value] of formData.entries()) {
-      if (key === 'images' && typeof value === 'string') {
+    // Content-Typeをチェック
+    const contentType = request.headers.get('content-type')
+    console.log('Content-Type:', contentType)
+    
+    let data: any = {}
+    
+    if (contentType?.includes('application/json')) {
+      // JSON形式の場合
+      const jsonData = await request.json()
+      console.log('JSON data:', jsonData)
+      data = jsonData
+    } else {
+      // FormData形式の場合
+      const formData = await request.formData()
+      console.log('FormData entries:')
+      for (const [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value}`)
+      }
+      
+      // PayloadCMS Admin UIの場合、_payloadフィールドにJSONデータが含まれている
+      const payloadData = formData.get('_payload')
+      if (payloadData) {
         try {
-          data[key] = JSON.parse(value)
-        } catch {
-          data[key] = value
+          const parsedData = JSON.parse(payloadData.toString())
+          console.log('Parsed _payload data:', parsedData)
+          data = parsedData
+        } catch (error) {
+          console.error('Error parsing _payload data:', error)
         }
-      } else {
-        data[key] = value
+      }
+      
+      // 従来の方法も維持（他のクライアントから直接送信される場合）
+      if (Object.keys(data).length === 0) {
+        // textフィールドを確実に処理
+        const textValue = formData.get('text') || formData.get('Text')
+        if (textValue) {
+          data.text = textValue.toString()
+        }
+        
+        // publishedAtフィールドを処理
+        const publishedAtValue = formData.get('publishedAt')
+        if (publishedAtValue) {
+          data.publishedAt = publishedAtValue.toString()
+        }
+        
+        // imagesフィールドを処理
+        const imagesValue = formData.get('images')
+        if (imagesValue) {
+          if (typeof imagesValue === 'string') {
+            try {
+              data.images = JSON.parse(imagesValue)
+            } catch {
+              data.images = imagesValue
+            }
+          } else {
+            data.images = imagesValue
+          }
+        }
       }
     }
     
-    console.log('Timeline POST data:', data)
+    console.log('Timeline POST data after processing:', data)
     
     const doc = await payload.create({
       collection: 'timeline',

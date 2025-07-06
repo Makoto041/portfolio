@@ -2,40 +2,58 @@ import { CollectionConfig } from 'payload'
 
 // タイムライン投稿の前処理
 const beforeChangeHook = async ({ req, data, operation }: { req: any; data: any; operation: string }) => {
-  // 新規作成または更新時に画像IDを収集
-  if (data?.images && Array.isArray(data.images) && data.images.length > 0) {
-    const imageIds = data.images
-      .filter((img: any) => img?.image)
-      .map((img: any) => img.image)
+  try {
+    console.log('Timeline beforeChange hook - operation:', operation)
+    console.log('Timeline beforeChange hook - data:', data)
+    
+    // 新規作成または更新時に画像IDを収集
+    if (data?.images && Array.isArray(data.images) && data.images.length > 0) {
+      const imageIds = data.images
+        .filter((img: any) => img?.image)
+        .map((img: any) => img.image)
 
-    // タイムライン用の画像IDを一時保存
-    req.timelineImageIds = imageIds
+      // タイムライン用の画像IDを一時保存
+      req.timelineImageIds = imageIds
+      console.log('Timeline beforeChange hook - imageIds:', imageIds)
+    }
+
+    return data
+  } catch (error) {
+    console.error('Timeline beforeChange hook error:', error)
+    throw error
   }
-
-  return data
 }
 
 // タイムライン投稿の後処理
 const afterChangeHook = async ({ req, operation, doc }: { req: any; operation: string; doc: any }) => {
-  // 保存した画像IDがあれば、それらの画像にフラグを設定
-  if (req.timelineImageIds && req.timelineImageIds.length > 0) {
-    const payload = req.payload
+  try {
+    console.log('Timeline afterChange hook - operation:', operation)
+    console.log('Timeline afterChange hook - doc:', doc)
+    
+    // 保存した画像IDがあれば、それらの画像にフラグを設定
+    if (req.timelineImageIds && req.timelineImageIds.length > 0) {
+      const payload = req.payload
 
-    // 各画像に対してisTimelineOnlyフラグをtrueに設定
-    for (const imageId of req.timelineImageIds) {
-      try {
-        await payload.update({
-          collection: 'media',
-          id: imageId,
-          data: { isTimelineOnly: true },
-        })
-      } catch (err) {
-        console.error(`画像の更新に失敗: ${imageId}`, err)
+      // 各画像に対してisTimelineOnlyフラグをtrueに設定
+      for (const imageId of req.timelineImageIds) {
+        try {
+          await payload.update({
+            collection: 'media',
+            id: imageId,
+            data: { isTimelineOnly: true },
+          })
+          console.log(`画像の更新成功: ${imageId}`)
+        } catch (err) {
+          console.error(`画像の更新に失敗: ${imageId}`, err)
+        }
       }
     }
-  }
 
-  return doc
+    return doc
+  } catch (error) {
+    console.error('Timeline afterChange hook error:', error)
+    throw error
+  }
 }
 
 export const TimelinePosts: CollectionConfig = {
@@ -52,7 +70,12 @@ export const TimelinePosts: CollectionConfig = {
     afterChange: [afterChangeHook],
   },
   fields: [
-    { name: 'text', type: 'textarea', required: true, maxLength: 280 },
+    { 
+      name: 'text', 
+      type: 'textarea', 
+      required: true, 
+      maxLength: 280
+    },
     { name: 'publishedAt', type: 'date', defaultValue: () => new Date() },
     {
       name: 'images',
