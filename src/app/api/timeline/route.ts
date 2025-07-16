@@ -100,3 +100,58 @@ export async function POST(request: Request) {
     )
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const url = new URL(request.url)
+    const payload = await getPayloadClient()
+    
+    console.log('DELETE request URL:', request.url)
+    console.log('Search params:', url.searchParams.toString())
+    
+    const ids: string[] = []
+    
+    // where[and][1][id][in][0], where[and][1][id][in][1], ... の形式から ID を抽出
+    for (const [key, value] of url.searchParams.entries()) {
+      console.log(`Param: ${key} = ${value}`)
+      if (key.includes('[id][in][') && value) {
+        ids.push(value)
+      }
+    }
+    
+    console.log('Extracted IDs:', ids)
+    
+    if (ids.length === 0) {
+      return NextResponse.json({ 
+        errors: [{ message: 'No IDs found for deletion' }] 
+      }, { status: 400 })
+    }
+    
+    // PayloadCMSのbulk deleteメソッドを使用
+    try {
+      const result = await payload.delete({
+        collection: 'timeline',
+        where: {
+          id: {
+            in: ids
+          }
+        }
+      })
+      
+      console.log(`Bulk delete result:`, result)
+      
+      // PayloadCMSのbulk delete結果を返す
+      return NextResponse.json(result, { status: 200 })
+    } catch (error) {
+      console.error('Error in bulk delete:', error)
+      return NextResponse.json({
+        errors: [{ message: `Failed to delete timeline entries: ${error instanceof Error ? error.message : 'Unknown error'}` }]
+      }, { status: 500 })
+    }
+  } catch (error) {
+    console.error('Error deleting timeline entries:', error)
+    return NextResponse.json({
+      errors: [{ message: `Failed to delete timeline entries: ${error instanceof Error ? error.message : 'Unknown error'}` }]
+    }, { status: 500 })
+  }
+}
