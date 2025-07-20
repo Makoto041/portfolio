@@ -1,0 +1,200 @@
+# ポートフォリオプロジェクト - Claude Code アシスタントガイド
+
+## プロジェクト概要
+
+Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリオサイトです。タイムライン、ブログ投稿、ギャラリー、イベント、制作物紹介機能を備えています。
+
+## 技術スタック
+
+- **フレームワーク**: Next.js 15.3.2 with React 19.1.0
+- **CMS**: PayloadCMS 3.38.0 with Neon DB
+- **スタイリング**: TailwindCSS 4.1.7
+- **UIライブラリ**: Framer Motion, React Icons, Lucide React
+- **クラウドストレージ**: Cloudflare with S3 integration
+- **データベース**: Neon DB
+- **デプロイ**: Vercel
+
+## 開発コマンド
+
+```bash
+# 開発
+pnpm dev                    # 開発サーバー開始
+pnpm devsafe               # クリーンスタート（.nextを削除）
+
+# ビルド
+pnpm build                 # プロダクション用ビルド
+pnpm start                 # プロダクションサーバー開始
+
+# リント & 型生成
+pnpm lint                  # ESLint実行
+pnpm generate:types        # PayloadCMS型生成
+
+# PayloadCMS
+pnpm payload               # PayloadCMS CLIコマンド
+```
+
+## プロジェクト構造
+
+```
+src/
+├── app/
+│   ├── (frontend)/           # 公開ページ
+│   │   ├── timeline/         # タイムラインページ
+│   │   ├── posts/           # ブログ投稿
+│   │   ├── gallery/         # 画像ギャラリー
+│   │   ├── profile/         # プロフィールページ
+│   │   └── products/        # 製品紹介
+│   ├── (payload)/           # PayloadCMS管理画面
+│   └── api/                 # APIルート
+├── collections/             # PayloadCMSコレクション
+├── components/              # Reactコンポーネント
+├── lib/                     # ユーティリティ関数
+└── globals/                 # グローバル設定
+```
+
+## 主要機能
+
+### 1. タイムラインシステム
+- 画像サポート付きリッチテキストコンテンツ
+- アニメーション付きハートエフェクトのいいね機能
+- 楽観的UIによるリアルタイム更新
+- 一括操作サポート
+
+### 2. ブログ投稿
+- リッチテキストエディタ（Lexical）
+- 画像アップロードと管理
+- SEOフレンドリーなURL
+
+### 3. ギャラリー
+- Cloudflare変換付き画像モーダル
+- レスポンシブグリッドレイアウト
+- サムネイルプレビュー
+
+### 4. イベント管理
+- アクティブイベント表示
+- 日付フォーマットユーティリティ
+- イベントカードコンポーネント
+
+### 5. 製品紹介
+- 画像付き製品カタログ
+- リッチな説明文
+- レスポンシブカード
+
+## APIエンドポイント
+
+### タイムライン
+- `GET /api/timeline` - タイムライン投稿取得
+- `POST /api/timeline` - タイムライン投稿作成
+- `DELETE /api/timeline` - タイムライン投稿一括削除
+- `POST /api/timeline/[id]/like` - タイムライン投稿にいいね
+
+### その他のAPI
+- `/api/products` - 製品管理
+- `/api/letter` - コンタクトフォーム処理
+- `/api/metadata` - URLメタデータ抽出
+
+## データベースコレクション
+
+1. **TimelinePosts** - リッチテキスト付きタイムラインエントリ
+2. **BlogPosts** - ブログ記事（タイトル、本文、画像、URL、日付、カテゴリー）
+3. **Events** - イベント管理（時刻、タイトル、説明、画像、プラットフォーム）
+4. **Products** - 作成したプログラムのカタログ
+5. **Letters** - コンタクトフォーム送信
+6. **Media** - 画像ファイルアップロード
+7. **Users** - 認証
+
+## 環境変数
+
+必要な環境変数：
+```
+DATABASE_URL=              # Vercel Postgres接続
+PAYLOAD_SECRET=           # PayloadCMSシークレットキー
+S3_ENDPOINT=              # Cloudflare R2エンドポイント
+S3_ACCESS_KEY_ID=         # Cloudflareアクセスキー
+S3_SECRET_ACCESS_KEY=     # Cloudflareシークレットキー
+S3_BUCKET=                # Cloudflareバケット名
+S3_REGION=                # Cloudflareリージョン
+```
+
+## コンポーネントガイドライン
+
+### スタイリング
+- TailwindCSSクラスを使用
+- レスポンシブデザインパターンに従う
+- グラスモーフィズム効果（`glass`クラス）を使用
+- セクションパディング（`section-pad`）で一貫したスペーシング
+
+### 状態管理
+- ローカル状態にはReactフックを使用
+- 楽観的UI更新を実装
+- ローディング状態を適切に処理
+
+### エラーハンドリング
+- 常にtry-catchブロックを実装
+- ユーザーフレンドリーなエラーメッセージを使用
+- デバッグ用にエラーをログ出力
+
+## 開発のヒント
+
+### PayloadCMS
+- 管理画面は`/admin`で利用可能
+- スキーマ変更後は型生成：`pnpm generate:types`
+- データベース操作にはPayloadCMSクライアントを使用
+
+### 画像処理
+- 画像はCloudflare R2に保存
+- 変換には`toCFUrl()`ヘルパーを使用
+- 適切なalt textとsizesを実装
+
+### パフォーマンス
+- Next.js Imageコンポーネントを使用
+- 適切なローディング状態を実装
+- データベースクエリを最適化
+
+### テスト
+- いいねボタンアニメーションのテスト
+- レスポンシブレイアウトの確認
+- APIエンドポイントのチェック
+
+## よくある問題と解決方法
+
+1. **いいねボタンが動作しない**
+   - APIエンドポイントパス（`/api/timeline/[id]/like`）を確認
+   - データベース接続を確認
+   - try-catch内のエラーハンドリングを確認
+
+2. **PayloadCMS管理画面エラー**
+   - `PAYLOAD_SECRET`環境変数を確認
+   - データベース接続を確認
+   - スキーマ変更時は型を再生成
+
+3. **画像アップロード問題**
+   - S3/Cloudflare認証情報を確認
+   - バケット権限を確認
+   - 適切なCORS設定を確認
+
+4. **ビルドエラー**
+   - ビルド前に`pnpm generate:types`を実行
+   - TypeScriptエラーを確認
+   - すべての環境変数を確認
+
+## 最近の更新
+
+- いいねボタンAPIエンドポイントパスを修正
+- いいね機能の楽観的UI更新を実装
+- Xスタイルのハートアニメーションを追加
+- PayloadCMS一括削除機能を修正
+- コンポーネント全体のエラーハンドリングを強化
+
+## デプロイメント
+
+プロジェクトはVercelデプロイ用に設定済み：
+- プッシュ時の自動ビルド
+- 環境変数管理
+- PostgreSQLデータベース統合
+- 静的ファイル最適化
+
+デプロイメント問題の場合、以下を確認：
+1. 環境変数が設定されている
+2. データベースマイグレーションが適用されている
+3. ビルドコマンドがローカルで成功している
