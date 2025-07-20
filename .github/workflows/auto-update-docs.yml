@@ -1,0 +1,97 @@
+# ポートフォリオプロジェクト専用 - 重要ファイル変更時の通知
+# Claude Code手動実行のための変更検知とアラート
+name: Documentation Update Alert
+
+on:
+  push:
+    branches: [main]
+    paths:
+      # PayloadCMS設定ファイル（重要度：高）
+      - 'src/payload.config.ts'
+      - 'src/collections/**'
+      - 'src/globals/**'
+      
+      # プロジェクト設定ファイル（重要度：高）
+      - 'package.json'
+      - 'next.config.mjs'
+      - 'tailwind.config.js'
+      
+      # APIルート（重要度：中）
+      - 'src/app/api/**'
+      
+      # 重要なコンポーネント（使用制限を考慮し、主要なもののみ）
+      - 'src/components/LikeButton.tsx'
+      - 'src/components/TimelinePageClient.tsx'
+      - 'src/components/TimelineFeedClient.tsx'
+
+jobs:
+  documentation_alert:
+    runs-on: ubuntu-latest
+    
+    # 不要な実行を防ぐ条件分岐
+    if: >
+      !contains(github.event.head_commit.message, '[skip docs]') &&
+      !contains(github.event.head_commit.message, 'docs:') &&
+      github.actor != 'dependabot[bot]'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Check changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            src/payload.config.ts
+            src/collections/**
+            src/globals/**
+            package.json
+            next.config.mjs
+            tailwind.config.js
+            src/app/api/**
+            src/components/LikeButton.tsx
+            src/components/TimelinePageClient.tsx
+            src/components/TimelineFeedClient.tsx
+
+      - name: Create Documentation Update Issue
+        if: steps.changed-files.outputs.any_changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changedFiles = `${{ steps.changed-files.outputs.all_changed_files }}`.split(' ');
+            const fileList = changedFiles.map(file => `- \`${file}\``).join('\n');
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📝 ドキュメント更新が必要です',
+              body: `## 重要なファイルが変更されました
+            
+            以下のファイルが変更されたため、CLAUDE.mdの更新が必要です：
+            
+            ${fileList}
+            
+            ## 手動で更新してください
+            
+            1. [Claude Code](https://claude.ai/code)を開く
+            2. このリポジトリに接続
+            3. 以下のコマンドを実行：
+            
+            \`\`\`
+            CLAUDE.mdを最新の変更内容に合わせて更新してください。
+            
+            更新すべき項目：
+            - PayloadCMS設定が変更された場合：データベースコレクション、API仕様
+            - package.jsonが変更された場合：技術スタック、開発コマンド
+            - APIルートが変更された場合：APIエンドポイント一覧
+            - 主要コンポーネントが変更された場合：機能説明、使用方法
+            \`\`\`
+            
+            ## 完了後
+            このIssueをクローズしてください。
+            
+            ---
+            🤖 自動生成されたアラート`,
+              labels: ['documentation', 'maintenance']
+            })

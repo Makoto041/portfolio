@@ -12,7 +12,8 @@
       "Bash(pkill:*)",
       "Bash(true)",
       "Bash(rm:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

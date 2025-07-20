@@ -1,0 +1,43 @@
+# Claude Code - サブスクリプション内での@claude呼び出し用
+# 注意: 現在Claude Code用の公式GitHub Actionは提供されていない可能性があります
+# 手動でのClaude Code使用を推奨します
+name: Claude Code
+
+on:
+  # 手動での@claude呼び出し
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  claude_code:
+    if: >
+      github.event.comment &&
+      (
+        contains(github.event.comment.body, '@claude') ||
+        contains(github.event.comment.body, '@Claude')
+      )
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      # Claude Code GitHub Actionが利用可能になるまでは以下をコメントアウト
+      # - name: Claude Code Action
+      #   uses: anthropics/claude-code-github-action@main
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      
+      - name: Comment for Manual Claude Code Usage
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🤖 Claude Code呼び出しが検出されました。\n\n現在、Claude Code GitHub Actionは準備中です。\n手動でClaude Codeを使用してください。\n\n詳細は[Claude Code](https://claude.ai/code)をご覧ください。'
+            })
