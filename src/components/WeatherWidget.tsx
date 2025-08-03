@@ -7,12 +7,27 @@ type Wx = { temp: string; icon: string; location: string } | null
 export default function WeatherWidget({ className = '' }: { className?: string }) {
   const [wx, setWx] = useState<Wx>(null)
   const [now, setNow] = useState(() => fmt())
+  const [isTimeVisible, setIsTimeVisible] = useState(true)
 
-  /* 時計（1 min ごと） */
+  /* 時計（1秒ごとにチェックして分が変わったら更新） */
   useEffect(() => {
-    const id = setInterval(() => setNow(fmt()), 60_000)
-    return () => clearInterval(id)
-  }, [])
+    const updateTime = () => {
+      const newTime = fmt()
+      if (newTime !== now) {
+        // 分が変わった時に短いフェードアニメーション
+        setIsTimeVisible(false)
+        setTimeout(() => {
+          setNow(newTime)
+          setIsTimeVisible(true)
+        }, 150)
+      }
+    }
+
+    // 1秒ごとにチェック（正確な時刻更新のため）
+    const intervalId = setInterval(updateTime, 1000)
+    
+    return () => clearInterval(intervalId)
+  }, [now])
 
   /* IP位置情報 → Open-Meteo (ポップアップなし) */
   useEffect(() => {
@@ -95,7 +110,13 @@ export default function WeatherWidget({ className = '' }: { className?: string }
           <span className="opacity-0">in --</span>
         </>
       )}
-      <span className="whitespace-nowrap">{now}</span>
+      <span 
+        className={`whitespace-nowrap transition-opacity duration-300 ${
+          isTimeVisible ? 'opacity-100' : 'opacity-50'
+        }`}
+      >
+        {now}
+      </span>
     </div>
   )
 }
