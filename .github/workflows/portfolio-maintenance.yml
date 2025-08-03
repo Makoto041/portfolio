@@ -3,11 +3,11 @@
 name: Portfolio Maintenance Reminder
 
 on:
-  # 月初の自動実行（使用制限を考慮し月1回のみ）
-  schedule:
-    - cron: '0 9 1 * *'  # 毎月1日の午前9時（UTC）
+  # 一時的に無効化（権限設定後に有効化）
+  # schedule:
+  #   - cron: '0 9 1 * *'  # 毎月1日の午前9時（UTC）
   
-  # 手動実行も可能
+  # 手動実行のみ
   workflow_dispatch:
 
 # ワークフロー全体の権限設定

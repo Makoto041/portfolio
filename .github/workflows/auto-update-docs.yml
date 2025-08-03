@@ -3,26 +3,30 @@
 name: Documentation Update Alert
 
 on:
-  push:
-    branches: [main]
-    paths:
-      # PayloadCMS設定ファイル（重要度：高）
-      - 'src/payload.config.ts'
-      - 'src/collections/**'
-      - 'src/globals/**'
-      
-      # プロジェクト設定ファイル（重要度：高）
-      - 'package.json'
-      - 'next.config.mjs'
-      - 'tailwind.config.js'
-      
-      # APIルート（重要度：中）
-      - 'src/app/api/**'
-      
-      # 重要なコンポーネント（使用制限を考慮し、主要なもののみ）
-      - 'src/components/LikeButton.tsx'
-      - 'src/components/TimelinePageClient.tsx'
-      - 'src/components/TimelineFeedClient.tsx'
+  # 一時的に無効化（権限設定後に有効化）
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     # PayloadCMS設定ファイル（重要度：高）
+  #     - 'src/payload.config.ts'
+  #     - 'src/collections/**'
+  #     - 'src/globals/**'
+  #     
+  #     # プロジェクト設定ファイル（重要度：高）
+  #     - 'package.json'
+  #     - 'next.config.mjs'
+  #     - 'tailwind.config.js'
+  #     
+  #     # APIルート（重要度：中）
+  #     - 'src/app/api/**'
+  #     
+  #     # 重要なコンポーネント（使用制限を考慮し、主要なもののみ）
+  #     - 'src/components/LikeButton.tsx'
+  #     - 'src/components/TimelinePageClient.tsx'
+  #     - 'src/components/TimelineFeedClient.tsx'
+  
+  # 手動実行のみ
+  workflow_dispatch:
 
 # ワークフロー全体の権限設定
 permissions:
@@ -36,11 +40,8 @@ jobs:
       issues: write
       contents: read
     
-    # 不要な実行を防ぐ条件分岐
-    if: >
-      !contains(github.event.head_commit.message, '[skip docs]') &&
-      !contains(github.event.head_commit.message, 'docs:') &&
-      github.actor != 'dependabot[bot]'
+    # 手動実行の場合は常に実行
+    if: github.actor != 'dependabot[bot]'
     
     steps:
       - name: Checkout repository
