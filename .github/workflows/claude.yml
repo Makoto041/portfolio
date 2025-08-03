@@ -10,6 +10,12 @@ on:
   pull_request_review_comment:
     types: [created]
 
+# ワークフロー全体の権限設定
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
 jobs:
   claude_code:
     if: >
@@ -19,6 +25,10 @@ jobs:
         contains(github.event.comment.body, '@Claude')
       )
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
     
     steps:
       - name: Checkout repository

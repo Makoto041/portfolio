@@ -24,9 +24,17 @@ on:
       - 'src/components/TimelinePageClient.tsx'
       - 'src/components/TimelineFeedClient.tsx'
 
+# ワークフロー全体の権限設定
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   documentation_alert:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
     
     # 不要な実行を防ぐ条件分岐
     if: >

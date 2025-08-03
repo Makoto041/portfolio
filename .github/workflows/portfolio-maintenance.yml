@@ -10,9 +10,17 @@ on:
   # 手動実行も可能
   workflow_dispatch:
 
+# ワークフロー全体の権限設定
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   maintenance_reminder:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
     
     steps:
       - name: Checkout repository
