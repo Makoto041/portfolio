@@ -13,7 +13,9 @@
       "Bash(true)",
       "Bash(rm:*)",
       "Bash(grep:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(pnpm dev)",
+      "Bash(pnpm run lint)"
     ],
     "deny": []
   }

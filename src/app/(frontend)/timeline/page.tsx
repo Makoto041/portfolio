@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import Breadcrumb from '@/components/Breadcrumb'
-import TimelinePageClient from '@/components/TimelinePageClient'
+import WeatherWidgetClient from '@/components/WeatherWidgetClient'
+import TimelineList from '@/components/TimelineList'
+import { fetchLatest } from '@/lib/payload'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -37,13 +40,34 @@ export const metadata: Metadata = {
   },
 }
 
-export default function TimelinePage() {
+const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad'
+
+export default async function TimelinePage() {
+  // サーバーコンポーネントで直接fetchLatest()を使用
+  const { timeline } = await fetchLatest({
+    timelineLimit: 100, // 全件取得
+  })
+
   return (
     <main className="min-h-screen bg-[color:var(--bg)] text-[color:var(--text)]">
       <div className="mt-10 text-gray-400 text-left">
         <Breadcrumb />
       </div>
-      <TimelinePageClient />
+
+      <section className={`${WRAP} py-12`}>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-semibold">Timeline</h1>
+          <WeatherWidgetClient />
+        </div>
+
+        <TimelineList initialTimeline={timeline} />
+
+        <div className="text-center mt-20">
+          <Link href="/" className="text-sm underline">
+            ← TOPページへ
+          </Link>
+        </div>
+      </section>
     </main>
   )
 }

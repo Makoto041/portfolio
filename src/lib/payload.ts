@@ -23,18 +23,22 @@ export async function fetchLatest({
 
     // タイムライン専用画像を除外するクエリ条件を構築
     const mediaWhere: any = {}
-    
+
     // includeTimelineOnlyがfalseの場合、タイムライン専用画像を除外
+    // isTimelineOnlyがtrueでないもの（false、null、undefined）を取得
     if (!includeTimelineOnly) {
-      mediaWhere.isTimelineOnly = { equals: false }
+      mediaWhere.or = [
+        { isTimelineOnly: { equals: false } },
+        { isTimelineOnly: { exists: false } }
+      ]
     }
     
     const [tRes, bRes, mRes] = await Promise.all([
       payload.find({ collection: 'timeline', limit: timelineLimit, sort: '-publishedAt' }),
       payload.find({ collection: 'blogPosts', limit: blogLimit, sort: '-publishedAt' }),
-      payload.find({ 
-        collection: 'media', 
-        limit: mediaLimit, 
+      payload.find({
+        collection: 'media',
+        limit: mediaLimit,
         sort: '-publishedAt',
         where: mediaWhere,
       }),
