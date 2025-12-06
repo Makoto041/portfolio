@@ -20,11 +20,6 @@ export default function SideNav() {
         <Link href="/" className="font-semibold tracking-[0.14em] text-lg hover:opacity-90">
           IWABUCHI
         </Link>
-
-        {/* Theme Toggle */}
-        <div className="pt-2">
-          <ThemeToggle />
-        </div>
       </div>
 
       <nav className="space-y-6 text-sm">
@@ -35,13 +30,21 @@ export default function SideNav() {
         ))}
       </nav>
 
-      <div className="flex gap-5 opacity-70">
-        <a href="https://x.com/" target="_blank" rel="noopener noreferrer">
-          X
-        </a>
-        <a href="https://instagram.com/makoto0140" target="_blank" rel="noopener noreferrer">
-          IG
-        </a>
+      <div className="space-y-4">
+        {/* Theme Toggle */}
+        <div className="flex justify-center">
+          <ThemeToggle />
+        </div>
+
+        {/* SNS Links */}
+        <div className="flex gap-5 opacity-70 justify-center">
+          <a href="https://x.com/" target="_blank" rel="noopener noreferrer" className="hover:opacity-100">
+            X
+          </a>
+          <a href="https://instagram.com/makoto0140" target="_blank" rel="noopener noreferrer" className="hover:opacity-100">
+            IG
+          </a>
+        </div>
       </div>
     </aside>
   )
