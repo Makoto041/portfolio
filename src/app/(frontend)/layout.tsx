@@ -5,6 +5,7 @@ import React from 'react'
 import SideNav from '@/components/SideNav'
 import MobileHeader from '@/components/MobileHeader'
 import { toCFUrl } from '@/lib/cfUrl'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 export const metadata: Metadata = {
   title: 'いわぶち | 個人ポートフォリオサイト',
@@ -64,8 +65,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="color-scheme" content="light dark" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{if(matchMedia('(prefers-color-scheme:dark)').matches)
-              document.documentElement.classList.add('dark')}catch(e){}})()`,
+            __html: `(()=>{try{
+              const stored = localStorage.getItem('theme');
+              const systemDark = matchMedia('(prefers-color-scheme:dark)').matches;
+              if (stored === 'dark' || (!stored && systemDark)) {
+                document.documentElement.classList.add('dark');
+              }
+            }catch(e){}})()`,
           }}
         />
         <script
@@ -127,18 +133,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className="antialiased overflow-x-hidden bg-[color:var(--bg)] text-[color:var(--text)]">
-        {/* ── Mobile header ─────────────────── */}
-        <MobileHeader />
+        <ThemeProvider>
+          {/* ── Mobile header ─────────────────── */}
+          <MobileHeader />
 
-        {/* ── Desktop layout ― side + main ── */}
-        <div className="flex">
-          <SideNav />
+          {/* ── Desktop layout ― side + main ── */}
+          <div className="flex">
+            <SideNav />
 
-          <main className="flex-1 min-h-screen">{children}</main>
-        </div>
-        
-        {/* Portal root for modals */}
-        <div id="modal-root"></div>
+            <main className="flex-1 min-h-screen">{children}</main>
+          </div>
+
+          {/* Portal root for modals */}
+          <div id="modal-root"></div>
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 import clsx from 'clsx'
 import { BookText, StickyNote, Image as ImageIcon, User, Mail, Disc3, Pen } from 'lucide-react'
+import ThemeToggle from './ThemeToggle'
 
 const NAV = [
   { label: 'Timeline', href: '/timeline', icon: BookText },
@@ -35,12 +36,17 @@ export default function MobileHeader() {
         >
           IWABUCHI
         </Link>
-        {/* hamburger */}
-        <button
-          aria-label="open menu"
-          onClick={() => setOpen(!open)}
-          className="relative w-8 h-8 text-neutral-900 dark:text-neutral-100"
-        >
+
+        {/* Right side: Theme toggle + Hamburger */}
+        <div className="flex items-center gap-3">
+          <ThemeToggle variant="mobile" />
+
+          {/* hamburger */}
+          <button
+            aria-label="open menu"
+            onClick={() => setOpen(!open)}
+            className="relative w-8 h-8 text-neutral-900 dark:text-neutral-100"
+          >
           {/* top line */}
           <span
             className={clsx(
@@ -62,7 +68,8 @@ export default function MobileHeader() {
               open && '-rotate-45 -translate-y-[8px]',
             )}
           />
-        </button>
+          </button>
+        </div>
       </header>
 
       {/* ── Drawer ────────────────────────────── */}

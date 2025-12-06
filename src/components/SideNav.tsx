@@ -2,6 +2,7 @@
 'use client'
 
 import Link from 'next/link'
+import ThemeToggle from './ThemeToggle'
 const NAV = [
   { label: 'Timeline', href: '/timeline' },
   { label: 'Blog', href: '/posts' },
@@ -15,9 +16,16 @@ const NAV = [
 export default function SideNav() {
   return (
     <aside className="hidden md:flex flex-col justify-between w-56 p-10 sticky top-0 h-screen glass backdrop-saturate-150 text-[color:var(--fg-base)]">
-      <Link href="/" className="font-semibold tracking-[0.14em] text-lg hover:opacity-90">
-        IWABUCHI
-      </Link>
+      <div className="space-y-6">
+        <Link href="/" className="font-semibold tracking-[0.14em] text-lg hover:opacity-90">
+          IWABUCHI
+        </Link>
+
+        {/* Theme Toggle */}
+        <div className="pt-2">
+          <ThemeToggle />
+        </div>
+      </div>
 
       <nav className="space-y-6 text-sm">
         {NAV.map(({ href, label }) => (
