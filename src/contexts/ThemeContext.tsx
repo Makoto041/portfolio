@@ -13,13 +13,10 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  // SSR時のHydration mismatch回避のため、初期値はundefinedとし、
-  // マウント後に実際の値を設定
+  // 初期値は'light'とし、マウント後に実際の値を設定
   const [theme, setThemeState] = useState<Theme>('light')
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
 
     // 初回マウント時: localStorage → システム設定の優先順位で決定
     const storedTheme = localStorage.getItem('theme') as Theme | null
@@ -64,11 +61,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme(newTheme)
   }
 
-  // SSR時は何もレンダリングしない（Hydration mismatch回避）
-  if (!mounted) {
-    return <>{children}</>
-  }
-
+  // 常にProviderで包む（mounted状態に関係なく）
   return (
     <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
       {children}

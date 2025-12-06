@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { motion } from 'framer-motion'
@@ -10,6 +11,16 @@ interface ThemeToggleProps {
 
 export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // SSR時は何も表示しない（Hydration mismatch回避）
+  if (!mounted) {
+    return <div className={variant === 'mobile' ? 'w-14 h-7' : 'w-16 h-8'} />
+  }
 
   return (
     <button
