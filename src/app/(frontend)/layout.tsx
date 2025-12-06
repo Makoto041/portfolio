@@ -5,7 +5,7 @@ import React from 'react'
 import SideNav from '@/components/SideNav'
 import MobileHeader from '@/components/MobileHeader'
 import { toCFUrl } from '@/lib/cfUrl'
-import { ThemeProvider } from '@/contexts/ThemeContext'
+import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
   title: 'いわぶち | 個人ポートフォリオサイト',
@@ -133,7 +133,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className="antialiased overflow-x-hidden bg-[color:var(--bg)] text-[color:var(--text)]">
-        <ThemeProvider>
+        <Providers>
           {/* ── Mobile header ─────────────────── */}
           <MobileHeader />
 
@@ -146,7 +146,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Portal root for modals */}
           <div id="modal-root"></div>
-        </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )
