@@ -43,7 +43,9 @@ export default function MobileHeader() {
 
           {/* hamburger */}
           <button
-            aria-label="open menu"
+            aria-label={open ? 'close menu' : 'open menu'}
+            aria-expanded={open}
+            aria-controls="mobile-menu"
             onClick={() => setOpen(!open)}
             className="relative w-8 h-8 text-[color:var(--fg-base)]"
           >
@@ -75,6 +77,7 @@ export default function MobileHeader() {
       {/* ── Drawer ────────────────────────────── */}
       {open && (
         <nav
+          id="mobile-menu"
           className={clsx(
             'fixed inset-0 z-40 bg-gray-600/30 backdrop-blur-md',
             'transition-opacity duration-300', // フェード
