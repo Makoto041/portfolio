@@ -12,14 +12,32 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
+// localStorageへの安全なアクセスを提供するヘルパー関数
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key)
+    } catch (error) {
+      console.warn('localStorage.getItem failed:', error)
+      return null
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      localStorage.setItem(key, value)
+    } catch (error) {
+      console.warn('localStorage.setItem failed:', error)
+    }
+  },
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   // 初期値は'light'とし、マウント後に実際の値を設定
   const [theme, setThemeState] = useState<Theme>('light')
 
   useEffect(() => {
-
     // 初回マウント時: localStorage → システム設定の優先順位で決定
-    const storedTheme = localStorage.getItem('theme') as Theme | null
+    const storedTheme = safeLocalStorage.getItem('theme') as Theme | null
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
     const initialTheme = storedTheme || systemTheme
 
@@ -30,7 +48,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = (e: MediaQueryListEvent) => {
       // localStorageに保存されていなければシステム設定に従う
-      if (!localStorage.getItem('theme')) {
+      if (!safeLocalStorage.getItem('theme')) {
         const newTheme = e.matches ? 'dark' : 'light'
         setThemeState(newTheme)
         applyTheme(newTheme)
@@ -53,7 +71,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme)
     applyTheme(newTheme)
-    localStorage.setItem('theme', newTheme)
+    safeLocalStorage.setItem('theme', newTheme)
   }
 
   const toggleTheme = () => {
