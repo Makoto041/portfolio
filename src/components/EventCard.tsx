@@ -45,7 +45,7 @@ export default function EventCard({ e }: { e: Event }) {
     <Link
       href={e.externalUrl || `/events/${e.slug}`}
       target={e.externalUrl ? '_blank' : undefined}
-      className="no-underline hover:no-underline"
+      className="card-link"
     >
       <article
         className={`

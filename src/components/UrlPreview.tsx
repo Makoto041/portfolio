@@ -44,7 +44,7 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-block border border-[color:var(--card-border)] rounded-lg p-3 hover:bg-[color:var(--card-bg-hover)] bg-[color:var(--card-bg)] transition-all duration-200 mt-3 no-underline ${getWidthClass()}`}
+      className={`card-link inline-block border border-[color:var(--card-border)] rounded-lg p-3 hover:bg-[color:var(--card-bg-hover)] bg-[color:var(--card-bg)] transition-all duration-200 mt-3 ${getWidthClass()}`}
     >
       <div className="flex gap-3 min-w-0">
         {hasImage && (

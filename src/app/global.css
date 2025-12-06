@@ -141,14 +141,78 @@ body {
   background-size: auto;
 }
 
-/* リンク内のテキストカラーをリセット */
-a {
+/* コンテンツ内のリンクはアクセシブルに保つ */
+article a,
+.prose a,
+.content a,
+p a {
+  color: #2563eb; /* blue-600 */
+  text-decoration: underline;
+  text-decoration-color: rgba(37, 99, 235, 0.3);
+  text-underline-offset: 2px;
+  transition: all 0.2s;
+}
+
+.dark article a,
+.dark .prose a,
+.dark .content a,
+.dark p a {
+  color: #60a5fa; /* blue-400 */
+  text-decoration-color: rgba(96, 165, 250, 0.3);
+}
+
+article a:hover,
+.prose a:hover,
+.content a:hover,
+p a:hover {
+  color: #1d4ed8; /* blue-700 */
+  text-decoration-color: rgba(29, 78, 216, 0.6);
+}
+
+.dark article a:hover,
+.dark .prose a:hover,
+.dark .content a:hover,
+.dark p a:hover {
+  color: #93c5fd; /* blue-300 */
+  text-decoration-color: rgba(147, 197, 253, 0.6);
+}
+
+article a:focus,
+.prose a:focus,
+.content a:focus,
+p a:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.dark article a:focus,
+.dark .prose a:focus,
+.dark .content a:focus,
+.dark p a:focus {
+  outline-color: #60a5fa;
+}
+
+/* カードコンポーネント内のリンクはリセット（視覚的にカード全体がクリッカブル） */
+.card-link,
+nav a,
+header a {
   color: inherit;
   text-decoration: none;
 }
 
-a:hover {
-  text-decoration: none;
+.card-link:focus,
+nav a:focus,
+header a:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.dark .card-link:focus,
+.dark nav a:focus,
+.dark header a:focus {
+  outline-color: #60a5fa;
 }
 
 /* ノイズと同系色を軽く被せる */

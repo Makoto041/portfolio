@@ -72,7 +72,7 @@ export default function ActiveEventCard({ event, cardClass }: ActiveEventCardPro
       <a
         href={href}
         target={event.externalUrl ? '_blank' : undefined}
-        className={`block mb-6 rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-bg)] backdrop-blur-sm shadow-sm relative overflow-hidden h-24 sm:h-32 hover:shadow-md transition-all duration-300 no-underline ${cardClass}`}
+        className={`card-link block mb-6 rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-bg)] backdrop-blur-sm shadow-sm relative overflow-hidden h-24 sm:h-32 hover:shadow-md transition-all duration-300 ${cardClass}`}
       >
         <div className="flex h-full">
           {/* Thumbnail - カード全体サイズに合わせる */}
@@ -126,12 +126,13 @@ export default function ActiveEventCard({ event, cardClass }: ActiveEventCardPro
       href={href}
       target={event.externalUrl ? '_blank' : undefined}
       className={`
+      card-link
       block mb-6 rounded-xl border-2
       border-red-400/60 dark:border-red-700/60
       bg-gradient-to-r from-red-50/90 to-pink-50/90
       dark:from-red-700/60 dark:via-pink-700/60 dark:to-orange-700/60
       shadow-xl backdrop-blur-sm relative overflow-hidden
-      h-32 sm:h-40 hover:shadow-2xl transition-all duration-300 no-underline ${cardClass}
+      h-32 sm:h-40 hover:shadow-2xl transition-all duration-300 ${cardClass}
     `}
     >
       {/* ダークモード背景エフェクト */}
