@@ -29,13 +29,13 @@ export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
       className={`
         relative rounded-full transition-all duration-300
         ${variant === 'mobile'
-          ? 'w-14 h-7 bg-gray-600/50 dark:bg-gray-400/30'
-          : 'w-16 h-8 bg-gray-300/60 dark:bg-gray-600/60'
+          ? 'w-14 h-7 bg-gray-300 dark:bg-gray-600'
+          : 'w-16 h-8 bg-gray-300 dark:bg-gray-600'
         }
-        hover:bg-gray-400/70 dark:hover:bg-gray-500/70
+        hover:bg-gray-400 dark:hover:bg-gray-500
         focus:outline-none focus:ring-2 focus:ring-offset-2
-        focus:ring-gray-400 dark:focus:ring-gray-500
-        backdrop-blur-sm border border-gray-400/30 dark:border-gray-500/30
+        focus:ring-blue-400 dark:focus:ring-blue-500
+        shadow-sm border border-gray-400/50 dark:border-gray-500/50
       `}
     >
       {/* スライドする丸いノブ */}
