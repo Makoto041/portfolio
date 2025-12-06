@@ -26,13 +26,13 @@ export default function MobileHeader() {
       <header
         className="md:hidden sticky top-0 z-40 h-14 px-4 flex items-center justify-between
              rounded-b-[var(--radius-m)] backdrop-blur-[var(--blur-m)]
-             border-b border-gray-200 dark:border-gray-700
-             bg-white/95 dark:bg-gray-900/95 drop-shadow-lg
+             border-b border-[color:var(--glass-border)]
+             bg-[color:var(--bg-base)] drop-shadow-lg
              shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
       >
         <Link
           href="/"
-          className="font-semibold tracking-[0.14em] text-neutral-900 dark:text-neutral-100 hover:opacity-90 transition-opacity"
+          className="font-semibold tracking-[0.14em] text-[color:var(--fg-base)] hover:opacity-90 transition-opacity"
         >
           IWABUCHI
         </Link>
@@ -45,7 +45,7 @@ export default function MobileHeader() {
           <button
             aria-label="open menu"
             onClick={() => setOpen(!open)}
-            className="relative w-8 h-8 text-neutral-900 dark:text-neutral-100"
+            className="relative w-8 h-8 text-[color:var(--fg-base)]"
           >
           {/* top line */}
           <span
@@ -85,7 +85,8 @@ export default function MobileHeader() {
           <ul
             className={clsx(
               'absolute top-14 left-0 w-64 h-[calc(100%-3.5rem)] p-8',
-              'bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg rounded-r-2xl shadow-2xl flex flex-col gap-6',
+              'bg-[color:var(--bg-base)] backdrop-blur-lg rounded-r-2xl shadow-2xl flex flex-col gap-6',
+              'border-r border-[color:var(--glass-border)]',
               'transition-transform duration-300', // スライド
               open ? 'translate-x-0' : '-translate-x-full',
             )}
@@ -95,7 +96,7 @@ export default function MobileHeader() {
               <li key={href}>
                 <Link
                   href={href}
-                  className="flex items-center text-lg py-1.5 font-medium tracking-wide text-gray-800 dark:text-neutral-100 hover:opacity-90 transition-opacity"
+                  className="flex items-center text-lg py-1.5 font-medium tracking-wide text-[color:var(--fg-base)] hover:opacity-90 transition-opacity"
                   onClick={() => setOpen(false)}
                 >
                   <Icon size={18} className="inline mr-2" />
@@ -109,7 +110,7 @@ export default function MobileHeader() {
                 href="https://x.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-700 dark:text-neutral-300 hover:opacity-100"
+                className="text-[color:var(--fg-base)] hover:opacity-100"
               >
                 X
               </a>
@@ -117,7 +118,7 @@ export default function MobileHeader() {
                 href="https://instagram.com/makoto0140"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-700 dark:text-neutral-300 hover:opacity-100"
+                className="text-[color:var(--fg-base)] hover:opacity-100"
               >
                 IG
               </a>
