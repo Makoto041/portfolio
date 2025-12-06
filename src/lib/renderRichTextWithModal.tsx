@@ -161,8 +161,6 @@ export function RenderRichTextWithModal({ nodes = [], keyPrefix = 'rt' }: { node
       <ImageModal
         src={modalImage?.src || ''}
         alt={modalImage?.alt || ''}
-        width={modalImage?.width}
-        height={modalImage?.height}
         isOpen={!!modalImage}
         onClose={() => setModalImage(null)}
       />
