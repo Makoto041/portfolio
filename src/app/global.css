@@ -69,6 +69,11 @@
   --glass-border: var(--glass-border-light);
   --bg-base: var(--bg-light);
   --fg-base: var(--fg-light);
+  /* カード背景・ボーダー */
+  --card-bg: rgb(255 255 255 / 0.6);
+  --card-bg-hover: rgb(255 255 255 / 0.75);
+  --card-border: rgb(229 231 235 / 0.4);
+  --card-border-hover: rgb(229 231 235 / 0.6);
 }
 
 /* システム設定がダークモード（ユーザー選択がない場合のみ） */
@@ -78,6 +83,11 @@
     --glass-border: var(--glass-border-dark);
     --bg-base: var(--bg-dark);
     --fg-base: var(--fg-dark);
+    /* カード背景・ボーダー */
+    --card-bg: rgb(31 41 55 / 0.4);
+    --card-bg-hover: rgb(31 41 55 / 0.6);
+    --card-border: rgb(75 85 99 / 0.3);
+    --card-border-hover: rgb(75 85 99 / 0.5);
   }
 }
 
@@ -87,6 +97,11 @@
   --glass-border: var(--glass-border-light);
   --bg-base: var(--bg-light);
   --fg-base: var(--fg-light);
+  /* カード背景・ボーダー */
+  --card-bg: rgb(255 255 255 / 0.6);
+  --card-bg-hover: rgb(255 255 255 / 0.75);
+  --card-border: rgb(229 231 235 / 0.4);
+  --card-border-hover: rgb(229 231 235 / 0.6);
 }
 
 /* ユーザーが明示的にダークを選択 */
@@ -95,6 +110,11 @@
   --glass-border: var(--glass-border-dark);
   --bg-base: var(--bg-dark);
   --fg-base: var(--fg-dark);
+  /* カード背景・ボーダー */
+  --card-bg: rgb(31 41 55 / 0.4);
+  --card-bg-hover: rgb(31 41 55 / 0.6);
+  --card-border: rgb(75 85 99 / 0.3);
+  --card-border-hover: rgb(75 85 99 / 0.5);
 }
 
 /* === UTILITIES ================================= */
@@ -119,6 +139,16 @@ body {
          text-[color:var(--fg-base)]
          antialiased selection:bg-[color:var(--accent)/.35];
   background-size: auto;
+}
+
+/* リンク内のテキストカラーをリセット */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
 }
 
 /* ノイズと同系色を軽く被せる */

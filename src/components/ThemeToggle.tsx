@@ -86,11 +86,11 @@ export default function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
       <div className="absolute inset-0 flex items-center justify-between px-2">
         <Sun
           size={variant === 'mobile' ? 12 : 14}
-          className={`transition-opacity ${theme === 'light' ? 'opacity-0' : 'opacity-40'} text-yellow-300`}
+          className={`transition-opacity ${theme === 'light' ? 'opacity-0' : 'opacity-40'} text-yellow-400 dark:text-yellow-300`}
         />
         <Moon
           size={variant === 'mobile' ? 12 : 14}
-          className={`transition-opacity ${theme === 'dark' ? 'opacity-0' : 'opacity-40'} text-blue-300`}
+          className={`transition-opacity ${theme === 'dark' ? 'opacity-0' : 'opacity-40'} text-blue-400 dark:text-blue-300`}
         />
       </div>
     </button>
