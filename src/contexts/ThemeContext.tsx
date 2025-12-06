@@ -36,13 +36,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light')
 
   useEffect(() => {
-    // 初回マウント時: localStorage → システム設定の優先順位で決定
+    // 初回マウント時の処理
     const storedTheme = safeLocalStorage.getItem('theme') as Theme | null
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    const initialTheme = storedTheme || systemTheme
 
-    setThemeState(initialTheme)
-    applyTheme(initialTheme)
+    if (storedTheme) {
+      // ユーザーが過去に選択している場合はそれを使う
+      setThemeState(storedTheme)
+      applyTheme(storedTheme)
+    } else {
+      // 初回訪問: システム設定を読み取るがクラスは付けない
+      setThemeState(systemTheme)
+      // applyTheme()を呼ばない → CSSの@mediaに任せる
+    }
 
     // システム設定変更の監視（ユーザーが手動設定していない場合のみ反映）
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -51,7 +57,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (!safeLocalStorage.getItem('theme')) {
         const newTheme = e.matches ? 'dark' : 'light'
         setThemeState(newTheme)
-        applyTheme(newTheme)
+        // クラスは付けない → CSSの@mediaに任せる
       }
     }
 

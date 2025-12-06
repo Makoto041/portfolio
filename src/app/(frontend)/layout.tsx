@@ -67,15 +67,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{
             __html: `(()=>{try{
               const stored = localStorage.getItem('theme');
-              const systemDark = matchMedia('(prefers-color-scheme:dark)').matches;
               const root = document.documentElement;
-              if (stored === 'dark' || (!stored && systemDark)) {
+              // ユーザーが選択している場合のみクラスを付与
+              if (stored === 'dark') {
                 root.classList.add('dark');
                 root.classList.remove('light');
-              } else {
+              } else if (stored === 'light') {
                 root.classList.add('light');
                 root.classList.remove('dark');
               }
+              // storedがnullの場合はクラスを付けず、システム設定に従う
             }catch(e){}})()`,
           }}
         />

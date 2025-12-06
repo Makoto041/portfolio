@@ -71,9 +71,9 @@
   --fg-base: var(--fg-light);
 }
 
-/* システム設定がダークモード＆.darkクラスなし */
+/* システム設定がダークモード（ユーザー選択がない場合のみ） */
 @media (prefers-color-scheme: dark) {
-  :root:not(.dark) {
+  :root:not(.light):not(.dark) {
     --glass-surface: var(--glass-surface-dark);
     --glass-border: var(--glass-border-dark);
     --bg-base: var(--bg-dark);
@@ -81,7 +81,15 @@
   }
 }
 
-/* .darkクラスが付与されている場合（ユーザー選択で最優先） */
+/* ユーザーが明示的にライトを選択 */
+.light {
+  --glass-surface: var(--glass-surface-light);
+  --glass-border: var(--glass-border-light);
+  --bg-base: var(--bg-light);
+  --fg-base: var(--fg-light);
+}
+
+/* ユーザーが明示的にダークを選択 */
 .dark {
   --glass-surface: var(--glass-surface-dark);
   --glass-border: var(--glass-border-dark);
