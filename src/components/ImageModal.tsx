@@ -3,50 +3,57 @@
 import React from 'react'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
+import { toCFUrl } from '@/lib/cfUrl'
 
 interface ImageModalProps {
   src: string
-  alt: string
-  width?: number
-  height?: number
+  alt?: string
   isOpen: boolean
   onClose: () => void
 }
 
-export default function ImageModal({ src, alt, width, height, isOpen, onClose }: ImageModalProps) {
+export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModalProps) {
   if (!isOpen || typeof window === 'undefined') return null
 
   const modalContent = (
-    <div 
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-75 p-4"
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center"
       onClick={onClose}
-      style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
         bottom: 0,
-        zIndex: 9999
+        zIndex: 9999,
+        transform: 'none',
+        zoom: 1
       }}
     >
-      <div 
-        className="relative max-w-[90vw] max-h-[90vh] overflow-hidden rounded-lg"
+      <div
+        className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
+        style={{ transform: 'none', zoom: 1 }}
       >
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 z-10 w-8 h-8 bg-black bg-opacity-50 text-white rounded-full flex items-center justify-center hover:bg-opacity-75 transition-all"
-        >
-          ✕
-        </button>
+        {/* 拡大画像 */}
         <Image
-          src={src}
+          src={toCFUrl(src)}
           alt={alt}
-          width={width || 1200}
-          height={height || 800}
-          className="max-w-full max-h-full object-contain"
-          sizes="90vw"
+          width={800}
+          height={600}
+          sizes="92vw"
+          className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain bg-white/5 backdrop-blur-lg p-1"
+          style={{ transform: 'none', zoom: 1 }}
         />
+
+        {/* PC表示ではモーダル右上に、スマホでは画像から十分離して表示 */}
+        <button
+          className="md:absolute md:top-3 md:right-3 w-10 h-10 flex items-center justify-center border-0 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 text-xl font-light cursor-pointer select-none focus:outline-none transition z-50 mt-8 md:mt-0 shadow-md"
+          onClick={onClose}
+          style={{ transform: 'none', zoom: 1 }}
+        >
+          ×
+        </button>
       </div>
     </div>
   )

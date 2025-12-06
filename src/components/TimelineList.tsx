@@ -6,6 +6,7 @@ import LocalDate from '@/components/LocalDate'
 import LikeButton from '@/components/LikeButton'
 import RichTextRenderer from '@/components/RichTextRenderer'
 import UrlPreview from '@/components/UrlPreview'
+import ImageModal from '@/components/ImageModal'
 import { toCFUrl } from '@/lib/cfUrl'
 import type { TimelineDoc } from '@/lib/payloadTypes'
 
@@ -47,46 +48,13 @@ export default function TimelineList({ initialTimeline }: TimelineListProps) {
 
   return (
     <>
-      {/* モーダルは全体の一番上で一度だけ表示 */}
-      {modalImg && (
-        <div
-          className="fixed inset-0 bg-black/75 z-[9999] flex items-center justify-center p-4"
-          onClick={() => setModalImg(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-            transform: 'none',
-            zoom: 1
-          }}
-        >
-          <div
-            className="relative flex flex-col items-center max-w-[90vw] max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-            style={{ transform: 'none', zoom: 1 }}
-          >
-            <Image
-              src={toCFUrl(modalImg)}
-              alt="timeline-modal-img"
-              width={800}
-              height={600}
-              sizes="90vw"
-              className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain"
-              style={{ transform: 'none', zoom: 1 }}
-            />
-            <button
-              className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/75 text-white text-lg cursor-pointer focus:outline-none transition"
-              onClick={() => setModalImg(null)}
-              style={{ transform: 'none', zoom: 1 }}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 画像モーダル */}
+      <ImageModal
+        src={modalImg ?? ''}
+        alt="timeline-modal-img"
+        isOpen={!!modalImg}
+        onClose={() => setModalImg(null)}
+      />
 
       {/* 日付ごとにグループ化して表示 */}
       <div>
