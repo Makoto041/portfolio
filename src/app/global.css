@@ -63,21 +63,30 @@
 }
 
 /* light / dark 切替 */
-@media (prefers-color-scheme: light) {
-  :root {
-    --glass-surface: var(--glass-surface-light);
-    --glass-border: var(--glass-border-light);
-    --bg-base: var(--bg-light);
-    --fg-base: var(--fg-light);
-  }
+/* デフォルト: ライトモード */
+:root {
+  --glass-surface: var(--glass-surface-light);
+  --glass-border: var(--glass-border-light);
+  --bg-base: var(--bg-light);
+  --fg-base: var(--fg-light);
 }
+
+/* システム設定がダークモード＆.darkクラスなし */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.dark) {
     --glass-surface: var(--glass-surface-dark);
     --glass-border: var(--glass-border-dark);
     --bg-base: var(--bg-dark);
     --fg-base: var(--fg-dark);
   }
+}
+
+/* .darkクラスが付与されている場合（ユーザー選択で最優先） */
+.dark {
+  --glass-surface: var(--glass-surface-dark);
+  --glass-border: var(--glass-border-dark);
+  --bg-base: var(--bg-dark);
+  --fg-base: var(--fg-dark);
 }
 
 /* === UTILITIES ================================= */

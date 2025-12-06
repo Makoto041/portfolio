@@ -61,9 +61,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement
+    // .darkクラスを追加/削除してテーマを切り替え
+    // CSS側で.darkクラスの有無でカスタムプロパティを制御
     if (newTheme === 'dark') {
       root.classList.add('dark')
+      root.classList.remove('light')
     } else {
+      root.classList.add('light')
       root.classList.remove('dark')
     }
   }
