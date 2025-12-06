@@ -42,7 +42,7 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
 
       {/* 画像モーダル */}
       <ImageModal
-        src={selected?.url ?? selected?.image?.url ?? ''}
+        src={selected?.url ?? selected?.image?.url ?? selected?.sizes?.thumbnail?.url ?? '/fallback.jpg'}
         alt={selected?.alt ?? ''}
         isOpen={!!selected}
         onClose={() => setSelected(null)}
