@@ -44,6 +44,9 @@ importers:
       cross-env:
         specifier: ^7.0.3
         version: 7.0.3
+      date-fns:
+        specifier: 3.6.0
+        version: 3.6.0
       esbuild:
         specifier: ^0.25.4
         version: 0.25.12
