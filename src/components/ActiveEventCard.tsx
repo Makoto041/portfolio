@@ -7,48 +7,28 @@ import { toCFUrl } from '@/lib/cfUrl'
 const platformConfig = {
   twitch: {
     name: 'Twitch',
-    color: 'bg-purple-500',
-    textColor: 'text-purple-700',
-    bgColor: 'bg-purple-50',
-    darkColor: 'bg-purple-700',
-    darkTextColor: 'text-purple-300',
-    darkBgColor: 'bg-purple-900/20',
+    badgeClass: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300',
+    dotClass: 'bg-purple-500 dark:bg-purple-400',
   },
   youtube: {
     name: 'YouTube',
-    color: 'bg-red-500',
-    textColor: 'text-red-700',
-    bgColor: 'bg-red-50',
-    darkColor: 'bg-red-700',
-    darkTextColor: 'text-red-300',
-    darkBgColor: 'bg-red-900/20',
+    badgeClass: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300',
+    dotClass: 'bg-red-500 dark:bg-red-400',
   },
   nico: {
     name: 'ニコニコ',
-    color: 'bg-orange-500',
-    textColor: 'text-orange-700',
-    bgColor: 'bg-orange-50',
-    darkColor: 'bg-orange-700',
-    darkTextColor: 'text-orange-300',
-    darkBgColor: 'bg-orange-900/20',
+    badgeClass: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300',
+    dotClass: 'bg-orange-500 dark:bg-orange-400',
   },
   offline: {
     name: '現地イベント',
-    color: 'bg-green-500',
-    textColor: 'text-green-700',
-    bgColor: 'bg-green-50',
-    darkColor: 'bg-green-700',
-    darkTextColor: 'text-green-300',
-    darkBgColor: 'bg-green-900/20',
+    badgeClass: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300',
+    dotClass: 'bg-green-500 dark:bg-green-400',
   },
   other: {
     name: 'その他',
-    color: 'bg-gray-500',
-    textColor: 'text-gray-700',
-    bgColor: 'bg-gray-50',
-    darkColor: 'bg-gray-700',
-    darkTextColor: 'text-gray-300',
-    darkBgColor: 'bg-gray-900/20',
+    badgeClass: 'bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300',
+    dotClass: 'bg-gray-500 dark:bg-gray-400',
   },
 }
 
@@ -92,7 +72,7 @@ export default function ActiveEventCard({ event, cardClass }: ActiveEventCardPro
       <a
         href={href}
         target={event.externalUrl ? '_blank' : undefined}
-        className={`block mb-6 rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm shadow-sm relative overflow-hidden h-24 sm:h-32 hover:shadow-md transition-all duration-300 ${cardClass}`}
+        className={`card-link block mb-6 rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-bg)] backdrop-blur-sm shadow-sm relative overflow-hidden h-24 sm:h-32 hover:shadow-md transition-all duration-300 ${cardClass}`}
       >
         <div className="flex h-full">
           {/* Thumbnail - カード全体サイズに合わせる */}
@@ -115,15 +95,13 @@ export default function ActiveEventCard({ event, cardClass }: ActiveEventCardPro
               <Bell size={10} className="text-blue-500" />
               <span className="text-xs text-blue-600 font-medium">予定</span>
               <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-xs font-bold shadow-sm bg-opacity-50 text-opacity-90 ${platform.bgColor} dark:${platform.darkBgColor} ${platform.textColor} dark:${platform.darkTextColor} transition-colors duration-200`}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-xs font-bold shadow-sm transition-colors duration-200 ${platform.badgeClass}`}
               >
-                <span
-                  className={`w-2 h-2 rounded-full mr-1 ${platform.color} dark:${platform.darkColor}`}
-                />
+                <span className={`w-2 h-2 rounded-full mr-1 ${platform.dotClass}`} />
                 {platform.name}
               </span>
             </div>
-            <h3 className="text-lg sm:text-base font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">
+            <h3 className="text-lg sm:text-base font-semibold text-gray-900 dark:!text-gray-100 line-clamp-2 mb-1">
               {event.title}
             </h3>
             <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-1">
@@ -148,6 +126,7 @@ export default function ActiveEventCard({ event, cardClass }: ActiveEventCardPro
       href={href}
       target={event.externalUrl ? '_blank' : undefined}
       className={`
+      card-link
       block mb-6 rounded-xl border-2
       border-red-400/60 dark:border-red-700/60
       bg-gradient-to-r from-red-50/90 to-pink-50/90
@@ -198,15 +177,9 @@ export default function ActiveEventCard({ event, cardClass }: ActiveEventCardPro
                 配信中
               </div>
               <span
-                className={`
-              inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium
-              ${platform.textColor} ${platform.bgColor} dark:${platform.darkTextColor} dark:${platform.darkBgColor} border
-              dark:border-gray-600
-            `}
+                className={`inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium border dark:border-gray-600 ${platform.badgeClass}`}
               >
-                <div
-                  className={`w-1 h-1 rounded-full ${platform.color} dark:${platform.darkColor} mr-1`}
-                />
+                <div className={`w-1 h-1 rounded-full mr-1 ${platform.dotClass}`} />
                 {platform.name}
               </span>
             </div>
@@ -214,7 +187,7 @@ export default function ActiveEventCard({ event, cardClass }: ActiveEventCardPro
             {/* Title */}
             <h2
               className="
-            text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100
+            text-base sm:text-lg font-bold !text-gray-900 dark:!text-gray-100
             mb-1 leading-tight line-clamp-2
           "
             >
