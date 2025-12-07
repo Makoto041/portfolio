@@ -52,7 +52,7 @@ export default function SideNav() {
 
         {/* SNS Links */}
         <div className="flex gap-5 opacity-70 justify-center">
-          <a href="https://x.com/" target="_blank" rel="noopener noreferrer" className="hover:opacity-100">
+          <a href="https://x.com/613_kmk" target="_blank" rel="noopener noreferrer" className="hover:opacity-100">
             X
           </a>
           <a href="https://instagram.com/makoto0140" target="_blank" rel="noopener noreferrer" className="hover:opacity-100">
