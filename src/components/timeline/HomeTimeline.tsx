@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { TimelineDoc } from '@/lib/payloadTypes'
-import LocalDate from '@/components/LocalDate'
-import LikeButton from '@/components/LikeButton'
+import LocalDate from '@/components/shared/LocalDate'
+import LikeButton from '@/components/timeline/LikeButton'
 import { toCFUrl } from '@/lib/cfUrl'
 import Image from 'next/image'
-import RichTextRenderer from '@/components/RichTextRenderer'
-import UrlPreview from '@/components/UrlPreview'
+import RichTextRenderer from '@/components/shared/RichTextRenderer'
+import UrlPreview from '@/components/shared/UrlPreview'
 
 type HomeTimelineProps = {
   timelineData: TimelineDoc[]

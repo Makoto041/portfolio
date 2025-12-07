@@ -3,9 +3,9 @@
 // ───────────────────────────────────────────
 
 import type { Metadata } from 'next'
-import Breadcrumb from '@/components/Breadcrumb'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 import { fetchLatest } from '@/lib/payload'
-import GalleryGrid from '@/components/GalleryGridMain'
+import GalleryGrid from '@/components/gallery/GalleryGridMain'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0

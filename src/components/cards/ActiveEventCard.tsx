@@ -32,7 +32,7 @@ const platformConfig = {
   },
 }
 
-import { formatEventDateWithExtendedHour } from './formatEventDateWithExtendedHour'
+import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
 
 function getEventStatus(startDate: string, endDate?: string | null) {
   const now = new Date()

@@ -3,7 +3,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import ThemeToggle from './ThemeToggle'
+import ThemeToggle from '@/components/ThemeToggle'
 const NAV = [
   { label: 'Timeline', href: '/timeline' },
   { label: 'Blog', href: '/posts' },

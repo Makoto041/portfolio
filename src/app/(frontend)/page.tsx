@@ -4,16 +4,16 @@ export const revalidate = 60
 
 import Link from 'next/link'
 import { Analytics } from '@vercel/analytics/next'
-import WeatherWidgetClient from '@/components/WeatherWidgetClient'
+import WeatherWidgetClient from '@/components/widgets/WeatherWidgetClient'
 import { fetchLatest } from '@/lib/payload'
 import { getActiveEvent } from '@/lib/getActiveEvent'
-import ActiveEventCard from '@/components/ActiveEventCard'
+import ActiveEventCard from '@/components/cards/ActiveEventCard'
 import type { TimelineDoc, MediaDoc, BlogPost } from '@/lib/payloadTypes'
 import type { Event } from '@/payload-types'
-import Breadcrumb from '@/components/Breadcrumb'
-import MemoGrid from '@/components/MemoGrid'
-import GalleryGrid from '@/components/GalleryGrid'
-import HomeTimeline from '@/components/HomeTimeline'
+import Breadcrumb from '@/components/layout/Breadcrumb'
+import MemoGrid from '@/components/shared/MemoGrid'
+import GalleryGrid from '@/components/gallery/GalleryGrid'
+import HomeTimeline from '@/components/timeline/HomeTimeline'
 
 export const metadata = {
   title: 'いわぶちまこと - ポートフォリオ',

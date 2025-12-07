@@ -1,7 +1,7 @@
 'use client'
 import nextDynamic from 'next/dynamic'
 
-const WeatherWidget = nextDynamic(() => import('@/components/WeatherWidget'), {
+const WeatherWidget = nextDynamic(() => import('@/components/widgets/WeatherWidget'), {
   ssr: false,
   loading: () => null,
 })

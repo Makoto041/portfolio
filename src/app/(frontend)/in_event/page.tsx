@@ -1,6 +1,6 @@
 import { fetchInEvent } from '@/lib/fetchInEvent'
-import EventCard from '@/components/EventCard'
-import Breadcrumb from '@/components/Breadcrumb'
+import EventCard from '@/components/cards/EventCard'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 
 export const metadata = { title: 'イベント一覧 - いわぶちまこと' }
 export const dynamic = 'force-dynamic'

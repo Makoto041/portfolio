@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import Breadcrumb from '@/components/Breadcrumb'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 
 const WRAP = 'mx-auto w-full max-w-[28rem] px-5 sm:px-8 section-pad flex justify-center'
 const CARD = 'glass p-8 flex flex-col gap-4 w-full'

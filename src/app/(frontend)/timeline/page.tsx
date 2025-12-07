@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Breadcrumb from '@/components/Breadcrumb'
-import WeatherWidgetClient from '@/components/WeatherWidgetClient'
-import TimelineList from '@/components/TimelineList'
+import Breadcrumb from '@/components/layout/Breadcrumb'
+import WeatherWidgetClient from '@/components/widgets/WeatherWidgetClient'
+import TimelineList from '@/components/timeline/TimelineList'
 import { fetchLatest } from '@/lib/payload'
 
 export const dynamic = 'force-dynamic'

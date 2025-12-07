@@ -5,7 +5,7 @@ export const revalidate = 0
 
 import type { Metadata } from 'next'
 import { fetchLatest } from '@/lib/payload'
-import Breadcrumb from '@/components/Breadcrumb'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 import { Suspense } from 'react'
 import PostsList from './PostsList'
 import PostsListLoading from './PostsListLoading'
