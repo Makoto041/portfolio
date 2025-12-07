@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 import clsx from 'clsx'
 import { BookText, StickyNote, Image as ImageIcon, User, Mail, Disc3, Pen } from 'lucide-react'
-import ThemeToggle from './ThemeToggle'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const NAV = [
   { label: 'Timeline', href: '/timeline', icon: BookText },
