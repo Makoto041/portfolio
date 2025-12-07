@@ -2,6 +2,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import ThemeToggle from './ThemeToggle'
 const NAV = [
   { label: 'Timeline', href: '/timeline' },
@@ -14,6 +15,8 @@ const NAV = [
 ] as const
 
 export default function SideNav() {
+  const pathname = usePathname()
+
   return (
     <aside className="hidden md:flex flex-col justify-between w-56 p-10 sticky top-0 h-screen glass backdrop-saturate-150 text-[color:var(--fg-base)]">
       <div className="space-y-6">
@@ -23,11 +26,22 @@ export default function SideNav() {
       </div>
 
       <nav className="space-y-6 text-sm">
-        {NAV.map(({ href, label }) => (
-          <Link key={href} href={href} className="block opacity-70 hover:opacity-100">
-            {label}
-          </Link>
-        ))}
+        {NAV.map(({ href, label }) => {
+          const isActive = pathname === href || pathname?.startsWith(href + '/')
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`block transition-all ${
+                isActive
+                  ? 'opacity-100 font-semibold'
+                  : 'opacity-70 font-normal hover:opacity-100'
+              }`}
+            >
+              {label}
+            </Link>
+          )
+        })}
       </nav>
 
       <div className="space-y-4">
