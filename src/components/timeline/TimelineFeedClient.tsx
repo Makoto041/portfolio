@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { TimelineDoc } from '@/lib/payloadTypes'
-import LocalDate from '@/components/LocalDate'
-import LikeButton from '@/components/LikeButton'
-import RichTextRenderer from '@/components/RichTextRenderer'
+import LocalDate from '@/components/shared/LocalDate'
+import LikeButton from '@/components/timeline/LikeButton'
+import RichTextRenderer from '@/components/shared/RichTextRenderer'
 import { toCFUrl } from '@/lib/cfUrl'
 
 type TimelineFeedProps = {

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { toCFUrl } from '@/lib/cfUrl'
-import ImageModal from './ImageModal'
+import ImageModal from '@/components/gallery/ImageModal'
 
 interface RichTextNode {
   children?: RichTextNode[]

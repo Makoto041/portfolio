@@ -10,7 +10,7 @@ import { getPayloadClient } from '@/lib/payloadClient'
 import { toCFUrl } from '@/lib/cfUrl'
 import type { BlogPost } from '@/lib/payloadTypes'
 import { RenderRichTextWithModal } from '@/lib/renderRichTextWithModal'
-import Breadcrumb from '@/components/Breadcrumb'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params

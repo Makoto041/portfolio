@@ -2,8 +2,8 @@
 import '../global.css'
 import type { Metadata } from 'next'
 import React from 'react'
-import SideNav from '@/components/SideNav'
-import MobileHeader from '@/components/MobileHeader'
+import SideNav from '@/components/layout/SideNav'
+import MobileHeader from '@/components/layout/MobileHeader'
 import { toCFUrl } from '@/lib/cfUrl'
 
 export const metadata: Metadata = {

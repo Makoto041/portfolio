@@ -53,7 +53,7 @@ const platformConfig = {
   },
 }
 
-import { formatEventDateWithExtendedHour } from './formatEventDateWithExtendedHour'
+import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
 
 
 export default function EventCard({ e }: { e: Event }) {

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { fetchProducts } from '@/lib/fetchProducts'
-import ProductCard from '@/components/ProductCard'
-import Breadcrumb from '@/components/Breadcrumb'
+import ProductCard from '@/components/cards/ProductCard'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 
 export const metadata: Metadata = {
   title: 'プロダクト | いわぶちまこと',

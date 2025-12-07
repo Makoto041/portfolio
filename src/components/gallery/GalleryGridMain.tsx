@@ -6,7 +6,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { toCFUrl } from '@/lib/cfUrl'
-import ImageModal from '@/components/ImageModal'
+import ImageModal from '@/components/gallery/ImageModal'
 import type { MediaDoc } from '@/lib/payloadTypes'
 
 export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
