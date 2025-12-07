@@ -5,6 +5,7 @@ import Link from 'next/link'
 
 import clsx from 'clsx'
 import { BookText, StickyNote, Image as ImageIcon, User, Mail, Disc3, Pen } from 'lucide-react'
+import ThemeToggle from './ThemeToggle'
 
 const NAV = [
   { label: 'Timeline', href: '/timeline', icon: BookText },
@@ -26,21 +27,28 @@ export default function MobileHeader() {
         className="md:hidden sticky top-0 z-40 h-14 px-4 flex items-center justify-between
              rounded-b-[var(--radius-m)] backdrop-blur-[var(--blur-m)]
              border-b border-[color:var(--glass-border)]
-             bg-[color:var(--bg-base)/.85] dark:bg-[color:var(--bg-base-dark)/.85] text-white drop-shadow-lg
-             shadow-[0_4px_12px_rgba(0,0,0,0.08)]"
+             bg-[color:var(--bg-base)] drop-shadow-lg
+             shadow-[0_4px_12px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)]"
       >
         <Link
           href="/"
-          className="font-semibold tracking-[0.14em] text-neutral-900 dark:text-neutral-100 hover:opacity-90 transition-opacity"
+          className="font-semibold tracking-[0.14em] text-[color:var(--fg-base)] hover:opacity-90 transition-opacity"
         >
           IWABUCHI
         </Link>
-        {/* hamburger */}
-        <button
-          aria-label="open menu"
-          onClick={() => setOpen(!open)}
-          className="relative w-8 h-8 text-neutral-900 dark:text-neutral-100"
-        >
+
+        {/* Right side: Theme toggle + Hamburger */}
+        <div className="flex items-center gap-3">
+          <ThemeToggle variant="mobile" />
+
+          {/* hamburger */}
+          <button
+            aria-label={open ? 'close menu' : 'open menu'}
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            onClick={() => setOpen(!open)}
+            className="relative w-8 h-8 text-[color:var(--fg-base)]"
+          >
           {/* top line */}
           <span
             className={clsx(
@@ -62,12 +70,14 @@ export default function MobileHeader() {
               open && '-rotate-45 -translate-y-[8px]',
             )}
           />
-        </button>
+          </button>
+        </div>
       </header>
 
       {/* ── Drawer ────────────────────────────── */}
       {open && (
         <nav
+          id="mobile-menu"
           className={clsx(
             'fixed inset-0 z-40 bg-gray-600/30 backdrop-blur-md',
             'transition-opacity duration-300', // フェード
@@ -78,7 +88,8 @@ export default function MobileHeader() {
           <ul
             className={clsx(
               'absolute top-14 left-0 w-64 h-[calc(100%-3.5rem)] p-8',
-              'bg-gray-700/75 backdrop-blur-lg dark:bg-[color:var(--bg-base-dark)/.92] rounded-r-2xl shadow-2xl flex flex-col gap-6',
+              'bg-[color:var(--bg-base)] backdrop-blur-lg rounded-r-2xl shadow-2xl flex flex-col gap-6',
+              'border-r border-[color:var(--glass-border)]',
               'transition-transform duration-300', // スライド
               open ? 'translate-x-0' : '-translate-x-full',
             )}
@@ -88,7 +99,7 @@ export default function MobileHeader() {
               <li key={href}>
                 <Link
                   href={href}
-                  className="flex items-center text-lg py-1.5 font-medium tracking-wide text-white dark:text-neutral-100 text-thin-shadow hover:opacity-90 transition-opacity"
+                  className="flex items-center text-lg py-1.5 font-medium tracking-wide text-[color:var(--fg-base)] hover:opacity-90 transition-opacity"
                   onClick={() => setOpen(false)}
                 >
                   <Icon size={18} className="inline mr-2" />
@@ -102,7 +113,7 @@ export default function MobileHeader() {
                 href="https://x.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white dark:text-neutral-100 hover:opacity-100"
+                className="text-[color:var(--fg-base)] hover:opacity-100"
               >
                 X
               </a>
@@ -110,7 +121,7 @@ export default function MobileHeader() {
                 href="https://instagram.com/makoto0140"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-white dark:text-neutral-100 hover:opacity-100"
+                className="text-[color:var(--fg-base)] hover:opacity-100"
               >
                 IG
               </a>

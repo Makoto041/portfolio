@@ -5,6 +5,7 @@ import React from 'react'
 import SideNav from '@/components/layout/SideNav'
 import MobileHeader from '@/components/layout/MobileHeader'
 import { toCFUrl } from '@/lib/cfUrl'
+import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
   title: 'いわぶち | 個人ポートフォリオサイト',
@@ -64,8 +65,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="color-scheme" content="light dark" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{if(matchMedia('(prefers-color-scheme:dark)').matches)
-              document.documentElement.classList.add('dark')}catch(e){}})()`,
+            __html: `(()=>{try{
+              const stored = localStorage.getItem('theme');
+              const root = document.documentElement;
+              // ユーザーが選択している場合のみクラスを付与
+              if (stored === 'dark') {
+                root.classList.add('dark');
+                root.classList.remove('light');
+              } else if (stored === 'light') {
+                root.classList.add('light');
+                root.classList.remove('dark');
+              }
+              // storedがnullの場合はクラスを付けず、システム設定に従う
+            }catch(e){}})()`,
           }}
         />
         <script
@@ -127,18 +139,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className="antialiased overflow-x-hidden bg-[color:var(--bg)] text-[color:var(--text)]">
-        {/* ── Mobile header ─────────────────── */}
-        <MobileHeader />
+        <Providers>
+          {/* ── Mobile header ─────────────────── */}
+          <MobileHeader />
 
-        {/* ── Desktop layout ― side + main ── */}
-        <div className="flex">
-          <SideNav />
+          {/* ── Desktop layout ― side + main ── */}
+          <div className="flex">
+            <SideNav />
 
-          <main className="flex-1 min-h-screen">{children}</main>
-        </div>
-        
-        {/* Portal root for modals */}
-        <div id="modal-root"></div>
+            <main className="flex-1 min-h-screen">{children}</main>
+          </div>
+
+          {/* Portal root for modals */}
+          <div id="modal-root"></div>
+        </Providers>
       </body>
     </html>
   )

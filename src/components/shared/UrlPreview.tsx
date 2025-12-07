@@ -44,7 +44,7 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-block border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200 mt-3 ${getWidthClass()}`}
+      className={`card-link inline-block border border-[color:var(--card-border)] rounded-lg p-3 hover:bg-[color:var(--card-bg-hover)] bg-[color:var(--card-bg)] transition-all duration-200 mt-3 ${getWidthClass()}`}
     >
       <div className="flex gap-3 min-w-0">
         {hasImage && (
@@ -67,18 +67,18 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
         )}
         <div className="min-w-0 flex-1">
           {hasTitle && (
-            <h3 className="font-medium text-sm text-gray-900 dark:text-gray-100 leading-tight mb-1 break-words">
+            <h3 className="font-medium text-sm text-gray-900 dark:text-white leading-tight mb-1 break-words">
               {metadata.title}
             </h3>
           )}
           {hasDescription && (
-            <p className="text-xs text-gray-600 dark:text-gray-400 leading-tight mb-2 break-words line-clamp-2">
+            <p className="text-xs text-gray-600 dark:text-gray-300 leading-tight mb-2 break-words line-clamp-2">
               {metadata.description}
             </p>
           )}
-          <div className="flex items-start text-xs text-gray-500 dark:text-gray-500 flex-wrap gap-1">
+          <div className="flex items-start text-xs text-gray-500 dark:text-gray-400 flex-wrap gap-1">
             {hasSiteName && (
-              <span className="font-medium text-gray-600 dark:text-gray-400">
+              <span className="font-medium text-gray-600 dark:text-gray-300">
                 {metadata.siteName}
               </span>
             )}
