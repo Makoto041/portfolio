@@ -67,7 +67,7 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
         )}
         <div className="min-w-0 flex-1">
           {hasTitle && (
-            <h3 className="font-medium text-sm dark:!text-white leading-tight mb-1 break-words">
+            <h3 className="font-medium text-sm text-gray-900 dark:text-white leading-tight mb-1 break-words">
               {metadata.title}
             </h3>
           )}
