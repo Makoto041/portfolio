@@ -32,7 +32,8 @@
       "Bash(gh pr view:*)",
       "Read(//Users/makoto/Github/**)",
       "Bash(gh pr close:*)",
-      "Bash(gh pr list:*)"
+      "Bash(gh pr list:*)",
+      "Bash(pnpm run build:*)"
     ],
     "deny": []
   }
