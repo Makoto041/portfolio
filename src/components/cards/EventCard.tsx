@@ -45,7 +45,6 @@ export default function EventCard({ e }: { e: Event }) {
     <Link
       href={e.externalUrl || `/events/${e.slug}`}
       target={e.externalUrl ? '_blank' : undefined}
-      className="card-link"
     >
       <article
         className={`
@@ -97,7 +96,7 @@ export default function EventCard({ e }: { e: Event }) {
   {platform.name}
 </span>
             {e.externalUrl && (
-              <ExternalLink size={16} className="!text-gray-400 group-hover:!text-blue-500 transition-colors duration-300" strokeWidth={1.5} />
+              <ExternalLink size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors duration-300" strokeWidth={1.5} />
             )}
           </div>
           
@@ -105,8 +104,8 @@ export default function EventCard({ e }: { e: Event }) {
           <h3
             className="
               font-bold text-xl leading-tight
-              !text-gray-900 dark:!text-white
-              group-hover:!text-blue-600 dark:group-hover:!text-blue-400
+              text-gray-900 dark:text-white
+              group-hover:text-blue-600 dark:group-hover:text-blue-400
               transition-colors duration-300
               line-clamp-2
             "
@@ -116,7 +115,7 @@ export default function EventCard({ e }: { e: Event }) {
 
           {/* Summary */}
           {e.summary && (
-            <p className="!text-gray-600 dark:!text-gray-300 text-sm leading-relaxed line-clamp-2">
+            <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-2">
               {e.summary}
             </p>
           )}
@@ -125,7 +124,7 @@ export default function EventCard({ e }: { e: Event }) {
           <div
             className="
               flex items-center gap-6 text-sm
-              !text-gray-600 dark:!text-gray-100
+              text-gray-600 dark:text-gray-100
               pt-2
               border-t border-gray-300/50 dark:border-gray-600/40
             "
