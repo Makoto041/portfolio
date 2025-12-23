@@ -8,27 +8,27 @@ import { toCFUrl } from '@/lib/cfUrl'
 const platformConfig = {
   twitch: {
     name: 'Twitch',
-    badgeClass: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300',
+    badgeClass: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200',
     dotClass: 'bg-purple-500 dark:bg-purple-400',
   },
   youtube: {
     name: 'YouTube',
-    badgeClass: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300',
+    badgeClass: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-200',
     dotClass: 'bg-red-500 dark:bg-red-400',
   },
   nico: {
     name: 'ニコニコ',
-    badgeClass: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300',
+    badgeClass: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-200',
     dotClass: 'bg-orange-500 dark:bg-orange-400',
   },
   offline: {
     name: '現地イベント',
-    badgeClass: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300',
+    badgeClass: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-200',
     dotClass: 'bg-green-500 dark:bg-green-400',
   },
   other: {
     name: 'その他',
-    badgeClass: 'bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300',
+    badgeClass: 'bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-200',
     dotClass: 'bg-gray-500 dark:bg-gray-400',
   },
 }
@@ -105,8 +105,8 @@ export default function EventCard({ e }: { e: Event }) {
           <h3
             className="
               font-bold text-xl leading-tight
-              text-gray-900 dark:text-white!
-              group-hover:text-blue-600! dark:group-hover:text-blue-400!
+              text-gray-900 dark:text-white
+              group-hover:text-blue-600 dark:group-hover:text-blue-400
               transition-colors duration-300
               line-clamp-2
             "
@@ -125,7 +125,7 @@ export default function EventCard({ e }: { e: Event }) {
           <div
             className="
               flex items-center gap-6 text-sm
-              text-gray-500 dark:text-gray-200
+              text-gray-600 dark:text-gray-100
               pt-2
               border-t border-gray-300/50 dark:border-gray-600/40
             "
