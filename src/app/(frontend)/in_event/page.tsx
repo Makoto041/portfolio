@@ -12,7 +12,7 @@ export default async function InEventPage() {
   const inEvent = await fetchInEvent()
 
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="min-h-screen flex flex-col bg-[color:var(--bg-base)] text-[color:var(--fg-base)]">
       <div className="mt-10 text-gray-400 text-left">
         <Breadcrumb />
       </div>
