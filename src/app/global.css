@@ -197,8 +197,12 @@ p a:focus {
 .card-link,
 nav a,
 header a {
-  color: inherit;
   text-decoration: none;
+}
+
+/* card-link配下でも子要素の色指定を優先 */
+.card-link > * {
+  color: inherit;
 }
 
 .card-link:focus,
