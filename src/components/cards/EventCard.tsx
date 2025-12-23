@@ -45,6 +45,7 @@ export default function EventCard({ e }: { e: Event }) {
     <Link
       href={e.externalUrl || `/events/${e.slug}`}
       target={e.externalUrl ? '_blank' : undefined}
+      className="block no-underline"
     >
       <article
         className={`
@@ -55,6 +56,7 @@ export default function EventCard({ e }: { e: Event }) {
           shadow-lg hover:shadow-xl
           transition-all duration-500
           rounded-2xl overflow-hidden
+          text-gray-900 dark:text-white
         `}
       >
         {/* Live indicator */}
