@@ -17,8 +17,8 @@ export default async function InEventPage() {
         <Breadcrumb />
       </div>
       <section className={WRAP}>
-        <h1 className="text-3xl font-semibold mb-8">Events</h1>
-        {inEvent.length === 0 && <p>現在予定されているイベントはありません。</p>}
+        <h1 className="text-3xl font-semibold mb-8 text-gray-900 dark:text-white">Events</h1>
+        {inEvent.length === 0 && <p className="text-gray-700 dark:text-gray-300">現在予定されているイベントはありません。</p>}
         <div className="grid gap-6 sm:grid-cols-2">
           {inEvent.map((e) => (
             <EventCard key={e.id} e={e} />

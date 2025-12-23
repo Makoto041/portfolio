@@ -105,7 +105,7 @@ export default function EventCard({ e }: { e: Event }) {
           <h3
             className="
               font-bold text-xl leading-tight
-              dark:!text-white
+              text-gray-900 dark:!text-white
               group-hover:!text-blue-600 dark:group-hover:!text-blue-400
               transition-colors duration-300
               line-clamp-2
