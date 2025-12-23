@@ -30,7 +30,9 @@
       "Bash(git fetch:*)",
       "Bash(gh pr create:*)",
       "Bash(gh pr view:*)",
-      "Read(//Users/makoto/Github/**)"
+      "Read(//Users/makoto/Github/**)",
+      "Bash(gh pr close:*)",
+      "Bash(gh pr list:*)"
     ],
     "deny": []
   }
