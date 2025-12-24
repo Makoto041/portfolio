@@ -106,18 +106,18 @@ export default function EventCard({ e }: { e: Event }) {
           <h3
             className="
               font-bold text-xl leading-tight
+              text-[color:var(--fg-base)]
               group-hover:text-blue-600 dark:group-hover:text-blue-400
               transition-colors duration-300
               line-clamp-2
             "
-            style={{ color: 'var(--fg-base)' }}
           >
             {e.title}
           </h3>
 
           {/* Summary */}
           {e.summary && (
-            <p className="text-sm leading-relaxed line-clamp-2 opacity-80" style={{ color: 'var(--fg-base)' }}>
+            <p className="text-sm leading-relaxed line-clamp-2 opacity-80 text-[color:var(--fg-base)]">
               {e.summary}
             </p>
           )}
@@ -129,8 +129,8 @@ export default function EventCard({ e }: { e: Event }) {
               pt-2
               border-t border-gray-300/50 dark:border-gray-600/40
               opacity-70
+              text-[color:var(--fg-base)]
             "
-            style={{ color: 'var(--fg-base)' }}
           >
             <div className="flex items-center gap-2">
               <Calendar size={14} strokeWidth={1.5} />
