@@ -1,6 +1,10 @@
 // src/components/cards/ActiveEventCard.tsx
 // トップページのお知らせカード（予定/開催中）。
-// glass-cardベースの横型レイアウトで、開催中は赤リングで控えめに強調する
+// glass-cardベースの横型レイアウトで、開催中は赤リングで控えめに強調する。
+// 開催状態はISRキャッシュの影響を受けないよう、クライアント側で定期再計算する
+'use client'
+
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { Calendar, Clock, Bell } from 'lucide-react'
 import type { Event } from '@/payload-types'
@@ -15,8 +19,7 @@ const PLATFORMS: Record<string, { name: string; dotClass: string }> = {
   other: { name: 'その他', dotClass: 'bg-slate-400' },
 }
 
-function getEventStatus(startDate: string, endDate?: string | null) {
-  const now = new Date()
+function getEventStatus(startDate: string, endDate: string | null | undefined, now: Date) {
   const start = new Date(startDate)
   const end = endDate ? new Date(endDate) : null
 
@@ -35,7 +38,15 @@ export default function ActiveEventCard({ event }: ActiveEventCardProps) {
   const href = event.externalUrl || '/in_event'
   const platform = PLATFORMS[event.platform ?? 'other'] ?? PLATFORMS.other
   const { date, time } = formatEventDateWithExtendedHour(event.startDate, event.endDate)
-  const status = getEventStatus(event.startDate, event.endDate)
+
+  // ISR(60s)で固まった判定を使わず、マウント後は30秒ごとに現在時刻で再計算する
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    setNow(new Date())
+    const id = setInterval(() => setNow(new Date()), 30_000)
+    return () => clearInterval(id)
+  }, [])
+  const status = getEventStatus(event.startDate, event.endDate, now)
 
   if (status === 'ended') return null
 
