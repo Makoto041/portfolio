@@ -2,6 +2,7 @@
 // src/app/(frontend)/gallery/page.tsx
 // ───────────────────────────────────────────
 
+import PageHeader from '@/components/layout/PageHeader'
 import type { Metadata } from 'next'
 import { fetchLatest } from '@/lib/payload'
 import GalleryGrid from '@/components/gallery/GalleryGridMain'
@@ -50,17 +51,10 @@ export default async function GalleryPage() {
   })
 
   return (
-    <main className="min-h-screen flex flex-col">
-      {/* パンくず */}
-      {/* セクションラップ */}
-      <section className="section-pad">
-        <div className="mb-6">
-          <h1 className="text-3xl font-semibold">Gallery</h1>
-        </div>
-
-        {/* サーバーサイドでフィルタリング済みのギャラリーデータを使用 */}
-        <GalleryGrid gallery={gallery} />
-      </section>
+    <main className="pb-16">
+      <PageHeader title="Gallery" description="写真のアーカイブ" />
+      {/* サーバーサイドでフィルタリング済みのギャラリーデータを使用 */}
+      <GalleryGrid gallery={gallery} />
     </main>
   )
 }

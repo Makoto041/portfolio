@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import type { Metadata } from 'next'
+import PageHeader from '@/components/layout/PageHeader'
 import { fetchLatest } from '@/lib/payload'
 import { Suspense } from 'react'
 import PostsList from './PostsList'
@@ -41,21 +42,17 @@ export const metadata: Metadata = {
   },
 }
 
-const WRAP = 'section-pad'
-
 export default async function BlogPage() {
   // blogLimit: 10 件取得
   const { posts } = await fetchLatest({ blogLimit: 10 })
 
   return (
-    <main className="min-h-screen flex flex-col">      <section className={WRAP}>
-        <h1 className="text-2xl font-semibold tracking-wide mb-2">Blog</h1>
-        <p className="mb-8 opacity-80">考えていることを書き留めておく場所</p>
-        {/* Suspense でラップ！ */}
-        <Suspense fallback={<PostsListLoading />}>
-          <PostsList posts={posts} />
-        </Suspense>
-      </section>
+    <main className="pb-16">
+      <PageHeader title="Blog" description="考えていることを書き留めておく場所" />
+      {/* Suspense でラップ！ */}
+      <Suspense fallback={<PostsListLoading />}>
+        <PostsList posts={posts} />
+      </Suspense>
     </main>
   )
 }

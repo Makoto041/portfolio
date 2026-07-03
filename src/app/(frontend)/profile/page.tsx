@@ -7,6 +7,7 @@ export const revalidate = 0
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import PageHeader from '@/components/layout/PageHeader'
 import { toCFUrl } from '@/lib/cfUrl'
 import { getPayloadClient } from '@/lib/payloadClient'
 
@@ -67,9 +68,8 @@ export async function generateMetadata(): Promise<Metadata> {
     }
   }
 }
-const WRAP =
-  'mx-auto w-full max-w-[28rem] section-pad flex flex-col items-center text-center'
-const CARD = 'glass p-8 flex flex-col items-center'
+const WRAP = 'mx-auto w-full max-w-[28rem] flex flex-col items-center text-center'
+const CARD = 'glass-card p-8 flex flex-col items-center w-full'
 
 export default async function ProfilePage() {
   let profileData = {
@@ -126,12 +126,14 @@ export default async function ProfilePage() {
   return (
     <>
       <link rel="preload" as="image" href={profileImageUrl} />
-      <main className="min-h-screen flex flex-col">        <section className={WRAP}>
+      <main className="pb-16">
+        <PageHeader title="Profile" />
+        <section className={WRAP}>
           <div className={CARD}>
             <div className="relative w-40 h-40 rounded-full mb-6 overflow-hidden">
               <Image
                 src={profileImageUrl}
-                alt="Profile"
+                alt={`${profileData.nameJapanese}（${profileData.name}）のプロフィール写真`}
                 width={160}
                 height={160}
                 sizes="160px"
@@ -139,13 +141,20 @@ export default async function ProfilePage() {
                 className="object-cover w-full h-full"
               />
             </div>
-            <h1 className="text-2xl font-semibold mb-4">{profileData.name}</h1>
-            <p className="mb-6 opacity-80">
+            <h2 className="text-2xl font-semibold mb-1">{profileData.name}</h2>
+            <p className="mb-4 text-sm text-muted">{profileData.nameJapanese}・{profileData.title}</p>
+            <p className="mb-6 text-sm leading-relaxed opacity-80">
               {profileData.description}
             </p>
-            <div className="flex gap-6 flex-wrap justify-center">
+            <div className="flex gap-3 flex-wrap justify-center">
               {profileData.socialLinks.map((link: any, index: number) => (
-                <Link key={index} href={link.url} className="underline" target="_blank" rel="noopener noreferrer">
+                <Link
+                  key={index}
+                  href={link.url}
+                  className="chip transition-opacity hover:opacity-70"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   {getPlatformDisplayName(link.platform, link.displayName)}
                 </Link>
               ))}

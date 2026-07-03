@@ -2,8 +2,9 @@
 'use client'
 
 import { useState } from 'react'
+import PageHeader from '@/components/layout/PageHeader'
 
-const WRAP = 'mx-auto w-full max-w-[28rem] section-pad flex justify-center'
+const WRAP = 'mx-auto w-full max-w-[28rem] flex justify-center'
 const CARD = 'glass p-8 flex flex-col gap-4 w-full'
 
 export default function LetterPage() {
@@ -39,32 +40,28 @@ export default function LetterPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col">      <section className={WRAP}>
+    <main className="pb-16">
+      <PageHeader title="Letter" description="お便り・メッセージはこちらから" />
+      <section className={WRAP}>
         <form onSubmit={handleSubmit} className={CARD}>
-          <h1 className="text-2xl font-semibold mb-4">お便りを送る</h1>
+          <h2 className="text-lg font-semibold">お便りを送る</h2>
           <input
             name="name"
             type="text"
             placeholder="お名前"
             required
-            className="p-2 rounded border border-zinc-300"
+            className="rounded-xl border border-[color:var(--card-border)] bg-white/50 p-2.5 text-sm transition-colors focus:border-[color:var(--accent)] focus:outline-none dark:bg-white/5"
           />
           <textarea
             name="message"
             placeholder="メッセージ"
             rows={5}
             required
-            className="p-2 rounded border border-zinc-300"
+            className="rounded-xl border border-[color:var(--card-border)] bg-white/50 p-2.5 text-sm transition-colors focus:border-[color:var(--accent)] focus:outline-none dark:bg-white/5"
           />
           <button
             type="submit"
-            className="
-              mt-4 py-2 rounded 
-              bg-gray-200 text-gray-700 
-              hover:bg-gray-300 
-              transition 
-              disabled:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed
-            "
+            className="pill mt-2 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={loading}
           >
             {loading ? '送信中...' : '送信'}

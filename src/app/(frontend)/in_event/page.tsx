@@ -1,3 +1,4 @@
+import PageHeader from '@/components/layout/PageHeader'
 import { fetchInEvent } from '@/lib/fetchInEvent'
 import EventCard from '@/components/cards/EventCard'
 
@@ -5,21 +6,18 @@ export const metadata = { title: 'イベント一覧 | 岩渕誠（いわぶち�
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const WRAP = 'section-pad'
-
 export default async function InEventPage() {
   const inEvent = await fetchInEvent()
 
   return (
-    <main className="min-h-screen flex flex-col bg-[color:var(--bg-base)]">      <section className={WRAP}>
-        <h1 className="text-2xl font-semibold tracking-wide mb-8">Events</h1>
-        {inEvent.length === 0 && <p className="text-[color:var(--fg-base)]">現在予定されているイベントはありません。</p>}
-        <div className="grid gap-6 sm:grid-cols-2">
-          {inEvent.map((e) => (
-            <EventCard key={e.id} e={e} />
-          ))}
-        </div>
-      </section>
+    <main className="pb-16">
+      <PageHeader title="Events" description="配信・イベントの記録" />
+      {inEvent.length === 0 && <p className="text-muted">現在予定されているイベントはありません。</p>}
+      <div className="grid gap-6 sm:grid-cols-2">
+        {inEvent.map((e) => (
+          <EventCard key={e.id} e={e} />
+        ))}
+      </div>
     </main>
   )
 }
