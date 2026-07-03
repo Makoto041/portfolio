@@ -2,6 +2,7 @@ import { CollectionConfig } from 'payload'
 import type { CollectionBeforeChangeHook, CollectionAfterChangeHook } from 'payload'
 import { fetchUrlMetadata } from '@/lib/urlMetadata'
 import { extractUrlsFromRichText } from '@/lib/urlExtractor'
+import { anyone, adminOnly } from '@/lib/access'
 
 interface TimelineData {
   text?: unknown
@@ -107,8 +108,10 @@ export const TimelinePosts: CollectionConfig = {
   labels: { singular: 'Timeline Post', plural: 'Timeline Posts' },
   admin: { useAsTitle: 'text', defaultColumns: ['text', 'publishedAt'] },
   access: {
-    read: () => true, // 全員閲覧可
-    create: () => true, // 全員作成可
+    read: anyone, // 閲覧は公開
+    create: adminOnly, // 投稿は管理者のみ
+    update: adminOnly, // 編集は管理者のみ
+    delete: adminOnly, // 削除は管理者のみ
   },
   hooks: {
     // タイムライン投稿時に自動的に画像に「タイムライン専用」フラグを設定
@@ -116,9 +119,32 @@ export const TimelinePosts: CollectionConfig = {
     afterChange: [afterChangeHook],
   },
   fields: [
-    { 
-      name: 'text', 
-      type: 'richText', 
+    {
+      name: 'title',
+      type: 'text',
+      label: 'タイトル',
+      admin: {
+        description: '任意。入力するとカードの見出しとして表示されます',
+      },
+    },
+    {
+      name: 'postType',
+      type: 'select',
+      label: '投稿タイプ',
+      defaultValue: 'diary',
+      options: [
+        { label: '日記', value: 'diary' },
+        { label: '技術メモ', value: 'tech' },
+        { label: '写真', value: 'photo' },
+        { label: '制作ログ', value: 'making' },
+        { label: 'イベント記録', value: 'event' },
+        { label: '旅行記', value: 'travel' },
+        { label: '学習ログ', value: 'study' },
+      ],
+    },
+    {
+      name: 'text',
+      type: 'richText',
       required: true
     },
     {
@@ -201,6 +227,19 @@ export const TimelinePosts: CollectionConfig = {
           relationTo: 'media',
           required: true,
         },
+      ],
+    },
+    {
+      name: 'related',
+      type: 'group',
+      label: '関連リンク',
+      admin: {
+        description: '関連するイベント・記事・制作物があれば紐付けられます',
+      },
+      fields: [
+        { name: 'event', type: 'relationship', relationTo: 'events', label: '関連イベント' },
+        { name: 'post', type: 'relationship', relationTo: 'blogPosts', label: '関連記事' },
+        { name: 'product', type: 'relationship', relationTo: 'products', label: '関連制作物' },
       ],
     },
     {

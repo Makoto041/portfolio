@@ -31,8 +31,23 @@ import { SiteSettings } from './globals/SiteSettings'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// 自サイトのオリジン（CORS / CSRF 制限用）
+// 空文字は || で既定値に落とし、Origin ヘッダーとの突き合わせのため末尾スラッシュを除去
+const siteURL = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://iwabuchi-makoto.com'
+    : 'http://localhost:3000')
+).replace(/\/$/, '')
+
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET!,
+  // NOTE: serverURL は設定しない（メディアURLが絶対URL化され toCFUrl の
+  // CloudFront 変換を素通りしてしまうため。相対URLのまま扱う）
+
+  // クロスオリジンからのAPI利用・認証Cookie送信を自サイトに限定
+  cors: [siteURL],
+  csrf: [siteURL],
 
   // 管理画面の設定
   admin: {

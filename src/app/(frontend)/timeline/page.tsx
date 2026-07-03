@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Breadcrumb from '@/components/layout/Breadcrumb'
 import WeatherWidgetClient from '@/components/widgets/WeatherWidgetClient'
 import TimelineList from '@/components/timeline/TimelineList'
+import AdminLinks from '@/components/admin/AdminLinks'
 import { fetchLatest } from '@/lib/payload'
 
 export const dynamic = 'force-dynamic'
@@ -40,8 +41,6 @@ export const metadata: Metadata = {
   },
 }
 
-const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad'
-
 export default async function TimelinePage() {
   // サーバーコンポーネントで直接fetchLatest()を使用
   const { timeline } = await fetchLatest({
@@ -49,21 +48,27 @@ export default async function TimelinePage() {
   })
 
   return (
-    <main className="min-h-screen bg-[color:var(--bg)] text-[color:var(--text)]">
-      <div className="mt-10 text-gray-400 text-left">
+    <main className="mx-auto w-full max-w-2xl px-4 pb-20 sm:px-6">
+      <div className="mt-6 text-muted">
         <Breadcrumb />
       </div>
 
-      <section className={`${WRAP} py-12`}>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-semibold">Timeline</h1>
+      <section className="pt-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-baseline gap-3">
+            <h1 className="text-2xl font-semibold tracking-wide">Timeline</h1>
+            <AdminLinks />
+          </div>
           <WeatherWidgetClient />
         </div>
 
         <TimelineList initialTimeline={timeline} />
 
-        <div className="text-center mt-20">
-          <Link href="/" className="text-sm underline">
+        <div className="mt-16 text-center">
+          <Link
+            href="/"
+            className="glass inline-block rounded-full px-6 py-2 text-sm text-muted transition-opacity hover:opacity-75"
+          >
             ← TOPページへ
           </Link>
         </div>

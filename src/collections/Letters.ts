@@ -1,6 +1,7 @@
 // src/collections/Letter.ts
 import { CollectionConfig } from 'payload'
 import nodemailer from 'nodemailer'
+import { anyone, adminOnly } from '@/lib/access'
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST!,
@@ -16,10 +17,10 @@ const Letter: CollectionConfig = {
   slug: 'letter',
   labels: { singular: 'Letter', plural: 'Letters' },
   access: {
-    read: () => true,
-    create: () => true,
+    read: adminOnly, // 問い合わせ内容は管理者のみ閲覧可（個人情報保護）
+    create: anyone, // フォーム送信は誰でも可
     update: () => false,
-    delete: () => false,
+    delete: adminOnly,
   },
   hooks: {
     afterChange: [

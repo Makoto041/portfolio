@@ -9,8 +9,20 @@ export interface BaseDoc {
   updatedAt?: string
 }
 
+/** タイムライン投稿タイプ */
+export type TimelinePostType =
+  | 'diary'
+  | 'tech'
+  | 'photo'
+  | 'making'
+  | 'event'
+  | 'travel'
+  | 'study'
+
 /** Timeline 用ドキュメント */
 export interface TimelineDoc extends BaseDoc {
+  title?: string | null
+  postType?: TimelinePostType | null
   text: any // richText JSON または文字列
   publishedAt?: string
   images?: { id: string; image: { id: string; url: string; sizes?: Record<string, { url: string }> } }[]
@@ -25,6 +37,11 @@ export interface TimelineDoc extends BaseDoc {
   }
   tags?: string[]
   priority?: 'normal' | 'important' | 'pinned'
+  related?: {
+    event?: (Event | string | number) | null
+    post?: (BlogPost | string | number) | null
+    product?: (Product | string | number) | null
+  }
 }
 
 /** Gallery 用ドキュメント */

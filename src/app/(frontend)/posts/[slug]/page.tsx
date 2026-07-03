@@ -119,7 +119,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="min-h-screen flex flex-col bg-[color:var(--bg)] text-[color:var(--text)]">
+      <main className="min-h-screen flex flex-col">
       <div className="mt-10 text-gray-400 text-left">
             <Breadcrumb />
     </div> 
