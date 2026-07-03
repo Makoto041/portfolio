@@ -35,7 +35,7 @@ export default function GlassNav() {
         </Link>
 
         {/* デスクトップナビ */}
-        <nav className="hidden items-center gap-5 md:flex">
+        <nav className="hidden items-center gap-1.5 md:flex">
           {NAV.map(({ href, label }) => {
             const isActive = pathname === href || pathname?.startsWith(href + '/')
             return (
@@ -43,17 +43,19 @@ export default function GlassNav() {
                 key={href}
                 href={href}
                 className={clsx(
-                  'text-[13px] tracking-wide transition-opacity',
+                  'rounded-full px-3 py-1 text-[13px] tracking-wide transition-all duration-200',
                   isActive
-                    ? 'font-semibold opacity-100 text-[color:var(--accent)]'
-                    : 'opacity-65 hover:opacity-100',
+                    ? 'bg-[color:var(--chip-bg)] font-semibold text-[color:var(--chip-fg)]'
+                    : 'opacity-65 hover:bg-[color:var(--chip-bg)] hover:opacity-100',
                 )}
               >
                 {label}
               </Link>
             )
           })}
-          <ThemeToggle />
+          <span className="ml-2">
+            <ThemeToggle />
+          </span>
         </nav>
 
         {/* モバイル：テーマ切替＋ハンバーガー */}
@@ -92,7 +94,7 @@ export default function GlassNav() {
       {open && (
         <nav
           id="mobile-menu"
-          className="glass mx-auto mt-2 max-w-4xl rounded-2xl p-4 md:hidden"
+          className="glass fade-in-up mx-auto mt-2 max-w-4xl rounded-2xl p-4 md:hidden"
         >
           <ul className="flex flex-col gap-1">
             {NAV.map(({ href, label }) => {
@@ -105,7 +107,7 @@ export default function GlassNav() {
                     className={clsx(
                       'block rounded-xl px-3 py-2 text-sm tracking-wide transition-colors',
                       isActive
-                        ? 'font-semibold text-[color:var(--accent)]'
+                        ? 'bg-[color:var(--chip-bg)] font-semibold text-[color:var(--chip-fg)]'
                         : 'opacity-75 hover:opacity-100',
                     )}
                   >

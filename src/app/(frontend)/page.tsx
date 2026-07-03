@@ -16,11 +16,13 @@ import AdminLinks from '@/components/admin/AdminLinks'
 import type { TimelineDoc, MediaDoc } from '@/lib/payloadTypes'
 
 export const metadata = {
-  title: 'いわぶちまこと - ライフログ',
-  description: 'いわぶちまことの個人サイト。日記、写真、制作ログ、イベント記録など日々の記録を残しています。',
+  title: '岩渕誠（いわぶちまこと） | ライフログ',
+  description:
+    '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録など日々の記録をタイムラインで残しています。',
   openGraph: {
-    title: 'いわぶちまこと - ライフログ',
-    description: 'いわぶちまことの個人サイト。日記、写真、制作ログ、イベント記録など日々の記録を残しています。',
+    title: '岩渕誠（いわぶちまこと） | ライフログ',
+    description:
+      '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録など日々の記録をタイムラインで残しています。',
     url: 'https://iwabuchi-makoto.com',
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
@@ -36,14 +38,15 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'いわぶちまこと - ライフログ',
-    description: 'いわぶちまことの個人サイト。日記、写真、制作ログ、イベント記録など日々の記録を残しています。',
+    title: '岩渕誠（いわぶちまこと） | ライフログ',
+    description:
+      '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録など日々の記録をタイムラインで残しています。',
     images: ['https://iwabuchi-makoto.com/myicon.png'],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/',
   },
-  keywords: ['いわぶちまこと', '岩渕誠', 'ライフログ', '日記', '写真', '制作ログ'],
+  keywords: ['岩渕誠', 'いわぶちまこと', 'Makoto Iwabuchi', 'ライフログ', '日記', '写真', '制作ログ'],
 }
 
 /** タイムライン投稿からタグを集計（出現数順・最大12件） */
@@ -97,19 +100,29 @@ export default async function Home() {
   const photos = gallery.filter((g: MediaDoc) => g.url || g.sizes?.thumbnail?.url)
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 pb-20 sm:px-6">
-      <h1 className="sr-only">いわぶちまこと ライフログ</h1>
+    <main className="mx-auto w-full max-w-5xl px-4 pb-12 sm:px-6">
       <Analytics />
+
+      {/* アイデンティティ（実名表記はSEOシグナルも兼ねる） */}
+      <header className="fade-in-up pt-10 pb-2">
+        <h1 className="text-xl font-semibold tracking-wide">
+          いわぶちまこと
+          <span className="ml-2 text-sm font-normal text-muted">岩渕誠 / Makoto Iwabuchi</span>
+        </h1>
+        <p className="mt-1.5 text-sm text-muted">
+          日々の記録・写真・制作物を残すライフログ
+        </p>
+      </header>
 
       {/* お知らせ（開催中イベントがある場合のみ） */}
       {activeEvent && (
-        <section className="pt-6">
+        <section className="pt-4">
           <ActiveEventCard event={activeEvent} cardClass="glass-card overflow-hidden" />
         </section>
       )}
 
       {/* タイムライン + サイドレール */}
-      <div className="grid gap-8 pt-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid gap-8 pt-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         {/* メイン: タイムライン */}
         <section>
           <div className="mb-5 flex items-center justify-between">
@@ -123,10 +136,7 @@ export default async function Home() {
           <HomeTimeline timelineData={timeline} />
 
           <div className="mt-8 text-center">
-            <Link
-              href="/timeline"
-              className="glass inline-block rounded-full px-6 py-2 text-sm text-muted transition-opacity hover:opacity-75"
-            >
+            <Link href="/timeline" className="pill text-muted">
               もっと読む →
             </Link>
           </div>

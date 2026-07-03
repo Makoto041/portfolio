@@ -63,7 +63,7 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error('Failed to generate profile metadata:', error)
     // フォールバック
     return {
-      title: 'プロフィール | いわぶちまこと',
+      title: 'プロフィール | 岩渕誠（いわぶちまこと）',
       description: '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。',
     }
   }
@@ -128,7 +128,7 @@ export default async function ProfilePage() {
     <>
       <link rel="preload" as="image" href={profileImageUrl} />
       <main className="min-h-screen flex flex-col">
-        <div className="mt-10 text-gray-400 text-left">
+        <div className="mx-auto w-full max-w-[28rem] px-5 sm:px-8 pt-6">
           <Breadcrumb />
         </div>
         <section className={WRAP}>

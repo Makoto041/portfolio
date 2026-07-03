@@ -30,12 +30,26 @@ export default function Breadcrumb({
 
   const crumbs = items && items.length > 0 ? items : autoItems
 
+  // 検索結果にパンくずを表示させるための構造化データ
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((crumb, idx) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      name: crumb.label,
+      item: `https://iwabuchi-makoto.com${crumb.href === '/' ? '' : crumb.href}`,
+    })),
+  }
+
   return (
-    <nav
-      aria-label="Breadcrumb"
-      className="mx-auto w-full max-w-[80rem] px-5 sm:px-8 text-sm text-gray-400 mb-4"
-    >
-      <ol className="flex flex-wrap gap-1">
+    // コンテナはページ側に任せる（独自の max-w/px を持つと本文と整列しないため）
+    <nav aria-label="Breadcrumb" className="text-[13px] text-muted">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <ol className="flex flex-wrap items-center gap-1">
         {crumbs.map((crumb, idx) => {
           const isLast = idx === crumbs.length - 1
           return (
@@ -44,7 +58,9 @@ export default function Breadcrumb({
               <Link
                 href={crumb.href}
                 aria-current={isLast ? 'page' : undefined}
-                className={`text-gray-400 hover:underline hover:text-gray-600 transition ${isLast ? 'font-medium' : ''}`}
+                className={`transition-opacity hover:opacity-70 ${
+                  isLast ? 'font-medium opacity-100' : 'opacity-80'
+                }`}
               >
                 {crumb.label}
               </Link>

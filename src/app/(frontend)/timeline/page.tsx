@@ -10,12 +10,12 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'タイムライン | いわぶちまこと',
+  title: 'タイムライン | 岩渕誠（いわぶちまこと）',
   description: '岩渕誠の日々の活動記録。リアルタイムで更新される思考の断片や日常の出来事を時系列で公開しています。',
   keywords: ['タイムライン', '日記', '岩渕誠', 'いわぶちまこと', '日常', '活動記録'],
   authors: [{ name: 'いわぶちまこと' }],
   openGraph: {
-    title: 'タイムライン | いわぶちまこと',
+    title: 'タイムライン | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠の日々の活動記録。リアルタイムで更新される思考の断片や日常の出来事を時系列で公開しています。',
     url: 'https://iwabuchi-makoto.com/timeline',
     siteName: 'いわぶちまこと',
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'タイムライン | いわぶちまこと',
+    title: 'タイムライン | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠の日々の活動記録。リアルタイムで更新される思考の断片や日常の出来事を時系列で公開しています。',
     images: ['/myicon.png'],
   },
@@ -49,7 +49,7 @@ export default async function TimelinePage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-20 sm:px-6">
-      <div className="mt-6 text-muted">
+      <div className="pt-6">
         <Breadcrumb />
       </div>
 
@@ -65,10 +65,7 @@ export default async function TimelinePage() {
         <TimelineList initialTimeline={timeline} />
 
         <div className="mt-16 text-center">
-          <Link
-            href="/"
-            className="glass inline-block rounded-full px-6 py-2 text-sm text-muted transition-opacity hover:opacity-75"
-          >
+          <Link href="/" className="pill text-muted">
             ← TOPページへ
           </Link>
         </div>

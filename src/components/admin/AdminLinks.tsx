@@ -29,7 +29,8 @@ export default function AdminLinks() {
   if (!isAdmin) return null
 
   return (
-    <span className="inline-flex items-center gap-3 text-xs text-muted">
+    // フェードインで出現させ、遅延表示によるちらつきを抑える
+    <span className="inline-flex animate-[fadeIn_.3s_ease] items-center gap-3 text-xs text-muted">
       {/* PayloadCMS Admin は別レイアウトのため、フルページ遷移させる */}
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a

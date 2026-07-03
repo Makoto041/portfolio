@@ -3,16 +3,31 @@ import '../global.css'
 import type { Metadata } from 'next'
 import React from 'react'
 import GlassNav from '@/components/layout/GlassNav'
+import SiteFooter from '@/components/layout/SiteFooter'
 import { toCFUrl } from '@/lib/cfUrl'
 import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
-  title: 'いわぶち | ライフログ',
-  description: 'いわぶちの個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
-  keywords: ['いわぶち', 'ライフログ', '日記', '写真', 'ブログ', 'ギャラリー'],
-  authors: [{ name: 'いわぶち' }],
-  creator: 'いわぶち',
-  publisher: 'いわぶち',
+  title: {
+    default: '岩渕誠（いわぶちまこと） | ライフログ',
+    template: '%s | 岩渕誠（いわぶちまこと）',
+  },
+  description:
+    '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
+  keywords: [
+    '岩渕誠',
+    'いわぶちまこと',
+    'Makoto Iwabuchi',
+    'ライフログ',
+    '日記',
+    '写真',
+    'ブログ',
+    'ギャラリー',
+    '制作ログ',
+  ],
+  authors: [{ name: '岩渕誠', url: 'https://iwabuchi-makoto.com/profile' }],
+  creator: '岩渕誠（いわぶちまこと）',
+  publisher: '岩渕誠（いわぶちまこと）',
   formatDetection: {
     email: false,
     address: false,
@@ -33,8 +48,9 @@ export const metadata: Metadata = {
     shortcut: '/myicon.png',
   },
   openGraph: {
-    title: 'いわぶち | ライフログ',
-    description: 'いわぶちの個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
+    title: '岩渕誠（いわぶちまこと） | ライフログ',
+    description:
+      '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
     url: 'https://iwabuchi-makoto.com', // 実際のドメインに変更してください
     siteName: 'いわぶち',
     locale: 'ja_JP',
@@ -50,8 +66,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'いわぶち | ライフログ',
-    description: 'いわぶちの個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
+    title: '岩渕誠（いわぶちまこと） | ライフログ',
+    description:
+      '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
     creator: '@iwabuchi', // 実際のTwitterアカウントに変更してください
     images: ['/myicon.png'], // サイトの代表写真を使用
   },
@@ -85,15 +102,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "Person",
+              "@id": "https://iwabuchi-makoto.com/#person",
               "name": "岩渕誠",
-              "alternateName": "いわぶちまこと",
+              "alternateName": ["いわぶちまこと", "Makoto Iwabuchi", "いわぶち"],
+              "givenName": "誠",
+              "familyName": "岩渕",
               "jobTitle": "ウェブエンジニア",
-              "description": "ウェブエンジニア・フロントエンド開発者として活動する岩渕誠のポートフォリオサイト",
+              "description": "ウェブエンジニアとして活動する岩渕誠（いわぶちまこと）の個人サイト。日記・写真・制作ログなどのライフログを公開している。",
               "url": "https://iwabuchi-makoto.com",
+              "mainEntityOfPage": "https://iwabuchi-makoto.com/profile",
               "image": "https://iwabuchi-makoto.com" + toCFUrl('/profile.jpg'),
               "sameAs": [
                 "https://github.com/Makoto041",
-                "https://instagram.com/makoto0140"
+                "https://instagram.com/makoto0140",
+                "https://x.com/613_kmk"
               ],
               "knowsAbout": [
                 "Web Development",
@@ -117,11 +139,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "WebSite",
-              "name": "いわぶちまこと | 個人ポートフォリオサイト",
-              "alternateName": "岩渕誠 ポートフォリオ",
+              "name": "岩渕誠（いわぶちまこと） | ライフログ",
+              "alternateName": ["いわぶちまこと ライフログ", "Makoto Iwabuchi"],
               "url": "https://iwabuchi-makoto.com",
-              "description": "岩渕誠のポートフォリオサイト。日記、ブログ、写真ギャラリーなど日々の活動や作品を公開しています。",
+              "description": "岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録など日々の記録を公開しています。",
               "inLanguage": "ja-JP",
+              "publisher": { "@id": "https://iwabuchi-makoto.com/#person" },
               "author": {
                 "@type": "Person",
                 "name": "岩渕誠",
@@ -144,6 +167,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* ── 1カラムのメインコンテンツ（各ページが <main> を持つため div） ── */}
           <div className="min-h-screen">{children}</div>
+
+          {/* ── フッター ── */}
+          <SiteFooter />
 
           {/* Portal root for modals */}
           <div id="modal-root"></div>
