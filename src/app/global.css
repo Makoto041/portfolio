@@ -174,6 +174,7 @@
            backdrop-blur-[var(--blur-m)]
            bg-[color:var(--glass-surface)]
            border border-[color:var(--glass-border)];
+
     box-shadow: var(--card-shadow);
   }
 
@@ -182,6 +183,7 @@
     @apply rounded-[var(--radius-m)]
            backdrop-blur-[var(--blur-m)]
            border;
+
     background: var(--card-bg);
     border-color: var(--card-border);
     box-shadow: var(--card-shadow);
@@ -201,6 +203,7 @@
   /* 投稿タイプ・タグ用チップ */
   .chip {
     @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide;
+
     background: var(--chip-bg);
     color: var(--chip-fg);
   }
@@ -214,7 +217,8 @@
 /* === BASE ===================================== */
 body {
   @apply text-[color:var(--fg-base)]
-         antialiased selection:bg-[color:var(--accent)/.25];
+         antialiased selection:bg-(--accent)/25;
+
   font-family: var(--font-body);
   background-color: var(--bg-base);
   background-image: var(--page-gradient);

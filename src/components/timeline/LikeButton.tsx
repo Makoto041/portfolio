@@ -13,7 +13,8 @@ const LIKED_STORAGE_KEY = 'tl_liked_posts'
 function getLikedFromStorage(): string[] {
   try {
     return JSON.parse(localStorage.getItem(LIKED_STORAGE_KEY) ?? '[]')
-  } catch {
+  } catch (error) {
+    console.error('Failed to read liked posts from storage:', error)
     return []
   }
 }
@@ -25,8 +26,9 @@ function saveLikedToStorage(id: string | number) {
       liked.push(String(id))
       localStorage.setItem(LIKED_STORAGE_KEY, JSON.stringify(liked.slice(-200)))
     }
-  } catch {
-    /* localStorage が使えない環境では UI 状態のみ */
+  } catch (error) {
+    // localStorage が使えない環境（プライベートブラウジング等）では UI 状態のみ
+    console.error('Failed to save liked post to storage:', error)
   }
 }
 

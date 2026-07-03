@@ -17,8 +17,9 @@ export default function AdminLinks() {
       .then((data) => {
         if (!cancelled && data?.user) setIsAdmin(true)
       })
-      .catch(() => {
-        /* 未ログイン時は何も表示しない */
+      .catch((error) => {
+        // 未ログイン時は何も表示しないが、予期しない失敗は追跡できるようログに残す
+        console.error('Failed to fetch current user:', error)
       })
     return () => {
       cancelled = true

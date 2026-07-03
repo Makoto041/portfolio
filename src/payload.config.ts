@@ -32,11 +32,13 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // 自サイトのオリジン（CORS / CSRF 制限用）
-const siteURL =
-  process.env.NEXT_PUBLIC_SITE_URL ??
+// 空文字は || で既定値に落とし、Origin ヘッダーとの突き合わせのため末尾スラッシュを除去
+const siteURL = (
+  process.env.NEXT_PUBLIC_SITE_URL ||
   (process.env.NODE_ENV === 'production'
     ? 'https://iwabuchi-makoto.com'
     : 'http://localhost:3000')
+).replace(/\/$/, '')
 
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET!,

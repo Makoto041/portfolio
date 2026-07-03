@@ -4,6 +4,7 @@
 // - httpOnly Cookie による重複いいね防止
 // - IPベースの簡易レート制限（サーバーレスのためベストエフォート）
 import { NextRequest, NextResponse } from 'next/server'
+import { sql } from '@payloadcms/db-vercel-postgres'
 import { getPayloadClient } from '@/lib/payloadClient'
 
 const LIKED_COOKIE = 'tl_liked'
@@ -42,8 +43,13 @@ export async function POST(
   }
 
   // レート制限
+  // x-real-ip はプラットフォーム（Vercel）が設定する信頼できる値を優先し、
+  // クライアントが偽装しうる x-forwarded-for は最後のフォールバックにする
   const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    request.headers.get('x-real-ip')?.trim() ||
+    request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    'unknown'
   if (isRateLimited(ip)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
@@ -54,7 +60,8 @@ export async function POST(
   let doc
   try {
     doc = await payload.findByID({ collection: 'timeline', id })
-  } catch {
+  } catch (error) {
+    console.error('Timeline findByID error:', error)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
   if (!doc) {
@@ -67,13 +74,11 @@ export async function POST(
     return NextResponse.json({ likes: doc.likes ?? 0, alreadyLiked: true })
   }
 
-  const likes = (doc.likes ?? 0) + 1
-  await payload.update({
-    collection: 'timeline',
-    id,
-    data: { likes },
-    overrideAccess: true, // likesフィールドのみサーバー側で更新（他フィールドは触らない）
-  })
+  // 同時いいねでロストアップデートしないよう、DBレベルでatomicにインクリメント
+  const result = await payload.db.drizzle.execute(
+    sql`UPDATE timeline SET likes = COALESCE(likes, 0) + 1 WHERE id = ${id} RETURNING likes`,
+  )
+  const likes = Number((result.rows?.[0] as { likes?: unknown } | undefined)?.likes ?? (doc.likes ?? 0) + 1)
 
   const res = NextResponse.json({ likes, alreadyLiked: false })
   const nextIds = [...likedIds, String(id)].slice(-COOKIE_MAX_IDS)
