@@ -69,7 +69,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-const WRAP = 'section-pad'
+const WRAP = 'pt-2 pb-16'
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   // Next.js v15+: params は Promise になっているので await して展開
@@ -118,7 +118,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="min-h-screen flex flex-col">      <section className={WRAP}>
+      <main className="pb-16">
+        <section className={WRAP}>
           {post.coverImage?.url && (
             <div className="relative w-full h-64 mb-6">
               <Image
@@ -130,7 +131,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             </div>
           )}
 
-          <h1 className="text-3xl font-semibold mb-2">{post.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-wide mb-2">{post.title}</h1>
           <time className="text-xs opacity-60 mb-6 block">
             {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
           </time>

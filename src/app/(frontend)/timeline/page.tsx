@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import PageHeader from '@/components/layout/PageHeader'
 import WeatherWidgetClient from '@/components/widgets/WeatherWidgetClient'
 import TimelineList from '@/components/timeline/TimelineList'
 import AdminLinks from '@/components/admin/AdminLinks'
@@ -47,16 +48,20 @@ export default async function TimelinePage() {
   })
 
   return (
-    <main className="mx-auto w-full max-w-2xl pb-20">
-      <section className="pt-6">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-baseline gap-3">
-            <h1 className="text-2xl font-semibold tracking-wide">Timeline</h1>
+    <main className="pb-16">
+      <PageHeader
+        title="Timeline"
+        description="日々の記録"
+        actions={
+          <>
             <AdminLinks />
-          </div>
-          <WeatherWidgetClient />
-        </div>
+            <WeatherWidgetClient />
+          </>
+        }
+      />
 
+      {/* 読みやすさのため本文は中央寄せの読み幅に */}
+      <div className="mx-auto w-full max-w-2xl">
         <TimelineList initialTimeline={timeline} />
 
         <div className="mt-16 text-center">
@@ -64,7 +69,7 @@ export default async function TimelinePage() {
             ← TOPページへ
           </Link>
         </div>
-      </section>
+      </div>
     </main>
   )
 }
