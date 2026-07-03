@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { fetchProducts } from '@/lib/fetchProducts'
 import ProductCard from '@/components/cards/ProductCard'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 
 export const metadata: Metadata = {
   title: 'プロダクト | 岩渕誠（いわぶちまこと）',
@@ -43,11 +42,7 @@ export default async function ProductsPage() {
   const products = await fetchProducts()
 
   return (
-    <main className="min-h-screen flex flex-col">
-      <div className="pt-6">
-        <Breadcrumb />
-      </div>
-      <section className={WRAP}>
+    <main className="min-h-screen flex flex-col">      <section className={WRAP}>
         <h1 className="text-2xl font-semibold tracking-wide mb-8">Products</h1>
         {products.length === 0 && <p>まだ公開されていません。</p>}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

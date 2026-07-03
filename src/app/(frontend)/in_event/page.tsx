@@ -1,6 +1,5 @@
 import { fetchInEvent } from '@/lib/fetchInEvent'
 import EventCard from '@/components/cards/EventCard'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 
 export const metadata = { title: 'イベント一覧 | 岩渕誠（いわぶちまこと）' }
 export const dynamic = 'force-dynamic'
@@ -12,11 +11,7 @@ export default async function InEventPage() {
   const inEvent = await fetchInEvent()
 
   return (
-    <main className="min-h-screen flex flex-col bg-[color:var(--bg-base)]">
-      <div className="pt-6">
-        <Breadcrumb />
-      </div>
-      <section className={WRAP}>
+    <main className="min-h-screen flex flex-col bg-[color:var(--bg-base)]">      <section className={WRAP}>
         <h1 className="text-2xl font-semibold tracking-wide mb-8">Events</h1>
         {inEvent.length === 0 && <p className="text-[color:var(--fg-base)]">現在予定されているイベントはありません。</p>}
         <div className="grid gap-6 sm:grid-cols-2">

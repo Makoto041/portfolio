@@ -7,7 +7,6 @@ export const revalidate = 0
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 import { toCFUrl } from '@/lib/cfUrl'
 import { getPayloadClient } from '@/lib/payloadClient'
 
@@ -127,11 +126,7 @@ export default async function ProfilePage() {
   return (
     <>
       <link rel="preload" as="image" href={profileImageUrl} />
-      <main className="min-h-screen flex flex-col">
-        <div className="pt-6">
-          <Breadcrumb />
-        </div>
-        <section className={WRAP}>
+      <main className="min-h-screen flex flex-col">        <section className={WRAP}>
           <div className={CARD}>
             <div className="relative w-40 h-40 rounded-full mb-6 overflow-hidden">
               <Image

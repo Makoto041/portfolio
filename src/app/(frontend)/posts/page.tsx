@@ -5,7 +5,6 @@ export const revalidate = 0
 
 import type { Metadata } from 'next'
 import { fetchLatest } from '@/lib/payload'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 import { Suspense } from 'react'
 import PostsList from './PostsList'
 import PostsListLoading from './PostsListLoading'
@@ -49,11 +48,7 @@ export default async function BlogPage() {
   const { posts } = await fetchLatest({ blogLimit: 10 })
 
   return (
-    <main className="min-h-screen flex flex-col">
-      <div className="pt-6">
-        <Breadcrumb />
-      </div>
-      <section className={WRAP}>
+    <main className="min-h-screen flex flex-col">      <section className={WRAP}>
         <h1 className="text-2xl font-semibold tracking-wide mb-2">Blog</h1>
         <p className="mb-8 opacity-80">考えていることを書き留めておく場所</p>
         {/* Suspense でラップ！ */}

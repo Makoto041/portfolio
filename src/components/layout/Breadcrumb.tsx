@@ -17,6 +17,9 @@ export default function Breadcrumb({
   const pathname = usePathname()
   const segments = pathname?.split('/').filter(Boolean) || []
 
+  // トップページでは表示しない（レイアウト層から全ページ共通で描画されるため）
+  if (segments.length === 0) return null
+
   // 「/foo/bar/baz」で [ {href:'/',label:'Home'}, {href:'/foo',label:'foo'}, ... ]
   const autoItems: Crumb[] = [
     { href: '/', label: 'Home' },
@@ -43,8 +46,8 @@ export default function Breadcrumb({
   }
 
   return (
-    // コンテナはページ側に任せる（独自の max-w/px を持つと本文と整列しないため）
-    <nav aria-label="Breadcrumb" className="text-[13px] text-muted">
+    // レイアウト層の統一コンテナ直下に置かれるため、全ページで同一位置に表示される
+    <nav aria-label="Breadcrumb" className="pt-6 text-[13px] text-muted">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

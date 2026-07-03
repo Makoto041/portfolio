@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 import WeatherWidgetClient from '@/components/widgets/WeatherWidgetClient'
 import TimelineList from '@/components/timeline/TimelineList'
 import AdminLinks from '@/components/admin/AdminLinks'
@@ -49,10 +48,6 @@ export default async function TimelinePage() {
 
   return (
     <main className="mx-auto w-full max-w-2xl pb-20">
-      <div className="pt-6">
-        <Breadcrumb />
-      </div>
-
       <section className="pt-6">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-baseline gap-3">

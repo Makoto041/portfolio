@@ -10,7 +10,6 @@ import { getPayloadClient } from '@/lib/payloadClient'
 import { toCFUrl } from '@/lib/cfUrl'
 import type { BlogPost } from '@/lib/payloadTypes'
 import { RenderRichTextWithModal } from '@/lib/renderRichTextWithModal'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -119,11 +118,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="min-h-screen flex flex-col">
-      <div className="pt-6">
-        <Breadcrumb />
-      </div>
-      <section className={WRAP}>
+      <main className="min-h-screen flex flex-col">      <section className={WRAP}>
           {post.coverImage?.url && (
             <div className="relative w-full h-64 mb-6">
               <Image
