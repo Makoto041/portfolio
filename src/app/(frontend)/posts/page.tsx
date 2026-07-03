@@ -11,12 +11,12 @@ import PostsList from './PostsList'
 import PostsListLoading from './PostsListLoading'
 
 export const metadata: Metadata = {
-  title: 'ブログ | いわぶちまこと',
+  title: 'ブログ | 岩渕誠（いわぶちまこと）',
   description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
   keywords: ['ブログ', '岩渕誠', 'いわぶちまこと', '技術', '学習', '考え'],
   authors: [{ name: 'いわぶちまこと' }],
   openGraph: {
-    title: 'ブログ | いわぶちまこと',
+    title: 'ブログ | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
     url: 'https://iwabuchi-makoto.com/posts',
     siteName: 'いわぶちまこと',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ブログ | いわぶちまこと',
+    title: 'ブログ | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
     images: ['/myicon.png'],
   },
@@ -50,7 +50,7 @@ export default async function BlogPage() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <div className="mt-10 text-gray-400 text-left">
+      <div className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 pt-6">
         <Breadcrumb />
       </div>
       <section className={WRAP}>

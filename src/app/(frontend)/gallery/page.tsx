@@ -11,12 +11,12 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'ギャラリー | いわぶちまこと',
+  title: 'ギャラリー | 岩渕誠（いわぶちまこと）',
   description: '岩渕誠の写真ギャラリー。日常の風景や旅行の思い出、気になる瞬間を切り取った写真を公開しています。',
   keywords: ['ギャラリー', '写真', '岩渕誠', 'いわぶちまこと', '日常', '風景', '旅行'],
   authors: [{ name: 'いわぶちまこと' }],
   openGraph: {
-    title: 'ギャラリー | いわぶちまこと',
+    title: 'ギャラリー | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠の写真ギャラリー。日常の風景や旅行の思い出、気になる瞬間を切り取った写真を公開しています。',
     url: 'https://iwabuchi-makoto.com/gallery',
     siteName: 'いわぶちまこと',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ギャラリー | いわぶちまこと',
+    title: 'ギャラリー | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠の写真ギャラリー。日常の風景や旅行の思い出、気になる瞬間を切り取った写真を公開しています。',
     images: ['/myicon.png'],
   },
@@ -53,7 +53,7 @@ export default async function GalleryPage() {
   return (
     <main className="min-h-screen flex flex-col">
       {/* パンくず */}
-      <div className="mt-10 text-gray-400 text-left">
+      <div className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 pt-6">
         <Breadcrumb />
       </div>
 

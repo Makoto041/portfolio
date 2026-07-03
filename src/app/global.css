@@ -4,30 +4,35 @@
   src: url('/fonts/HigureGothic-Light.ttf') format('truetype');
   font-weight: 300;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: 'Higure Gothic';
   src: url('/fonts/HigureGothic-Regular.ttf') format('truetype');
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: 'Higure Gothic';
   src: url('/fonts/HigureGothic-Medium.ttf') format('truetype');
   font-weight: 500;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: 'Higure Gothic';
   src: url('/fonts/HigureGothic-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
 }
 @font-face {
   font-family: 'Higure Gothic';
   src: url('/fonts/HigureGothic-Black.ttf') format('truetype');
   font-weight: 900;
   font-style: normal;
+  font-display: swap;
 }
 
 /* ──────────────────────────────────────────────
@@ -68,6 +73,7 @@
 :root {
   --glass-surface: var(--glass-surface-light);
   --glass-border: var(--glass-border-light);
+  --glass-highlight: hsl(0 0% 100% / 0.6);
   --bg-base: var(--bg-light);
   --fg-base: var(--fg-light);
   --fg-muted: #64748b;
@@ -95,6 +101,7 @@
   :root:not(.light):not(.dark) {
     --glass-surface: var(--glass-surface-dark);
     --glass-border: var(--glass-border-dark);
+    --glass-highlight: hsl(0 0% 100% / 0.07);
     --bg-base: var(--bg-dark);
     --fg-base: var(--fg-dark);
     --fg-muted: #8a99ab;
@@ -119,6 +126,7 @@
 .light {
   --glass-surface: var(--glass-surface-light);
   --glass-border: var(--glass-border-light);
+  --glass-highlight: hsl(0 0% 100% / 0.6);
   --bg-base: var(--bg-light);
   --fg-base: var(--fg-light);
   --fg-muted: #64748b;
@@ -142,6 +150,7 @@
 .dark {
   --glass-surface: var(--glass-surface-dark);
   --glass-border: var(--glass-border-dark);
+  --glass-highlight: hsl(0 0% 100% / 0.07);
   --bg-base: var(--bg-dark);
   --fg-base: var(--fg-dark);
   --fg-muted: #8a99ab;
@@ -168,25 +177,32 @@
     @apply py-8 sm:py-12 lg:py-16;
   }
 
-  /* 基本のガラス面（ナビ・パネル用） */
+  /* 基本のガラス面（ナビ・パネル用）
+     上端のinsetハイライトと彩度ブーストで「液体ガラス」の質感を出す */
   .glass {
     @apply rounded-[var(--radius-m)]
            backdrop-blur-[var(--blur-m)]
+           backdrop-saturate-150
            bg-[color:var(--glass-surface)]
            border border-[color:var(--glass-border)];
 
-    box-shadow: var(--card-shadow);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--card-shadow);
   }
 
   /* タイムラインカード用：控えめなホバーだけ動く */
   .glass-card {
     @apply rounded-[var(--radius-m)]
            backdrop-blur-[var(--blur-m)]
+           backdrop-saturate-150
            border;
 
     background: var(--card-bg);
     border-color: var(--card-border);
-    box-shadow: var(--card-shadow);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--card-shadow);
     transition:
       background 0.25s ease,
       border-color 0.25s ease,
@@ -196,7 +212,9 @@
   .glass-card:hover {
     background: var(--card-bg-hover);
     border-color: var(--card-border-hover);
-    box-shadow: var(--card-shadow-hover);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--card-shadow-hover);
     transform: translateY(-1px);
   }
 
@@ -208,9 +226,70 @@
     color: var(--chip-fg);
   }
 
+  /* ガラス風ピル（リンク・CTA用） */
+  .pill {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-2 text-sm;
+
+    backdrop-filter: blur(var(--blur-m)) saturate(1.5);
+    background: var(--glass-surface);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--card-shadow);
+    transition:
+      background 0.25s ease,
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+  }
+  .pill:hover {
+    background: var(--card-bg-hover);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--card-shadow-hover);
+    transform: translateY(-1px);
+  }
+
   /* 補助テキスト */
   .text-muted {
     color: var(--fg-muted);
+  }
+}
+
+/* === MOTION =================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.45s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-up {
+    animation: none;
+  }
+
+  .glass-card,
+  .pill {
+    transition: none;
   }
 }
 
@@ -223,6 +302,33 @@ body {
   background-color: var(--bg-base);
   background-image: var(--page-gradient);
   background-attachment: fixed;
+}
+
+/* ごく薄いアンビエント光彩（ガラス面に映り込む「奥行き」用。
+   装飾は最小限に留め、コンテンツを主役にする） */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(38rem 26rem at 82% -6%, hsl(206 70% 85% / 0.35), transparent 70%),
+    radial-gradient(30rem 22rem at -8% 30%, hsl(196 60% 88% / 0.28), transparent 70%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) body::before {
+    background:
+      radial-gradient(38rem 26rem at 82% -6%, hsl(212 60% 30% / 0.16), transparent 70%),
+      radial-gradient(30rem 22rem at -8% 30%, hsl(196 60% 25% / 0.12), transparent 70%);
+  }
+}
+
+.dark body::before {
+  background:
+    radial-gradient(38rem 26rem at 82% -6%, hsl(212 60% 30% / 0.16), transparent 70%),
+    radial-gradient(30rem 22rem at -8% 30%, hsl(196 60% 25% / 0.12), transparent 70%);
 }
 
 /* コンテンツ内のリンクはアクセシブルに保つ */

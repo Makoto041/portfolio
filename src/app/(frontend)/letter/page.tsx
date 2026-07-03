@@ -41,9 +41,9 @@ export default function LetterPage() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <div className="mt-10 text-gray-400 text-left">
+      <div className="mx-auto w-full max-w-[28rem] px-5 sm:px-8 pt-6">
         <Breadcrumb />
-      </div>
+        </div>
       <section className={WRAP}>
         <form onSubmit={handleSubmit} className={CARD}>
           <h1 className="text-2xl font-semibold mb-4">お便りを送る</h1>

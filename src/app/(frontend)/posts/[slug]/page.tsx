@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!post) {
     return {
-      title: 'ページが見つかりません | いわぶちまこと',
+      title: 'ページが見つかりません | 岩渕誠（いわぶちまこと）',
       description: 'お探しのページは見つかりませんでした。',
     }
   }
@@ -120,9 +120,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="min-h-screen flex flex-col">
-      <div className="mt-10 text-gray-400 text-left">
-            <Breadcrumb />
-    </div> 
+      <div className="mx-auto w-full max-w-[78rem] px-5 sm:px-8 pt-6">
+        <Breadcrumb />
+      </div>
       <section className={WRAP}>
           {post.coverImage?.url && (
             <div className="relative w-full h-64 mb-6">

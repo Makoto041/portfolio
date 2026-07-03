@@ -4,12 +4,12 @@ import ProductCard from '@/components/cards/ProductCard'
 import Breadcrumb from '@/components/layout/Breadcrumb'
 
 export const metadata: Metadata = {
-  title: 'プロダクト | いわぶちまこと',
+  title: 'プロダクト | 岩渕誠（いわぶちまこと）',
   description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
   keywords: ['プロダクト', '制作物', '岩渕誠', 'いわぶちまこと', 'Webアプリ', 'ツール', 'サービス'],
   authors: [{ name: 'いわぶちまこと' }],
   openGraph: {
-    title: 'プロダクト | いわぶちまこと',
+    title: 'プロダクト | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
     url: 'https://iwabuchi-makoto.com/products',
     siteName: 'いわぶちまこと',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'プロダクト | いわぶちまこと',
+    title: 'プロダクト | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
     images: ['/myicon.png'],
   },
@@ -44,7 +44,7 @@ export default async function ProductsPage() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <div className="mt-10 text-gray-400 text-left">
+      <div className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 pt-6">
         <Breadcrumb />
       </div>
       <section className={WRAP}>

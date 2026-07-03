@@ -4,6 +4,7 @@
 // - httpOnly Cookie による重複いいね防止
 // - IPベースの簡易レート制限（サーバーレスのためベストエフォート）
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { sql } from '@payloadcms/db-vercel-postgres'
 import { getPayloadClient } from '@/lib/payloadClient'
 
@@ -79,6 +80,10 @@ export async function POST(
     sql`UPDATE timeline SET likes = COALESCE(likes, 0) + 1 WHERE id = ${id} RETURNING likes`,
   )
   const likes = Number((result.rows?.[0] as { likes?: unknown } | undefined)?.likes ?? (doc.likes ?? 0) + 1)
+
+  // ISRキャッシュを無効化し、次回アクセスで最新のいいね数を反映させる
+  revalidatePath('/')
+  revalidatePath('/timeline')
 
   const res = NextResponse.json({ likes, alreadyLiked: false })
   const nextIds = [...likedIds, String(id)].slice(-COOKIE_MAX_IDS)

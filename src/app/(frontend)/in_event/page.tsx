@@ -2,7 +2,7 @@ import { fetchInEvent } from '@/lib/fetchInEvent'
 import EventCard from '@/components/cards/EventCard'
 import Breadcrumb from '@/components/layout/Breadcrumb'
 
-export const metadata = { title: 'イベント一覧 - いわぶちまこと' }
+export const metadata = { title: 'イベント一覧 | 岩渕誠（いわぶちまこと）' }
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -13,7 +13,7 @@ export default async function InEventPage() {
 
   return (
     <main className="min-h-screen flex flex-col bg-[color:var(--bg-base)]">
-      <div className="mt-10 text-gray-400 text-left">
+      <div className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 pt-6">
         <Breadcrumb />
       </div>
       <section className={WRAP}>

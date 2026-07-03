@@ -71,7 +71,7 @@ export default function TimelineCard({
   const relatedLinks = buildRelatedLinks(post)
 
   return (
-    <article className="glass-card p-5">
+    <article className="glass-card fade-in-up p-5">
       {/* ヘッダー: 投稿タイプ + 日時 */}
       <div className="mb-2 flex items-center gap-2.5">
         {typeLabel && <span className="chip">{typeLabel}</span>}
