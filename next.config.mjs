@@ -20,14 +20,17 @@ const nextConfig = {
   },
 
   async headers() {
+    // NOTE: Next.js は同一パスに同一キーのヘッダーが複数マッチした場合「後勝ち」なので、
+    // ブランケットルールを先頭に置き、静的アセットの長期キャッシュを最後に置く
     return [
-      // Long-term cache for Next.js static assets
+      // HTMLはブラウザに再検証させ、いいね数などの更新を即時反映する
+      // （no-store ではなく no-cache なので bfcache は維持される）
       {
-        source: '/_next/static/:path*',
+        source: '/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: 'no-cache',
           },
         ],
       },
@@ -49,13 +52,13 @@ const nextConfig = {
           },
         ],
       },
-      // Allow bfcache by avoiding no-store on HTML; short cache for page data
+      // Long-term cache for Next.js static assets（最後に置いてブランケットを上書き）
       {
-        source: '/:path*',
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=600',
+            value: 'public, max-age=31536000, immutable',
           },
         ],
       },
