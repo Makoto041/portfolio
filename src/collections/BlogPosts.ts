@@ -1,4 +1,5 @@
 import { CollectionConfig } from 'payload'
+import { anyone, adminOnly } from '@/lib/access'
 
 export const BlogPosts: CollectionConfig = {
   slug: 'blogPosts',
@@ -55,6 +56,9 @@ export const BlogPosts: CollectionConfig = {
     },
   ],
   access: {
-    read: () => true,
+    read: anyone,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
 }

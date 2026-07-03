@@ -1,13 +1,14 @@
 import type { CollectionConfig } from 'payload'
+import { anyone, adminOnly } from '@/lib/access'
 
 export const Products: CollectionConfig = {
   slug: 'products',
   admin: { useAsTitle: 'name' },
-  access: { 
-    read: () => true,
-    create: () => true,
-    update: () => true,
-    delete: () => true,
+  access: {
+    read: anyone,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
     { name: 'name', type: 'text', required: true },

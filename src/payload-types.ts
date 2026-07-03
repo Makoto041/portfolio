@@ -176,6 +176,11 @@ export interface Media {
  */
 export interface Timeline {
   id: number;
+  /**
+   * 任意。入力するとカードの見出しとして表示されます
+   */
+  title?: string | null;
+  postType?: ('diary' | 'tech' | 'photo' | 'making' | 'event' | 'travel' | 'study') | null;
   text: {
     root: {
       type: string;
@@ -214,7 +219,33 @@ export interface Timeline {
         id?: string | null;
       }[]
     | null;
+  /**
+   * 関連するイベント・記事・制作物があれば紐付けられます
+   */
+  related?: {
+    event?: (number | null) | Event;
+    post?: (number | null) | BlogPost;
+    product?: (number | null) | Product;
+  };
   likes?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  title: string;
+  summary?: string | null;
+  platform?: ('twitch' | 'youtube' | 'nico' | 'offline' | 'other') | null;
+  externalUrl?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  thumbnail?: (number | null) | Media;
+  slug: string;
+  isPublic?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -268,35 +299,6 @@ export interface BlogMedia {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "letter".
- */
-export interface Letter {
-  id: number;
-  name: string;
-  message: string;
-  createdAt: string;
-  updatedAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "events".
- */
-export interface Event {
-  id: number;
-  title: string;
-  summary?: string | null;
-  platform?: ('twitch' | 'youtube' | 'nico' | 'offline' | 'other') | null;
-  externalUrl?: string | null;
-  startDate: string;
-  endDate?: string | null;
-  thumbnail?: (number | null) | Media;
-  slug: string;
-  isPublic?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "products".
  */
 export interface Product {
@@ -309,6 +311,17 @@ export interface Product {
   order?: number | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "letter".
+ */
+export interface Letter {
+  id: number;
+  name: string;
+  message: string;
+  createdAt: string;
+  updatedAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -431,6 +444,8 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "timeline_select".
  */
 export interface TimelineSelect<T extends boolean = true> {
+  title?: T;
+  postType?: T;
   text?: T;
   embedUrl?: T;
   urlMetadata?:
@@ -450,6 +465,13 @@ export interface TimelineSelect<T extends boolean = true> {
     | {
         image?: T;
         id?: T;
+      };
+  related?:
+    | T
+    | {
+        event?: T;
+        post?: T;
+        product?: T;
       };
   likes?: T;
   updatedAt?: T;

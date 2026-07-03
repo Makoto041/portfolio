@@ -1,4 +1,4 @@
-/* ── ここから追加 ── */
+/* ── フォント ── */
 @font-face {
   font-family: 'Higure Gothic';
   src: url('/fonts/HigureGothic-Light.ttf') format('truetype');
@@ -29,37 +29,38 @@
   font-weight: 900;
   font-style: normal;
 }
-/* ── ここまで追加 ── */
 
 /* ──────────────────────────────────────────────
-   Framer-like “Cream-Glass” 2025
-   Tailwind v4  ― CSS-first (@theme / @layer)
+   Quiet Glass ― 白・薄ブルー・薄グレー基調の
+   シンプルで涼しげな Liquid Glass デザイン
+   Tailwind v4 ― CSS-first (@theme / @layer)
 ─────────────────────────────────────────────── */
 @import "tailwindcss";
 
 /* === TOKENS ================================== */
 @theme {
-  /* ベース色 */
-  --bg-light: #fdfdfd;
-  --bg-dark: #0f1117;
-  --fg-light: #111;
-  --fg-dark: #f5f7fa;
-  /* フォント定義をトークン化しておくと、後で var() で使いやすいです */
+  /* ベース色（涼しげな白 / 深い青灰） */
+  --bg-light: #f6f9fc;
+  --bg-dark: #0e141c;
+  --fg-light: #1c2733;
+  --fg-dark: #e8eef5;
+
+  /* フォント */
   --font-body: 'Higure Gothic', sans-serif;
 
-
-  /* アクセント（リンク等） */
-  --accent: #1d4aab;
+  /* アクセント（薄いブルー系） */
+  --accent: #4a7fb5;
+  --accent-soft: #dce9f5;
 
   /* ガラス面 */
-  --glass-surface-light: hsl(0 0% 100% / 0.14);
-  --glass-border-light: hsl(215 15% 15% / 0.08);
-  --glass-surface-dark: hsl(220 20% 16% / 0.3);
-  --glass-border-dark: hsl(0 0% 100% / 0.12);
+  --glass-surface-light: hsl(210 40% 100% / 0.55);
+  --glass-border-light: hsl(210 30% 60% / 0.16);
+  --glass-surface-dark: hsl(214 28% 16% / 0.55);
+  --glass-border-dark: hsl(210 40% 90% / 0.1);
 
   /* radius / blur */
-  --radius-m: 1rem;
-  --blur-m: clamp(8px, 2vw, 16px);
+  --radius-m: 1.1rem;
+  --blur-m: clamp(10px, 2vw, 18px);
 }
 
 /* light / dark 切替 */
@@ -69,11 +70,24 @@
   --glass-border: var(--glass-border-light);
   --bg-base: var(--bg-light);
   --fg-base: var(--fg-light);
-  /* カード背景・ボーダー */
-  --card-bg: rgb(255 255 255 / 0.6);
-  --card-bg-hover: rgb(255 255 255 / 0.75);
-  --card-border: rgb(229 231 235 / 0.4);
-  --card-border-hover: rgb(229 231 235 / 0.6);
+  --fg-muted: #64748b;
+  /* カード */
+  --card-bg: hsl(210 40% 100% / 0.55);
+  --card-bg-hover: hsl(210 40% 100% / 0.72);
+  --card-border: hsl(210 30% 60% / 0.16);
+  --card-border-hover: hsl(210 40% 55% / 0.28);
+  --card-shadow: 0 4px 24px hsl(212 45% 40% / 0.07);
+  --card-shadow-hover: 0 8px 32px hsl(212 45% 40% / 0.12);
+  /* バッジ・タグ */
+  --chip-bg: hsl(210 45% 55% / 0.1);
+  --chip-fg: #45688c;
+  /* ページ背景（ごく薄いブルーのグラデーション） */
+  --page-gradient: linear-gradient(
+    180deg,
+    #f8fbfe 0%,
+    #f3f7fb 45%,
+    #eef4f9 100%
+  );
 }
 
 /* システム設定がダークモード（ユーザー選択がない場合のみ） */
@@ -83,11 +97,21 @@
     --glass-border: var(--glass-border-dark);
     --bg-base: var(--bg-dark);
     --fg-base: var(--fg-dark);
-    /* カード背景・ボーダー */
-    --card-bg: rgb(31 41 55 / 0.4);
-    --card-bg-hover: rgb(31 41 55 / 0.6);
-    --card-border: rgb(75 85 99 / 0.3);
-    --card-border-hover: rgb(75 85 99 / 0.5);
+    --fg-muted: #8a99ab;
+    --card-bg: hsl(214 26% 17% / 0.55);
+    --card-bg-hover: hsl(214 26% 20% / 0.7);
+    --card-border: hsl(210 40% 90% / 0.09);
+    --card-border-hover: hsl(210 40% 90% / 0.18);
+    --card-shadow: 0 4px 24px hsl(220 60% 2% / 0.35);
+    --card-shadow-hover: 0 8px 32px hsl(220 60% 2% / 0.5);
+    --chip-bg: hsl(210 50% 70% / 0.12);
+    --chip-fg: #9dbdd9;
+    --page-gradient: linear-gradient(
+      180deg,
+      #101720 0%,
+      #0e141c 55%,
+      #0c1219 100%
+    );
   }
 }
 
@@ -97,11 +121,21 @@
   --glass-border: var(--glass-border-light);
   --bg-base: var(--bg-light);
   --fg-base: var(--fg-light);
-  /* カード背景・ボーダー */
-  --card-bg: rgb(255 255 255 / 0.6);
-  --card-bg-hover: rgb(255 255 255 / 0.75);
-  --card-border: rgb(229 231 235 / 0.4);
-  --card-border-hover: rgb(229 231 235 / 0.6);
+  --fg-muted: #64748b;
+  --card-bg: hsl(210 40% 100% / 0.55);
+  --card-bg-hover: hsl(210 40% 100% / 0.72);
+  --card-border: hsl(210 30% 60% / 0.16);
+  --card-border-hover: hsl(210 40% 55% / 0.28);
+  --card-shadow: 0 4px 24px hsl(212 45% 40% / 0.07);
+  --card-shadow-hover: 0 8px 32px hsl(212 45% 40% / 0.12);
+  --chip-bg: hsl(210 45% 55% / 0.1);
+  --chip-fg: #45688c;
+  --page-gradient: linear-gradient(
+    180deg,
+    #f8fbfe 0%,
+    #f3f7fb 45%,
+    #eef4f9 100%
+  );
 }
 
 /* ユーザーが明示的にダークを選択 */
@@ -110,11 +144,21 @@
   --glass-border: var(--glass-border-dark);
   --bg-base: var(--bg-dark);
   --fg-base: var(--fg-dark);
-  /* カード背景・ボーダー */
-  --card-bg: rgb(31 41 55 / 0.4);
-  --card-bg-hover: rgb(31 41 55 / 0.6);
-  --card-border: rgb(75 85 99 / 0.3);
-  --card-border-hover: rgb(75 85 99 / 0.5);
+  --fg-muted: #8a99ab;
+  --card-bg: hsl(214 26% 17% / 0.55);
+  --card-bg-hover: hsl(214 26% 20% / 0.7);
+  --card-border: hsl(210 40% 90% / 0.09);
+  --card-border-hover: hsl(210 40% 90% / 0.18);
+  --card-shadow: 0 4px 24px hsl(220 60% 2% / 0.35);
+  --card-shadow-hover: 0 8px 32px hsl(220 60% 2% / 0.5);
+  --chip-bg: hsl(210 50% 70% / 0.12);
+  --chip-fg: #9dbdd9;
+  --page-gradient: linear-gradient(
+    180deg,
+    #101720 0%,
+    #0e141c 55%,
+    #0c1219 100%
+  );
 }
 
 /* === UTILITIES ================================= */
@@ -124,21 +168,57 @@
     @apply py-8 sm:py-12 lg:py-16;
   }
 
+  /* 基本のガラス面（ナビ・パネル用） */
   .glass {
     @apply rounded-[var(--radius-m)]
            backdrop-blur-[var(--blur-m)]
            bg-[color:var(--glass-surface)]
-           border border-[color:var(--glass-border)]
-           shadow-[0_6px_26px_rgba(0,0,0,.12)];
+           border border-[color:var(--glass-border)];
+    box-shadow: var(--card-shadow);
+  }
+
+  /* タイムラインカード用：控えめなホバーだけ動く */
+  .glass-card {
+    @apply rounded-[var(--radius-m)]
+           backdrop-blur-[var(--blur-m)]
+           border;
+    background: var(--card-bg);
+    border-color: var(--card-border);
+    box-shadow: var(--card-shadow);
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease,
+      transform 0.25s ease;
+  }
+  .glass-card:hover {
+    background: var(--card-bg-hover);
+    border-color: var(--card-border-hover);
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-1px);
+  }
+
+  /* 投稿タイプ・タグ用チップ */
+  .chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide;
+    background: var(--chip-bg);
+    color: var(--chip-fg);
+  }
+
+  /* 補助テキスト */
+  .text-muted {
+    color: var(--fg-muted);
   }
 }
 
 /* === BASE ===================================== */
 body {
-  @apply bg-[color:var(--bg-base)]
-         text-[color:var(--fg-base)]
-         antialiased selection:bg-[color:var(--accent)/.35];
-  background-size: auto;
+  @apply text-[color:var(--fg-base)]
+         antialiased selection:bg-[color:var(--accent)/.25];
+  font-family: var(--font-body);
+  background-color: var(--bg-base);
+  background-image: var(--page-gradient);
+  background-attachment: fixed;
 }
 
 /* コンテンツ内のリンクはアクセシブルに保つ */
@@ -212,14 +292,4 @@ header a:focus {
 .dark nav a:focus,
 .dark header a:focus {
   outline-color: #60a5fa;
-}
-
-/* ノイズと同系色を軽く被せる */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  opacity: 0.05;
-  pointer-events: none;
-  z-index: -1;
 }

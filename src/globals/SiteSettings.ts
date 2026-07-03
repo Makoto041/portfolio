@@ -1,4 +1,5 @@
 import type { GlobalConfig } from 'payload'
+import { anyone, adminOnly } from '@/lib/access'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
@@ -7,8 +8,8 @@ export const SiteSettings: GlobalConfig = {
     group: '設定',
   },
   access: {
-    read: () => true,
-    update: () => true,
+    read: anyone,
+    update: adminOnly, // サイト設定の変更は管理者のみ
   },
   fields: [
     {

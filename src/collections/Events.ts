@@ -1,5 +1,6 @@
 // src/collections/Events.ts
 import type { CollectionConfig } from 'payload'
+import { anyone, adminOnly } from '@/lib/access'
 
 export const Events: CollectionConfig = {
   slug: 'events',
@@ -8,7 +9,12 @@ export const Events: CollectionConfig = {
     plural: 'イベント',
   },
   admin: { useAsTitle: 'title' },
-  access: { read: () => true },
+  access: {
+    read: anyone,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
+  },
   fields: [
     { name: 'title', type: 'text', required: true, label: 'タイトル' },
     { name: 'summary', type: 'textarea', label: '概要' },

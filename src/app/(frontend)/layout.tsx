@@ -2,15 +2,14 @@
 import '../global.css'
 import type { Metadata } from 'next'
 import React from 'react'
-import SideNav from '@/components/layout/SideNav'
-import MobileHeader from '@/components/layout/MobileHeader'
+import GlassNav from '@/components/layout/GlassNav'
 import { toCFUrl } from '@/lib/cfUrl'
 import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
-  title: 'いわぶち | 個人ポートフォリオサイト',
-  description: 'いわぶちの個人ポートフォリオサイト。日記、ブログ、写真ギャラリーなど日々の活動や作品を公開しています。',
-  keywords: ['いわぶち', 'ポートフォリオ', '写真', 'ブログ', 'ギャラリー'],
+  title: 'いわぶち | ライフログ',
+  description: 'いわぶちの個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
+  keywords: ['いわぶち', 'ライフログ', '日記', '写真', 'ブログ', 'ギャラリー'],
   authors: [{ name: 'いわぶち' }],
   creator: 'いわぶち',
   publisher: 'いわぶち',
@@ -34,8 +33,8 @@ export const metadata: Metadata = {
     shortcut: '/myicon.png',
   },
   openGraph: {
-    title: 'いわぶち | 個人ポートフォリオサイト',
-    description: 'いわぶちの個人ポートフォリオサイト。日記、ブログ、写真ギャラリーなど日々の活動や作品を公開しています。',
+    title: 'いわぶち | ライフログ',
+    description: 'いわぶちの個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
     url: 'https://iwabuchi-makoto.com', // 実際のドメインに変更してください
     siteName: 'いわぶち',
     locale: 'ja_JP',
@@ -51,8 +50,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'いわぶち | 個人ポートフォリオサイト',
-    description: 'いわぶちの個人ポートフォリオサイト。日記、ブログ、写真ギャラリーなど日々の活動や作品を公開しています。',
+    title: 'いわぶち | ライフログ',
+    description: 'いわぶちの個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
     creator: '@iwabuchi', // 実際のTwitterアカウントに変更してください
     images: ['/myicon.png'], // サイトの代表写真を使用
   },
@@ -138,17 +137,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
 
-      <body className="antialiased overflow-x-hidden bg-[color:var(--bg)] text-[color:var(--text)]">
+      <body className="antialiased overflow-x-hidden text-[color:var(--fg-base)]">
         <Providers>
-          {/* ── Mobile header ─────────────────── */}
-          <MobileHeader />
+          {/* ── 上部グラスナビゲーション ── */}
+          <GlassNav />
 
-          {/* ── Desktop layout ― side + main ── */}
-          <div className="flex">
-            <SideNav />
-
-            <main className="flex-1 min-h-screen">{children}</main>
-          </div>
+          {/* ── 1カラムのメインコンテンツ（各ページが <main> を持つため div） ── */}
+          <div className="min-h-screen">{children}</div>
 
           {/* Portal root for modals */}
           <div id="modal-root"></div>
