@@ -165,8 +165,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* ── 上部グラスナビゲーション ── */}
           <GlassNav />
 
-          {/* ── 1カラムのメインコンテンツ（各ページが <main> を持つため div） ── */}
-          <div className="min-h-screen">{children}</div>
+          {/* ── 1カラムのメインコンテンツ（各ページが <main> を持つため div）
+               全ページ同一のコンテナ幅にすることで、ページ遷移時の横ずれを防ぐ ── */}
+          <div className="mx-auto min-h-screen w-full max-w-5xl px-4 sm:px-6">{children}</div>
 
           {/* ── フッター ── */}
           <SiteFooter />

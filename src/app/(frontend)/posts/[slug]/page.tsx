@@ -70,7 +70,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-const WRAP = 'mx-auto w-full max-w-[78rem] px-5 sm:px-8 section-pad'
+const WRAP = 'section-pad'
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   // Next.js v15+: params は Promise になっているので await して展開
@@ -120,7 +120,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="min-h-screen flex flex-col">
-      <div className="mx-auto w-full max-w-[78rem] px-5 sm:px-8 pt-6">
+      <div className="pt-6">
         <Breadcrumb />
       </div>
       <section className={WRAP}>

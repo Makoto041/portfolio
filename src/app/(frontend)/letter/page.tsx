@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import Breadcrumb from '@/components/layout/Breadcrumb'
 
-const WRAP = 'mx-auto w-full max-w-[28rem] px-5 sm:px-8 section-pad flex justify-center'
+const WRAP = 'mx-auto w-full max-w-[28rem] section-pad flex justify-center'
 const CARD = 'glass p-8 flex flex-col gap-4 w-full'
 
 export default function LetterPage() {
@@ -41,7 +41,7 @@ export default function LetterPage() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <div className="mx-auto w-full max-w-[28rem] px-5 sm:px-8 pt-6">
+      <div className="pt-6">
         <Breadcrumb />
         </div>
       <section className={WRAP}>

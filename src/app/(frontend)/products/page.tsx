@@ -37,18 +37,18 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
-const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad'
+const WRAP = 'section-pad'
 
 export default async function ProductsPage() {
   const products = await fetchProducts()
 
   return (
     <main className="min-h-screen flex flex-col">
-      <div className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 pt-6">
+      <div className="pt-6">
         <Breadcrumb />
       </div>
       <section className={WRAP}>
-        <h1 className="text-3xl font-semibold mb-8">Products</h1>
+        <h1 className="text-2xl font-semibold tracking-wide mb-8">Products</h1>
         {products.length === 0 && <p>まだ公開されていません。</p>}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((p) => (

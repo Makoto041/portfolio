@@ -6,18 +6,18 @@ export const metadata = { title: 'イベント一覧 | 岩渕誠（いわぶち�
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad'
+const WRAP = 'section-pad'
 
 export default async function InEventPage() {
   const inEvent = await fetchInEvent()
 
   return (
     <main className="min-h-screen flex flex-col bg-[color:var(--bg-base)]">
-      <div className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 pt-6">
+      <div className="pt-6">
         <Breadcrumb />
       </div>
       <section className={WRAP}>
-        <h1 className="text-3xl font-semibold mb-8 text-[color:var(--fg-base)]">Events</h1>
+        <h1 className="text-2xl font-semibold tracking-wide mb-8">Events</h1>
         {inEvent.length === 0 && <p className="text-[color:var(--fg-base)]">現在予定されているイベントはありません。</p>}
         <div className="grid gap-6 sm:grid-cols-2">
           {inEvent.map((e) => (

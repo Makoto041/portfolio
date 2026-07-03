@@ -294,6 +294,12 @@
 }
 
 /* === BASE ===================================== */
+
+/* ページごとのスクロールバー有無で横位置がずれないよう常にガター確保 */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   @apply text-[color:var(--fg-base)]
          antialiased selection:bg-(--accent)/25;
