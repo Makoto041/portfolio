@@ -53,12 +53,12 @@ export default async function GalleryPage() {
   return (
     <main className="min-h-screen flex flex-col">
       {/* パンくず */}
-      <div className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 pt-6">
+      <div className="pt-6">
         <Breadcrumb />
       </div>
 
       {/* セクションラップ */}
-      <section className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad">
+      <section className="section-pad">
         <div className="mb-6">
           <h1 className="text-3xl font-semibold">Gallery</h1>
         </div>

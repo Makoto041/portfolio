@@ -121,23 +121,23 @@ export default function TimelineCard({
         />
       )}
 
-      {/* 画像（最大3枚） */}
+      {/* 画像（最大3枚）。固定幅ではなくグリッドでSPでもはみ出さない */}
       {post.images?.length ? (
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 grid max-w-md grid-cols-3 gap-2">
           {post.images.slice(0, 3).map((imgObj) =>
             imgObj?.image?.url ? (
               <button
                 key={imgObj.id || imgObj.image?.id}
                 type="button"
                 aria-label="画像を拡大表示"
-                className="relative h-28 w-28 cursor-zoom-in overflow-hidden rounded-xl sm:h-32 sm:w-32"
+                className="relative aspect-square cursor-zoom-in overflow-hidden rounded-xl"
                 onClick={() => onImageClick?.(imgObj.image.url)}
               >
                 <Image
                   src={toCFUrl(imgObj.image.sizes?.thumbnail?.url ?? imgObj.image.url)}
                   alt={post.title ?? 'timeline-img'}
                   fill
-                  sizes="(max-width: 640px) 33vw, 128px"
+                  sizes="(max-width: 640px) 33vw, 150px"
                   quality={75}
                   className="object-cover transition-transform duration-300 hover:scale-[1.03]"
                   loading="lazy"

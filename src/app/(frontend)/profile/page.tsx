@@ -69,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 const WRAP =
-  'mx-auto w-full max-w-[28rem] px-5 sm:px-8 section-pad flex flex-col items-center text-center'
+  'mx-auto w-full max-w-[28rem] section-pad flex flex-col items-center text-center'
 const CARD = 'glass p-8 flex flex-col items-center'
 
 export default async function ProfilePage() {
@@ -128,7 +128,7 @@ export default async function ProfilePage() {
     <>
       <link rel="preload" as="image" href={profileImageUrl} />
       <main className="min-h-screen flex flex-col">
-        <div className="mx-auto w-full max-w-[28rem] px-5 sm:px-8 pt-6">
+        <div className="pt-6">
           <Breadcrumb />
         </div>
         <section className={WRAP}>

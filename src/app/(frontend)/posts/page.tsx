@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
 }
 
-const WRAP = 'mx-auto w-full max-w-[58rem] px-5 sm:px-8 section-pad'
+const WRAP = 'section-pad'
 
 export default async function BlogPage() {
   // blogLimit: 10 件取得
@@ -50,11 +50,11 @@ export default async function BlogPage() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <div className="mx-auto w-full max-w-[58rem] px-5 sm:px-8 pt-6">
+      <div className="pt-6">
         <Breadcrumb />
       </div>
       <section className={WRAP}>
-        <h1 className="text-3xl font-semibold mb-2">Blog</h1>
+        <h1 className="text-2xl font-semibold tracking-wide mb-2">Blog</h1>
         <p className="mb-8 opacity-80">考えていることを書き留めておく場所</p>
         {/* Suspense でラップ！ */}
         <Suspense fallback={<PostsListLoading />}>

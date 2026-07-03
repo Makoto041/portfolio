@@ -100,7 +100,7 @@ export default async function Home() {
   const photos = gallery.filter((g: MediaDoc) => g.url || g.sizes?.thumbnail?.url)
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 pb-12 sm:px-6">
+    <main className="pb-12">
       <Analytics />
 
       {/* アイデンティティ（実名表記はSEOシグナルも兼ねる） */}
@@ -117,7 +117,7 @@ export default async function Home() {
       {/* お知らせ（開催中イベントがある場合のみ） */}
       {activeEvent && (
         <section className="pt-4">
-          <ActiveEventCard event={activeEvent} cardClass="glass-card overflow-hidden" />
+          <ActiveEventCard event={activeEvent} />
         </section>
       )}
 
@@ -125,7 +125,7 @@ export default async function Home() {
       <div className="grid gap-8 pt-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         {/* メイン: タイムライン */}
         <section>
-          <div className="mb-5 flex items-center justify-between">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-baseline gap-3">
               <h2 className="text-lg font-semibold tracking-wide">Timeline</h2>
               <AdminLinks />

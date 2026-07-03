@@ -1,145 +1,95 @@
-// src/components/EventCard.tsx
+// src/components/cards/EventCard.tsx
+// イベント一覧用カード。glass-cardデザインシステムに統一し、
+// プラットフォームは色付きドット+チップで控えめに示す
 import Image from 'next/image'
 import Link from 'next/link'
 import { ExternalLink, Calendar, Clock } from 'lucide-react'
 import type { Event } from '@/payload-types'
 import { toCFUrl } from '@/lib/cfUrl'
-
-const platformConfig = {
-  twitch: {
-    name: 'Twitch',
-    badgeClass: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-200',
-    dotClass: 'bg-purple-500 dark:bg-purple-400',
-  },
-  youtube: {
-    name: 'YouTube',
-    badgeClass: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-200',
-    dotClass: 'bg-red-500 dark:bg-red-400',
-  },
-  nico: {
-    name: 'ニコニコ',
-    badgeClass: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-200',
-    dotClass: 'bg-orange-500 dark:bg-orange-400',
-  },
-  offline: {
-    name: '現地イベント',
-    badgeClass: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-200',
-    dotClass: 'bg-green-500 dark:bg-green-400',
-  },
-  other: {
-    name: 'その他',
-    badgeClass: 'bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-200',
-    dotClass: 'bg-gray-500 dark:bg-gray-400',
-  },
-}
-
 import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
 
+const PLATFORMS: Record<string, { name: string; dotClass: string }> = {
+  twitch: { name: 'Twitch', dotClass: 'bg-purple-500' },
+  youtube: { name: 'YouTube', dotClass: 'bg-red-500' },
+  nico: { name: 'ニコニコ', dotClass: 'bg-orange-500' },
+  offline: { name: '現地イベント', dotClass: 'bg-emerald-500' },
+  other: { name: 'その他', dotClass: 'bg-slate-400' },
+}
 
 export default function EventCard({ e }: { e: Event }) {
-  const platform = platformConfig[e.platform as keyof typeof platformConfig] || platformConfig.other
+  const platform = PLATFORMS[e.platform ?? 'other'] ?? PLATFORMS.other
   const { date, time } = formatEventDateWithExtendedHour(e.startDate, e.endDate)
-  const isLive = e.externalUrl && new Date(e.startDate) <= new Date() && (!e.endDate || new Date(e.endDate) >= new Date())
+  const isLive =
+    new Date(e.startDate) <= new Date() && (!e.endDate || new Date(e.endDate) >= new Date())
+  const thumbnailUrl =
+    e.thumbnail && typeof e.thumbnail === 'object' && 'url' in e.thumbnail && e.thumbnail.url
+      ? toCFUrl(e.thumbnail.url)
+      : null
 
   return (
     <Link
-      href={e.externalUrl || `/events/${e.slug}`}
+      href={e.externalUrl || `/in_event`}
       target={e.externalUrl ? '_blank' : undefined}
-      className="block no-underline"
+      rel={e.externalUrl ? 'noopener noreferrer' : undefined}
+      className="card-link group block"
     >
-      <article
-        className={`
-          group relative
-          bg-[color:var(--card-bg)] hover:bg-[color:var(--card-bg-hover)]
-          backdrop-blur-xl
-          border border-[color:var(--card-border)] hover:border-[color:var(--card-border-hover)]
-          shadow-lg hover:shadow-xl
-          transition-all duration-500
-          rounded-2xl overflow-hidden
-          text-gray-900 dark:text-white
-        `}
-      >
-        {/* Live indicator */}
-        {isLive && (
-          <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5 bg-red-500/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-            LIVE
-          </div>
-        )}
-        
-        {/* Thumbnail */}
-        <div className="relative h-52 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 overflow-hidden">
-          {e.thumbnail && typeof e.thumbnail === 'object' && 'url' in e.thumbnail && e.thumbnail.url ? (
+      <article className="glass-card fade-in-up overflow-hidden">
+        {/* サムネイル */}
+        <div className="relative aspect-[16/9] overflow-hidden">
+          {thumbnailUrl ? (
             <Image
-              src={toCFUrl(e.thumbnail.url)}
+              src={thumbnailUrl}
               alt={e.title}
               fill
-              className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+              sizes="(max-width: 640px) 100vw, 480px"
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
           ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-gray-300">
-              <Calendar size={56} strokeWidth={1.5} />
+            <div className="absolute inset-0 flex items-center justify-center bg-[color:var(--chip-bg)] text-muted">
+              <Calendar size={40} strokeWidth={1.5} />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-          
-          {/* Glassmorphism overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          {/* LIVEバッジ */}
+          {isLive && (
+            <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-red-500/90 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+              LIVE
+            </span>
+          )}
         </div>
-        
-        {/* Content */}
-        <div className="p-6 space-y-4">
-          {/* Platform badge */}
-          <div className="flex items-center justify-between">
-            <span
-  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-xs font-bold shadow-sm transition-colors duration-200 ${platform.badgeClass}`}
->
-  <span className={`w-2 h-2 rounded-full mr-1 ${platform.dotClass}`} />
-  {platform.name}
-</span>
+
+        {/* 本文 */}
+        <div className="space-y-2.5 p-5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="chip">
+              <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${platform.dotClass}`} />
+              {platform.name}
+            </span>
             {e.externalUrl && (
-              <ExternalLink size={16} className="!text-gray-400 dark:!text-gray-400 group-hover:!text-blue-500 transition-colors duration-300" strokeWidth={1.5} />
+              <ExternalLink
+                size={14}
+                strokeWidth={1.5}
+                className="shrink-0 text-muted transition-opacity group-hover:opacity-70"
+              />
             )}
           </div>
-          
-          {/* Title */}
-          <h3
-            className="
-              font-bold text-xl leading-tight
-              text-[color:var(--fg-base)]
-              group-hover:text-blue-600 dark:group-hover:text-blue-400
-              transition-colors duration-300
-              line-clamp-2
-            "
-          >
-            {e.title}
-          </h3>
 
-          {/* Summary */}
+          <h2 className="line-clamp-2 text-base font-semibold leading-snug">{e.title}</h2>
+
           {e.summary && (
-            <p className="text-sm leading-relaxed line-clamp-2 opacity-80 text-[color:var(--fg-base)]">
-              {e.summary}
-            </p>
+            <p className="line-clamp-2 text-sm leading-relaxed text-muted">{e.summary}</p>
           )}
 
-          {/* Date and time */}
-          <div
-            className="
-              flex items-center gap-6 text-sm
-              pt-2
-              border-t border-gray-300/50 dark:border-gray-600/40
-              opacity-70
-              text-[color:var(--fg-base)]
-            "
-          >
-            <div className="flex items-center gap-2">
-              <Calendar size={14} strokeWidth={1.5} />
-              <span className="font-medium">{date}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock size={14} strokeWidth={1.5} />
-              <span className="font-medium">{time}</span>
-            </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[color:var(--glass-border)] pt-2.5 text-xs text-muted">
+            <span className="inline-flex items-center gap-1.5">
+              <Calendar size={13} strokeWidth={1.5} />
+              {date}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Clock size={13} strokeWidth={1.5} />
+              {time}
+            </span>
           </div>
         </div>
       </article>

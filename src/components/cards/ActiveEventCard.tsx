@@ -1,214 +1,109 @@
-// src/components/ActiveEventCard.tsx
-import { Calendar, Clock, Bell } from 'lucide-react'
+// src/components/cards/ActiveEventCard.tsx
+// トップページのお知らせカード（予定/開催中）。
+// glass-cardベースの横型レイアウトで、開催中は赤リングで控えめに強調する
 import Image from 'next/image'
+import { Calendar, Clock, Bell } from 'lucide-react'
 import type { Event } from '@/payload-types'
 import { toCFUrl } from '@/lib/cfUrl'
-
-const platformConfig = {
-  twitch: {
-    name: 'Twitch',
-    badgeClass: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300',
-    dotClass: 'bg-purple-500 dark:bg-purple-400',
-  },
-  youtube: {
-    name: 'YouTube',
-    badgeClass: 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300',
-    dotClass: 'bg-red-500 dark:bg-red-400',
-  },
-  nico: {
-    name: 'ニコニコ',
-    badgeClass: 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300',
-    dotClass: 'bg-orange-500 dark:bg-orange-400',
-  },
-  offline: {
-    name: '現地イベント',
-    badgeClass: 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300',
-    dotClass: 'bg-green-500 dark:bg-green-400',
-  },
-  other: {
-    name: 'その他',
-    badgeClass: 'bg-gray-50 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300',
-    dotClass: 'bg-gray-500 dark:bg-gray-400',
-  },
-}
-
 import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
+
+const PLATFORMS: Record<string, { name: string; dotClass: string }> = {
+  twitch: { name: 'Twitch', dotClass: 'bg-purple-500' },
+  youtube: { name: 'YouTube', dotClass: 'bg-red-500' },
+  nico: { name: 'ニコニコ', dotClass: 'bg-orange-500' },
+  offline: { name: '現地イベント', dotClass: 'bg-emerald-500' },
+  other: { name: 'その他', dotClass: 'bg-slate-400' },
+}
 
 function getEventStatus(startDate: string, endDate?: string | null) {
   const now = new Date()
   const start = new Date(startDate)
   const end = endDate ? new Date(endDate) : null
 
-  if (now < start) {
-    return 'upcoming' // 告知モード
-  } else if (now >= start && (!end || now <= end)) {
-    return 'live' // 開催中モード
-  } else {
-    return 'ended' // 終了（表示しない）
-  }
+  if (now < start) return 'upcoming' // 告知
+  if (now >= start && (!end || now <= end)) return 'live' // 開催中
+  return 'ended'
 }
 
-type EventDoc = Event
 type ActiveEventCardProps = {
-  event: EventDoc
-  cardClass: string
+  event: Event
+  /** 互換のため残置（未使用） */
+  cardClass?: string
 }
 
-export default function ActiveEventCard({ event, cardClass }: ActiveEventCardProps) {
-  const href = event.externalUrl || `/events/${event.slug}`
-  const platform =
-    platformConfig[event.platform as keyof typeof platformConfig] || platformConfig.other
+export default function ActiveEventCard({ event }: ActiveEventCardProps) {
+  const href = event.externalUrl || '/in_event'
+  const platform = PLATFORMS[event.platform ?? 'other'] ?? PLATFORMS.other
   const { date, time } = formatEventDateWithExtendedHour(event.startDate, event.endDate)
   const status = getEventStatus(event.startDate, event.endDate)
 
-  // 終了したイベントは表示しない
-  if (status === 'ended') {
-    return null
-  }
+  if (status === 'ended') return null
 
-  if (status === 'upcoming') {
-    // 告知モード：控えめなカード
-    return (
-      <a
-        href={href}
-        target={event.externalUrl ? '_blank' : undefined}
-        className={`card-link block mb-6 rounded-xl border border-[color:var(--card-border)] bg-[color:var(--card-bg)] backdrop-blur-sm shadow-sm relative overflow-hidden h-24 sm:h-32 hover:shadow-md transition-all duration-300 ${cardClass}`}
-      >
-        <div className="flex h-full">
-          {/* Thumbnail - カード全体サイズに合わせる */}
-          {event.thumbnail &&
-            typeof event.thumbnail === 'object' &&
-            'url' in event.thumbnail &&
-            event.thumbnail.url && (
-              <div className="flex-shrink-0 w-32 sm:w-48 h-full relative">
-                <Image
-                  src={toCFUrl(event.thumbnail.url)}
-                  alt={event.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
+  const isLive = status === 'live'
+  const thumbnailUrl =
+    event.thumbnail &&
+    typeof event.thumbnail === 'object' &&
+    'url' in event.thumbnail &&
+    event.thumbnail.url
+      ? toCFUrl(event.thumbnail.url)
+      : null
 
-          <div className="flex-1 min-w-0 p-2 sm:p-4 flex flex-col justify-center">
-            <div className="flex flex-wrap items-center gap-1 mb-1">
-              <Bell size={10} className="text-blue-500" />
-              <span className="text-xs text-blue-600 font-medium">予定</span>
-              <span
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-xl text-xs font-bold shadow-sm transition-colors duration-200 ${platform.badgeClass}`}
-              >
-                <span className={`w-2 h-2 rounded-full mr-1 ${platform.dotClass}`} />
-                {platform.name}
-              </span>
-            </div>
-            <h3 className="text-lg sm:text-base font-semibold text-gray-900 dark:!text-gray-100 line-clamp-2 mb-1">
-              {event.title}
-            </h3>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 mb-1">
-              <div className="flex items-center gap-1">
-                <Calendar size={8} />
-                <span>{date}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock size={8} />
-                <span>{time}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </a>
-    )
-  }
-
-  // 開催中モード：目立つカード
   return (
     <a
       href={href}
       target={event.externalUrl ? '_blank' : undefined}
-      className={`
-      card-link
-      block mb-6 rounded-xl border-2
-      border-red-400/60 dark:border-red-700/60
-      bg-gradient-to-r from-red-50/90 to-pink-50/90
-      dark:from-red-700/60 dark:via-pink-700/60 dark:to-orange-700/60
-      shadow-xl backdrop-blur-sm relative overflow-hidden
-      h-32 sm:h-40 hover:shadow-2xl transition-all duration-300 ${cardClass}
-    `}
+      rel={event.externalUrl ? 'noopener noreferrer' : undefined}
+      className={`card-link glass-card fade-in-up group block overflow-hidden ${
+        isLive ? 'ring-1 ring-red-400/40' : ''
+      }`}
     >
-      {/* ダークモード背景エフェクト */}
-      <div className="absolute inset-0 opacity-10">
-        <div
-          className="
-        absolute inset-0
-        bg-gradient-to-br from-red-500 via-pink-500 to-orange-500
-        dark:from-red-800 dark:via-pink-800 dark:to-orange-800
-      "
-        />
-      </div>
+      <div className="flex">
+        {/* サムネイル */}
+        {thumbnailUrl && (
+          <div className="relative w-28 shrink-0 sm:w-44">
+            <Image
+              src={thumbnailUrl}
+              alt={event.title}
+              fill
+              sizes="(max-width: 640px) 112px, 176px"
+              className="object-cover"
+            />
+          </div>
+        )}
 
-      <div className="relative h-full">
-        <div className="flex h-full">
-          {/* Thumbnail - unchanged */}
-          {event.thumbnail &&
-            typeof event.thumbnail === 'object' &&
-            'url' in event.thumbnail &&
-            event.thumbnail.url && (
-              <div className="flex-shrink-0 w-32 sm:w-64 h-full relative">
-                <Image
-                  src={toCFUrl(event.thumbnail.url)}
-                  alt={event.title}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-
-          {/* Content */}
-          <div className="flex-1 p-2 sm:p-5 flex flex-col justify-center">
-            {/* Header */}
-            <div className="flex flex-wrap items-center gap-1 mb-1">
-              <div
-                className="
-              flex items-center gap-1
-              bg-red-500 dark:bg-red-600 text-white px-2 py-0.5 rounded-full text-xs font-bold
-            "
-              >
-                <div className="w-1 h-1 bg-white rounded-full" />
-                配信中
-              </div>
-              <span
-                className={`inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium border dark:border-gray-600 ${platform.badgeClass}`}
-              >
-                <div className={`w-1 h-1 rounded-full mr-1 ${platform.dotClass}`} />
-                {platform.name}
+        {/* 本文 */}
+        <div className="min-w-0 flex-1 space-y-1.5 p-4 sm:p-5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {isLive ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/90 px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                開催中
               </span>
-            </div>
+            ) : (
+              <span className="chip">
+                <Bell size={11} className="mr-1" />
+                予定
+              </span>
+            )}
+            <span className="chip">
+              <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${platform.dotClass}`} />
+              {platform.name}
+            </span>
+          </div>
 
-            {/* Title */}
-            <h2
-              className="
-            text-base sm:text-lg font-bold !text-gray-900 dark:!text-gray-100
-            mb-1 leading-tight line-clamp-2
-          "
-            >
-              {event.title}
-            </h2>
+          <h2 className="line-clamp-2 text-sm font-semibold leading-snug sm:text-base">
+            {event.title}
+          </h2>
 
-            {/* Date and time */}
-            <div
-              className="
-            flex flex-wrap items-center gap-2 text-xs text-gray-600 dark:text-gray-300 mb-2
-          "
-            >
-              <div className="flex items-center gap-0.5">
-                <Calendar size={10} />
-                <span>{date}</span>
-              </div>
-              <div className="flex items-center gap-0.5">
-                <Clock size={10} />
-                <span>{time}</span>
-              </div>
-            </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+            <span className="inline-flex items-center gap-1">
+              <Calendar size={12} strokeWidth={1.5} />
+              {date}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Clock size={12} strokeWidth={1.5} />
+              {time}
+            </span>
           </div>
         </div>
       </div>
