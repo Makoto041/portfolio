@@ -2,7 +2,6 @@
 'use client'
 
 import { useState } from 'react'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 
 const WRAP = 'mx-auto w-full max-w-[28rem] section-pad flex justify-center'
 const CARD = 'glass p-8 flex flex-col gap-4 w-full'
@@ -40,11 +39,7 @@ export default function LetterPage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col">
-      <div className="pt-6">
-        <Breadcrumb />
-        </div>
-      <section className={WRAP}>
+    <main className="min-h-screen flex flex-col">      <section className={WRAP}>
         <form onSubmit={handleSubmit} className={CARD}>
           <h1 className="text-2xl font-semibold mb-4">お便りを送る</h1>
           <input

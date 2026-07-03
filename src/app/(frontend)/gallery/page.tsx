@@ -3,7 +3,6 @@
 // ───────────────────────────────────────────
 
 import type { Metadata } from 'next'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 import { fetchLatest } from '@/lib/payload'
 import GalleryGrid from '@/components/gallery/GalleryGridMain'
 
@@ -53,10 +52,6 @@ export default async function GalleryPage() {
   return (
     <main className="min-h-screen flex flex-col">
       {/* パンくず */}
-      <div className="pt-6">
-        <Breadcrumb />
-      </div>
-
       {/* セクションラップ */}
       <section className="section-pad">
         <div className="mb-6">

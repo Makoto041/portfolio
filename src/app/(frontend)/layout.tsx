@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import React from 'react'
 import GlassNav from '@/components/layout/GlassNav'
 import SiteFooter from '@/components/layout/SiteFooter'
+import Breadcrumb from '@/components/layout/Breadcrumb'
 import { toCFUrl } from '@/lib/cfUrl'
 import { Providers } from '@/components/Providers'
 
@@ -167,7 +168,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* ── 1カラムのメインコンテンツ（各ページが <main> を持つため div）
                全ページ同一のコンテナ幅にすることで、ページ遷移時の横ずれを防ぐ ── */}
-          <div className="mx-auto min-h-screen w-full max-w-5xl px-4 sm:px-6">{children}</div>
+          <div className="mx-auto min-h-screen w-full max-w-5xl px-4 sm:px-6">
+            {/* パンくずはレイアウト層で一元描画（ページごとの位置ずれを防ぐ） */}
+            <Breadcrumb />
+            {children}
+          </div>
 
           {/* ── フッター ── */}
           <SiteFooter />
