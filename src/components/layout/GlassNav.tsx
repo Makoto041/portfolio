@@ -46,7 +46,7 @@ export default function GlassNav() {
                 className={clsx(
                   'rounded-full px-3 py-1 text-[13px] tracking-wide transition-all duration-200',
                   isActive
-                    ? 'bg-[color:var(--accent)] font-semibold text-white shadow-sm'
+                    ? 'bg-[color:var(--accent)] font-semibold text-[color:var(--accent-contrast)] shadow-sm'
                     : 'opacity-65 hover:bg-[color:var(--chip-bg)] hover:opacity-100',
                 )}
               >
@@ -108,7 +108,7 @@ export default function GlassNav() {
                     className={clsx(
                       'block rounded-xl px-3 py-2 text-sm tracking-wide transition-colors',
                       isActive
-                        ? 'bg-[color:var(--accent)] font-semibold text-white'
+                        ? 'bg-[color:var(--accent)] font-semibold text-[color:var(--accent-contrast)]'
                         : 'opacity-75 hover:opacity-100',
                     )}
                   >

@@ -57,6 +57,7 @@
   /* アクセント（群青） */
   --accent: #3d5cc9;
   --accent-hover: #2b449f;
+  --accent-contrast: #ffffff;
   --accent-gradient: linear-gradient(135deg, #3d5cc9 0%, #5b8def 55%, #6fb1f5 100%);
   /* ページ背景（明るい白 + ごく薄い群青のグラデーション） */
   --page-gradient: linear-gradient(
@@ -86,6 +87,7 @@
     --chip-fg: #9db7f2;
     --accent: #8aa8f0;
     --accent-hover: #aec4f7;
+    --accent-contrast: #0e1626;
     --accent-gradient: linear-gradient(135deg, #7d9cef 0%, #93bbf5 55%, #a9d2fa 100%);
     --page-gradient: linear-gradient(
       180deg,
@@ -114,6 +116,7 @@
   --chip-fg: #33509e;
   --accent: #3d5cc9;
   --accent-hover: #2b449f;
+  --accent-contrast: #ffffff;
   --accent-gradient: linear-gradient(135deg, #3d5cc9 0%, #5b8def 55%, #6fb1f5 100%);
   --page-gradient: linear-gradient(
     180deg,
@@ -141,6 +144,7 @@
   --chip-fg: #9db7f2;
   --accent: #8aa8f0;
   --accent-hover: #aec4f7;
+  --accent-contrast: #0e1626;
   --accent-gradient: linear-gradient(135deg, #7d9cef 0%, #93bbf5 55%, #a9d2fa 100%);
   --page-gradient: linear-gradient(
     180deg,
