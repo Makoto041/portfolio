@@ -85,7 +85,9 @@ const higure = localFont({
     { path: '../../fonts/HigureGothic-Light.woff2', weight: '300', style: 'normal' },
     { path: '../../fonts/HigureGothic-Regular.woff2', weight: '400', style: 'normal' },
     { path: '../../fonts/HigureGothic-Medium.woff2', weight: '500', style: 'normal' },
-    { path: '../../fonts/HigureGothic-Bold.woff2', weight: '700', style: 'normal' },
+    // 600(font-semibold)はフォントに存在しないためBoldを600-700のレンジで割当て、
+    // ブラウザごとの近似解決（500/700に揺れる）を防ぐ
+    { path: '../../fonts/HigureGothic-Bold.woff2', weight: '600 700', style: 'normal' },
     { path: '../../fonts/HigureGothic-Black.woff2', weight: '900', style: 'normal' },
   ],
   display: 'optional',
