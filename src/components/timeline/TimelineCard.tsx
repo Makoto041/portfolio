@@ -24,6 +24,17 @@ const POST_TYPE_LABELS: Record<TimelinePostType, string> = {
   study: '学習ログ',
 }
 
+/** 投稿タイプごとの色相（群青を中心とした寒色ファミリーで個性を出す） */
+const POST_TYPE_HUES: Record<TimelinePostType, number> = {
+  diary: 226, // 群青
+  tech: 250, // 青紫
+  photo: 199, // 空色
+  making: 262, // 菫
+  event: 288, // 淡紫
+  travel: 186, // 青緑
+  study: 213, // 青
+}
+
 type RelatedLink = { label: string; href: string }
 
 /** related グループから表示用リンクを組み立てる（depth=2 で解決済みの場合のみ） */
@@ -74,7 +85,14 @@ export default function TimelineCard({
     <article className="glass-card fade-in-up p-5">
       {/* ヘッダー: 投稿タイプ + 日時 */}
       <div className="mb-2 flex items-center gap-2.5">
-        {typeLabel && <span className="chip">{typeLabel}</span>}
+        {typeLabel && (
+          <span
+            className="chip chip-hued"
+            style={{ '--chip-h': POST_TYPE_HUES[post.postType!] } as React.CSSProperties}
+          >
+            {typeLabel}
+          </span>
+        )}
         {post.priority === 'pinned' && <span className="chip">📌 ピン留め</span>}
         <time className="text-xs text-muted">
           {dateMode === 'date' ? (

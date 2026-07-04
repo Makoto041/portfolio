@@ -15,6 +15,8 @@ export default function PageHeader({ title, description, actions }: PageHeaderPr
   return (
     <header className="flex flex-wrap items-end justify-between gap-3 pt-6 pb-8">
       <div>
+        {/* シグネチャーの群青ダッシュ */}
+        <span aria-hidden className="accent-dash mb-2.5 block h-1 w-8 rounded-full" />
         <h1 className="text-2xl font-semibold tracking-wide">{title}</h1>
         {description && <p className="mt-1.5 text-sm text-muted">{description}</p>}
       </div>

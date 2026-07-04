@@ -17,8 +17,10 @@ export default function SiteFooter() {
       <div className="glass rounded-2xl px-6 py-6">
         <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="text-center sm:text-left">
+            <span aria-hidden className="accent-dash mx-auto mb-2 block h-0.5 w-6 rounded-full sm:mx-0" />
             <p className="text-sm font-semibold tracking-wide">
-              岩渕誠<span className="ml-1.5 text-xs font-normal text-muted">いわぶちまこと / Makoto Iwabuchi</span>
+              <span className="text-gradient">岩渕誠</span>
+              <span className="ml-1.5 text-xs font-normal text-muted">いわぶちまこと / Makoto Iwabuchi</span>
             </p>
             <p className="mt-1.5 text-xs leading-relaxed text-muted">
               日々の記録・写真・制作物を残す個人のライフログサイト

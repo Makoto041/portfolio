@@ -25,12 +25,13 @@ export default function GlassNav() {
   return (
     <header className="sticky top-0 z-40 px-4 pt-4 pb-2 sm:px-6">
       <div className="glass mx-auto flex h-12 max-w-4xl items-center justify-between rounded-full px-5">
-        {/* ブランド */}
+        {/* ブランド（群青グラデーションのドットがシグネチャー） */}
         <Link
           href="/"
-          className="text-sm font-semibold tracking-[0.18em] text-[color:var(--fg-base)] hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 text-sm font-semibold tracking-[0.18em] text-[color:var(--fg-base)] hover:opacity-80 transition-opacity"
           onClick={() => setOpen(false)}
         >
+          <span aria-hidden className="accent-dash h-2.5 w-2.5 rounded-full" />
           IWABUCHI
         </Link>
 
@@ -45,7 +46,7 @@ export default function GlassNav() {
                 className={clsx(
                   'rounded-full px-3 py-1 text-[13px] tracking-wide transition-all duration-200',
                   isActive
-                    ? 'bg-[color:var(--chip-bg)] font-semibold text-[color:var(--chip-fg)]'
+                    ? 'bg-[color:var(--accent)] font-semibold text-[color:var(--accent-contrast)] shadow-sm'
                     : 'opacity-65 hover:bg-[color:var(--chip-bg)] hover:opacity-100',
                 )}
               >
@@ -107,7 +108,7 @@ export default function GlassNav() {
                     className={clsx(
                       'block rounded-xl px-3 py-2 text-sm tracking-wide transition-colors',
                       isActive
-                        ? 'bg-[color:var(--chip-bg)] font-semibold text-[color:var(--chip-fg)]'
+                        ? 'bg-[color:var(--accent)] font-semibold text-[color:var(--accent-contrast)]'
                         : 'opacity-75 hover:opacity-100',
                     )}
                   >
