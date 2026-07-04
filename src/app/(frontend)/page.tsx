@@ -103,13 +103,16 @@ export default async function Home() {
     <main className="pb-12">
       <Analytics />
 
-      {/* アイデンティティ（実名表記はSEOシグナルも兼ねる） */}
+      {/* アイデンティティ（実名表記はSEOシグナルも兼ねる・群青グラデーションが個性） */}
       <header className="fade-in-up pt-10 pb-2">
-        <h1 className="text-xl font-semibold tracking-wide">
-          いわぶちまこと
-          <span className="ml-2 text-sm font-normal text-muted">岩渕誠 / Makoto Iwabuchi</span>
+        <span aria-hidden className="accent-dash mb-3 block h-1 w-10 rounded-full" />
+        <h1 className="text-2xl font-bold tracking-wide sm:text-3xl">
+          <span className="text-gradient">いわぶちまこと</span>
+          <span className="ml-3 text-sm font-normal tracking-normal text-muted">
+            岩渕誠 / Makoto Iwabuchi
+          </span>
         </h1>
-        <p className="mt-1.5 text-sm text-muted">
+        <p className="mt-2 text-sm text-muted">
           日々の記録・写真・制作物を残すライフログ
         </p>
       </header>
