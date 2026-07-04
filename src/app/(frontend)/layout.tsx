@@ -76,20 +76,25 @@ export const metadata: Metadata = {
   },
 }
 
-// 本文フォント（next/font/local）
-// display: 'optional' — 一度描画した後にフォントを差し替えない。
-// 間に合わなければそのページはフォールバック表示になり、キャッシュ済みの
-// 次回以降は最初から本フォントで描画される（FOUT/置き換わり対策）
+// 本文フォント（next/font/local）— 個性のある Higure Gothic を全ページで使用する
+// display: 'block' — フォント読み込み完了まではテキストを不可視にし、
+//   Higure が用意でき次第まとめて描画する。
+//   「システムフォントで一瞬表示 → Higure に置き換わる」FOUT を見せないための設定
+//   （'optional' だと初回訪問時はシステムフォントのままになり Higure が使われなかった）。
+//   woff2 化済み（TTF比 約68%減）+ ブラウザは実際に使うウェイトのみ取得するため、
+//   不可視期間はごく短時間に収まり、キャッシュ後は即 Higure で描画される。
 const higure = localFont({
   src: [
     { path: '../../fonts/HigureGothic-Light.woff2', weight: '300', style: 'normal' },
     { path: '../../fonts/HigureGothic-Regular.woff2', weight: '400', style: 'normal' },
     { path: '../../fonts/HigureGothic-Medium.woff2', weight: '500', style: 'normal' },
-    { path: '../../fonts/HigureGothic-Bold.woff2', weight: '700', style: 'normal' },
+    // 600(font-semibold)はフォントに存在しないためBoldを600-700のレンジで割当て、
+    // ブラウザごとの近似解決（500/700に揺れる）を防ぐ
+    { path: '../../fonts/HigureGothic-Bold.woff2', weight: '600 700', style: 'normal' },
     { path: '../../fonts/HigureGothic-Black.woff2', weight: '900', style: 'normal' },
   ],
-  display: 'optional',
-  preload: false, // 日本語フォントは大きいため優先読み込みしない（バックグラウンドで取得しキャッシュ）
+  display: 'block',
+  preload: false, // 日本語フォントは大きいため優先読み込みしない（全ウェイトpreloadはLCPを害する）
   variable: '--font-higure',
   fallback: [
     'Hiragino Kaku Gothic ProN',
