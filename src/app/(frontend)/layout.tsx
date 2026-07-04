@@ -2,6 +2,7 @@
 import '../global.css'
 import type { Metadata } from 'next'
 import React from 'react'
+import localFont from 'next/font/local'
 import GlassNav from '@/components/layout/GlassNav'
 import SiteFooter from '@/components/layout/SiteFooter'
 import Breadcrumb from '@/components/layout/Breadcrumb'
@@ -75,9 +76,37 @@ export const metadata: Metadata = {
   },
 }
 
+// 本文フォント（next/font/local）
+// display: 'optional' — 一度描画した後にフォントを差し替えない。
+// 間に合わなければそのページはフォールバック表示になり、キャッシュ済みの
+// 次回以降は最初から本フォントで描画される（FOUT/置き換わり対策）
+const higure = localFont({
+  src: [
+    { path: '../../fonts/HigureGothic-Light.woff2', weight: '300', style: 'normal' },
+    { path: '../../fonts/HigureGothic-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../../fonts/HigureGothic-Medium.woff2', weight: '500', style: 'normal' },
+    { path: '../../fonts/HigureGothic-Bold.woff2', weight: '700', style: 'normal' },
+    { path: '../../fonts/HigureGothic-Black.woff2', weight: '900', style: 'normal' },
+  ],
+  display: 'optional',
+  preload: false, // 日本語フォントは大きいため優先読み込みしない（バックグラウンドで取得しキャッシュ）
+  variable: '--font-higure',
+  fallback: [
+    'Hiragino Kaku Gothic ProN',
+    'Hiragino Sans',
+    'BIZ UDPGothic',
+    'Meiryo',
+    'sans-serif',
+  ],
+})
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ja" suppressHydrationWarning className="dark:text-zinc-50">
+    <html
+      lang="ja"
+      suppressHydrationWarning
+      className={`dark:text-zinc-50 ${higure.variable}`}
+    >
       <head>
         <meta name="color-scheme" content="light dark" />
         <script

@@ -1,39 +1,6 @@
-/* ── フォント ── */
-@font-face {
-  font-family: 'Higure Gothic';
-  src: url('/fonts/HigureGothic-Light.ttf') format('truetype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Higure Gothic';
-  src: url('/fonts/HigureGothic-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Higure Gothic';
-  src: url('/fonts/HigureGothic-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Higure Gothic';
-  src: url('/fonts/HigureGothic-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Higure Gothic';
-  src: url('/fonts/HigureGothic-Black.ttf') format('truetype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
+/* ── フォント ──
+   本文フォント(Higure Gothic)は next/font/local で読み込み・最適化する
+   （(frontend)/layout.tsx 参照。--font-higure 変数として提供される） */
 
 /* ──────────────────────────────────────────────
    Quiet Glass ― 白・薄ブルー・薄グレー基調の
@@ -50,8 +17,8 @@
   --fg-light: #1c2733;
   --fg-dark: #e8eef5;
 
-  /* フォント */
-  --font-body: 'Higure Gothic', sans-serif;
+  /* フォント（next/font/local が定義する --font-higure を参照） */
+  --font-body: var(--font-higure, 'Hiragino Kaku Gothic ProN'), sans-serif;
 
   /* アクセント（薄いブルー系） */
   --accent: #4a7fb5;
