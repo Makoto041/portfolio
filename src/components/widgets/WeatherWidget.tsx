@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
-type Wx = { temp: string; icon: string; location: string } | null
+type Wx = { temp: string; icon: string; location: string; source?: string } | null
 
 export default function WeatherWidget({ className = '' }: { className?: string }) {
   const [wx, setWx] = useState<Wx>(null)
@@ -42,6 +42,7 @@ export default function WeatherWidget({ className = '' }: { className?: string }
         temp: `${data.temp}°C`,
         icon: codeToIcon(data.code),
         location: locationName,
+        source: data.source,
       })
     }
 
@@ -82,6 +83,18 @@ export default function WeatherWidget({ className = '' }: { className?: string }
           <span>{wx.icon}</span>
           <span>{wx.temp}</span>
           <span className="text-gray-500 dark:text-gray-400">in {wx.location}</span>
+          {/* met.no のデータ利用時はライセンス(NLOD/CC BY 4.0)に基づく帰属表示が必要 */}
+          {wx.source === 'met.no' && (
+            <a
+              href="https://www.met.no/en"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-gray-400 underline decoration-dotted underline-offset-2 hover:text-gray-500 dark:text-gray-500 dark:hover:text-gray-400"
+              title="Weather data by MET Norway (NLOD / CC BY 4.0)"
+            >
+              MET Norway
+            </a>
+          )}
         </>
       ) : (
         <>
