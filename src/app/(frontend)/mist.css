@@ -150,24 +150,68 @@
 }
 /* 見た目を変えずヒット領域だけ縦に拡張し 44px 以上に（横は隣接のため触らない） */
 .mist .nav a::after { content: ''; position: absolute; inset: -10px 0; }
+/* ハンバーガーボタン（PC では非表示。SP で nav をドロップダウンに畳む） */
+.mist .navtoggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 11px;
+  border: 1px solid var(--m-hairline);
+  background: var(--m-surface);
+  color: var(--m-ink);
+  font-size: var(--fs-ui);
+  line-height: 1;
+  cursor: pointer;
+}
 @media (max-width: 760px) {
-  .mist .navwrap::before,
-  .mist .navwrap::after {
-    content: '';
+  .mist .navtoggle { display: inline-flex; }
+  /* 既定は閉（非表示）。開くと titlebar 直下に $ ls ./nav 風ドロップダウン */
+  .mist .nav { display: none; }
+  .mist .navwrap .nav.open {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 22px;
-    pointer-events: none;
-    z-index: 1;
+    top: calc(100% + 9px);
+    right: 0;
+    z-index: 30;
+    min-width: 190px;
+    padding: 6px;
+    margin: 0;
+    overflow: visible;
+    background: var(--m-surface);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--m-hairline);
+    box-shadow: 0 10px 30px color-mix(in oklch, var(--m-ink) 12%, transparent);
   }
-  .mist .navwrap::before { left: 0; background: linear-gradient(to right, rgba(244, 246, 249, 0.95), transparent); }
-  .mist .navwrap::after { right: 0; background: linear-gradient(to left, rgba(244, 246, 249, 0.95), transparent); }
+  /* 縦積みのため ::after(縦±10px) は隣接項目と重なる → 無効化し padding でタップ領域を確保 */
+  .mist .nav.open a { padding: 12px 14px; }
+  .mist .nav.open a::after { content: none; }
 }
 .mist .nav a.on,
 .mist .nav a:active { background: var(--m-ink); color: #fff; }
 @media (hover: hover) {
   .mist .nav a:hover { background: var(--m-ink); color: #fff; }
+}
+
+/* ── コンパクト自己紹介（D-1 案2・SP のみ表示。フルの profile カードは現位置に残す） ── */
+.mist .compact-intro { display: none; }
+@media (max-width: 760px) {
+  .mist .compact-intro {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px var(--m-pad) 0;
+    padding: 8px 12px;
+    background: var(--m-surface);
+    border: 1px solid var(--m-hairline);
+  }
+  .mist .ci-av { position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 1px solid var(--m-hairline); flex: none; }
+  .mist .ci-meta { display: flex; flex-direction: column; min-width: 0; }
+  .mist .ci-nm { font-weight: 700; font-size: var(--fs-ui); color: var(--m-ink); line-height: 1.2; }
+  .mist .ci-rl { font-size: var(--fs-caption); color: var(--m-faint); }
+  .mist .ci-sns { display: flex; gap: 6px; margin-left: auto; flex: none; }
+  .mist .ci-sns a { font-size: var(--fs-caption); color: var(--m-sub); border: 1px solid var(--m-hairline); padding: 6px 8px; text-decoration: none; line-height: 1; }
 }
 
 /* ── hero ─────────────────────────────────── */
@@ -607,12 +651,15 @@
 }
 
 /* ── SP 出し分け（D-4）: DOM はPC分をレンダリングし、SPは display:none で間引く。
-   Home の対象画像は loading="lazy" のため非表示分は取得されず転送量は増えない。
+   非表示分の Next <Image loading="lazy"> は display:none でレイアウトボックスを持たず
+   ビューポート交差判定に掛からないため取得されない（転送量は増えない）。
    閾値は既存の 760px（homecols 縦積み点）を再利用。 */
 @media (max-width: 760px) {
-  /* タイムライン: PC 6 / SP 3（4件目以降を非表示。load --more の全件導線は維持） */
-  .mist .commits .commit:nth-child(n + 4) { display: none; }
-  /* ギャラリー: PC 9(big維持) / SP 6（big解除で等サイズ 2×3、7枚目以降を非表示） */
+  /* タイムライン（Home のダイジェストのみ。.homecols で限定し、専用 /timeline には効かせない）
+     PC 6 / SP 3（4件目以降を非表示。load --more の全件導線は維持） */
+  .mist .homecols .commits .commit:nth-child(n + 4) { display: none; }
+  /* ギャラリー（Home）: 2列固定で 6枚=2×3 を全帯域で成立させる（auto-fill だと ~615-760px で4列になり最終行が欠ける） */
+  .mist .gal { grid-template-columns: repeat(2, 1fr); }
   .mist .gal .g.big { grid-column: span 1; grid-row: span 1; }
   .mist .gal .g:nth-child(n + 7) { display: none; }
 }
@@ -860,7 +907,8 @@
 .mist .formnote { font-size: var(--fs-meta); color: var(--m-faint); }
 
 /* 記事詳細（posts/[slug]） */
-.mist .article { width: 100%; max-width: 760px; margin: 0 auto; }
+/* D-3: 本文行長を約42字/行に（prose 16px × 680px）。日本語可読の目安 35〜45字内 */
+.mist .article { width: 100%; max-width: 680px; margin: 0 auto; }
 .mist .article .cover { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--m-hairline); margin-bottom: 22px; }
 .mist .article h1 { margin: 0 0 8px; font-family: var(--font-outfit), sans-serif; font-size: clamp(24px, 3.6vw, 32px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; color: var(--m-ink); }
 .mist .article .amETA,

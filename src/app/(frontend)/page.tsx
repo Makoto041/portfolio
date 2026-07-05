@@ -15,6 +15,7 @@ import MistLogTimeline from '@/components/mist/MistLogTimeline'
 import MistGallery from '@/components/mist/MistGallery'
 import MistPortalSection, { type PortalItem } from '@/components/mist/MistPortalSection'
 import MistRail from '@/components/mist/MistRail'
+import MistCompactIntro from '@/components/mist/MistCompactIntro'
 import type { TimelineDoc, MediaDoc, BlogPost, Event, Product } from '@/lib/payloadTypes'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 
@@ -344,6 +345,9 @@ export default async function Home() {
           <header className="hero">
             <MistHero tagline={hero.tagline} role={hero.role} />
           </header>
+
+          {/* SP のみ: hero 直下のコンパクト自己紹介（D-1 案2） */}
+          <MistCompactIntro profile={profile} />
 
           {/* ── 統合バー: NOTICE ローテ + entries/photos/streak + 天気/時計 ── */}
           <MistStatusBar
