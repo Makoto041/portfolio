@@ -68,7 +68,9 @@
   margin: 0;
   background: var(--m-bg);
   min-height: 100vh;
-  overflow: hidden;
+  /* clip: ブロブのはみ出しは隠しつつ、スクロールコンテナ化を避けて .rail の sticky を保つ
+     （overflow:hidden だと親がスクロール基準になり sticky が効かなくなる） */
+  overflow: clip;
 }
 /* 1080px 未満はモバイル方針で伸縮（min-width を解除して横スクロールを防ぐ） */
 @media (max-width: 1080px) {

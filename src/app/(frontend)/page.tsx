@@ -118,14 +118,20 @@ async function fetchTopPageData() {
         where: GALLERY_WHERE,
       }),
       payload.findGlobal({ slug: 'site-settings' }),
-      // お知らせ（NOTICE）: 公開分を新しい順に
-      payload.find({
-        collection: 'notices',
-        limit: 20,
-        sort: '-date',
-        depth: 0,
-        where: { isPublic: { equals: true } },
-      }),
+      // お知らせ（NOTICE）: 公開分を新しい順に。
+      // notices テーブル未マイグレーション時でもトップ全体を巻き込まないよう独立して握りつぶす
+      payload
+        .find({
+          collection: 'notices',
+          limit: 20,
+          sort: '-date',
+          depth: 0,
+          where: { isPublic: { equals: true } },
+        })
+        .catch((e) => {
+          console.error('Notices fetch failed (falling back to none):', e)
+          return { docs: [] as { date: string; body: string }[] }
+        }),
     ])
 
   const posts = postsRes.docs as unknown as TimelineDoc[]

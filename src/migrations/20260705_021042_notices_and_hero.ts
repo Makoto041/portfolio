@@ -26,13 +26,14 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+  // 依存オブジェクト（FK制約・インデックス・カラム）を先に削除してから notices を落とす。
+  // DROP TABLE CASCADE を先に実行すると FK が暗黙削除され、後続の DROP CONSTRAINT が失敗するため。
   await db.execute(sql`
-   ALTER TABLE "notices" DISABLE ROW LEVEL SECURITY;
-  DROP TABLE "notices" CASCADE;
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_notices_fk";
-  
+   ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_notices_fk";
   DROP INDEX IF EXISTS "payload_locked_documents_rels_notices_id_idx";
   ALTER TABLE "payload_locked_documents_rels" DROP COLUMN IF EXISTS "notices_id";
   ALTER TABLE "site_settings" DROP COLUMN IF EXISTS "hero_tagline";
-  ALTER TABLE "site_settings" DROP COLUMN IF EXISTS "hero_role_en";`)
+  ALTER TABLE "site_settings" DROP COLUMN IF EXISTS "hero_role_en";
+  ALTER TABLE "notices" DISABLE ROW LEVEL SECURITY;
+  DROP TABLE IF EXISTS "notices" CASCADE;`)
 }

@@ -1,8 +1,13 @@
 // src/collections/Notices.ts
 // お知らせ（NOTICE）コレクション。トップページの統合バーで日付+メッセージを
 // 新しい順にローテーション表示する（docs/CHANGELOG.md §3 参照）。
-import type { CollectionConfig } from 'payload'
-import { anyone, adminOnly } from '@/lib/access'
+import type { Access, CollectionConfig } from 'payload'
+import { adminOnly } from '@/lib/access'
+
+// 未ログインには公開分（isPublic:true）のみ返す。ログイン（管理者）は全件。
+// UI 側の where ではなくアクセス制御で非公開お知らせを保護する。
+const readPublicOnly: Access = ({ req: { user } }) =>
+  user ? true : { isPublic: { equals: true } }
 
 export const Notices: CollectionConfig = {
   slug: 'notices',
@@ -17,7 +22,7 @@ export const Notices: CollectionConfig = {
   },
   defaultSort: '-date',
   access: {
-    read: anyone,
+    read: readPublicOnly,
     create: adminOnly,
     update: adminOnly,
     delete: adminOnly,

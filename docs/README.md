@@ -10,7 +10,7 @@ iwabuchi-makoto.com のトップページ(Timeline メイン)リデザイン実�
 コンセプト: **群青×ミストの透明感 × ターミナル/git log のメタファー**。
 Timeline(気軽な日記投稿)が主役。Gallery・Posts・Profile などの既存セクションは右レール+写真ストリームで露出させる。
 
-- ロゴ「MAKOTO(アウトライン)+ IWABUCHI(ベタ)」はヘッダーに常駐。ページ本体は**コンテンツ(Timeline)最優先**
+- ワードマーク「MAKOTO(アウトライン)+ IWABUCHI(ベタ)」はヒーローに表示。ヘッダーはターミナルパスを常駐させ、ページ本体は**コンテンツ(Timeline)最優先**
 - 現行サイトにある **現在地・天気・日時のライブ表示機能は踏襲**(ステータスバー右側に統合)
 
 ## About the Design Files
@@ -91,9 +91,9 @@ Timeline(気軽な日記投稿)が主役。Gallery・Posts・Profile などの�
 ### ライブ環境情報(現行サイト機能の踏襲)
 
 - **時計**: 表示 `YYYY.MM.DD DAY` + `HH:MM`(**秒なし・固定的な見た目**。内部的には30s間隔程度で更新して分を追従)。タイトルバーの時刻も同期
-- **位置**: `navigator.geolocation.getCurrentPosition`(timeout 5s)。拒否/失敗/6s無応答 → **東京(35.6812, 139.7671)にフォールバック**し、表示名「東京」
+- **位置**: `ipinfo.io` の IP ベース概算位置(許可ポップアップを出さない現行方針)。失敗時は **東京(35.6812, 139.7671)にフォールバック**し、表示名「東京」
 - **逆ジオコーディング**: `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=&longitude=&localityLanguage=ja` → `city || locality || principalSubdivision`
-- **天気**: `https://api.open-meteo.com/v1/forecast?latitude=&longitude=&current=temperature_2m,weather_code`(APIキー不要)
+- **天気**: 自サイトの `/api/weather` プロキシ経由で取得(open-meteo → met.no フォールバック、APIキー不要)
   - 気温: 四捨五入 + `°C`。取得前は `--°`
   - weather_code → ラベル: 0=快晴 / ≤2=晴れ / 3=くもり / ≤48=霧 / ≤57=霧雨 / ≤67=雨 / ≤77=雪 / ≤82=にわか雨 / ≤86=雪 / else=雷雨
   - weather_code → アイコン種別: sun / partly / cloud / fog / rain / snow / thunder

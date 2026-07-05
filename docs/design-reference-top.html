@@ -287,14 +287,20 @@ body{margin:0;background:#eef1f4;font-family:'IBM Plex Mono',ui-monospace,monosp
 // ---- 左スロット: STATUS/entries/photos/streak を順番にタイプ表示でローテーション ----
 (function(){
   var SP=['⠋','⠙','⠹','⠸','⠼','⠴','⠦','⠧','⠇','⠏'],si=0;
-  setInterval(function(){si=(si+1)%SP.length;document.getElementById('spin').textContent=SP[si];},90);
   var items=[
     {date:'12.06',text:'アドベントカレンダー執筆中です'},
     {date:'11.28',text:'年末の振り返り記事を準備中'},
     {date:'11.20',text:'ギャラリーに写真を50枚追加しました'},
     {date:'11.12',text:'コメント欄からのお便り、読んでます'}
   ];
-  var idx=0,typed=0,hold=0,slot=document.getElementById('rotslot'),dateEl=document.getElementById('rotdate');
+  var slot=document.getElementById('rotslot'),dateEl=document.getElementById('rotdate');
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce){ // 静止: スピナー●固定・先頭の日付+メッセージを固定表示
+    document.getElementById('spin').textContent='●';
+    dateEl.textContent=items[0].date;slot.textContent=items[0].text;return;
+  }
+  setInterval(function(){si=(si+1)%SP.length;document.getElementById('spin').textContent=SP[si];},90);
+  var idx=0,typed=0,hold=0;
   dateEl.textContent=items[0].date;
   setInterval(function(){
     var cur=items[idx].text;

@@ -44,38 +44,15 @@ export default function EventCard({ e }: { e: Event }) {
             className="object-cover"
           />
         ) : (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--m-faint)',
-            }}
-          >
+          <div className="absolute inset-0 flex items-center justify-center text-[color:var(--m-faint)]">
             <Calendar size={38} strokeWidth={1.5} />
           </div>
         )}
 
         {/* LIVEバッジ */}
         {isLive && (
-          <span
-            className="livebadge"
-            style={{
-              position: 'absolute',
-              right: 10,
-              top: 10,
-              zIndex: 1,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <span
-              className="livedot"
-              style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }}
-            />
+          <span className="livebadge absolute right-2.5 top-2.5 z-10 inline-flex items-center gap-1.5">
+            <span className="livedot h-1.5 w-1.5 rounded-full bg-white" />
             LIVE
           </span>
         )}
@@ -83,11 +60,10 @@ export default function EventCard({ e }: { e: Event }) {
 
       {/* 本文 */}
       <div className="cbody">
-        <span className="cmeta" style={{ justifyContent: 'space-between' }}>
+        <span className="cmeta justify-between">
           <span className="tagchip">
-            <span
-              style={{ width: 6, height: 6, borderRadius: '50%', background: platform.dot }}
-            />
+            {/* プラットフォーム色は動的なため style で指定（配色トークン外の識別色） */}
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: platform.dot }} />
             {platform.name}
           </span>
           {e.externalUrl && <ExternalLink size={13} strokeWidth={1.5} />}
@@ -97,19 +73,12 @@ export default function EventCard({ e }: { e: Event }) {
 
         {e.summary && <span className="cexcerpt jp line-clamp-2">{e.summary}</span>}
 
-        <span
-          className="cmeta"
-          style={{
-            borderTop: '1px solid var(--m-hairline)',
-            paddingTop: 10,
-            marginTop: 2,
-          }}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+        <span className="cmeta mt-0.5 border-t border-[color:var(--m-hairline)] pt-2.5">
+          <span className="inline-flex items-center gap-1.5">
             <Calendar size={12} strokeWidth={1.5} />
             {date}
           </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <span className="inline-flex items-center gap-1.5">
             <Clock size={12} strokeWidth={1.5} />
             {time}
           </span>
