@@ -116,7 +116,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       />
       <main className="content">
         <article className="article">
-          <span className="cmd" style={{ fontSize: 12.5, color: 'oklch(0.5 0.06 268)' }}>
+          <span className="cmd" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-sub)' }}>
             ~/life $ cat ./posts/{slug}
           </span>
           {post.coverImage?.url && (

@@ -2,17 +2,11 @@
    Mist Terminal ― トップページ専用スタイル
    （docs/design-reference-top.html の hifi 移植）
 
-   デザイントークン（docs/README.md 参照）:
-   ink:        oklch(0.30 0.08 272)  — 群青（テキスト/ベタ面）
-   ink-soft:   oklch(0.45 0.07 268)  — アウトライン文字・準アクセント
-   sub:        oklch(0.50 0.04 268)  — 補助テキスト
-   faint:      oklch(0.55 0.04 268)  — メタ情報
-   hairline:   oklch(0.85 0.02 262)  — 罫線
-   bg:         #eef1f4               — ベース
-   accent-dot: oklch(0.55 0.09 268)  — カーソル/ドット
+   カラー/タイポは .mist のトークン（--m-* / --fs-*）に集約。本文系(テキスト/構造罫線/
+   パネル面)は生 oklch を持たずトークン経由。装飾色(dots/ブロブ/status/写真プレースホルダ/
+   チップ地/wordmark stroke)のみ各要素に literal で残す（意図的な意匠色）。
 
-   ライトターミナル意匠のためダークモードでも配色は固定。
-   すべて .mist 配下にスコープする。
+   ライトターミナル意匠のためダークモードでも配色は固定。すべて .mist 配下にスコープする。
 ─────────────────────────────────────────────── */
 
 @keyframes m-blobdrift {
@@ -42,13 +36,27 @@
 }
 
 .mist {
-  --m-ink: oklch(0.3 0.08 272);
-  --m-sub: oklch(0.5 0.05 268);
-  --m-faint: oklch(0.51 0.04 268); /* #eef1f4 上で約4.8:1（AA）。9.5〜12pxのメタ情報に使用 */
-  --m-hairline: oklch(0.85 0.02 262);
-  --m-accent: oklch(0.55 0.09 268);
+  /* ── カラートークン（本文系: テキスト/構造罫線/パネル面）。
+     装飾色(dots/ブロブ/status/写真プレースホルダ/チップ地/wordmark stroke)は
+     各要素に literal のまま残す（意図的な意匠色のため）。全て #eef1f4 前提。 */
+  --m-ink: oklch(0.3 0.08 272); /* 主要テキスト・ベタ面 */
+  --m-ink-2: oklch(0.35 0.07 270); /* 強い準主要（prose本文・統計太字） */
+  --m-sub: oklch(0.45 0.06 268); /* 補助テキスト（旧 0.40〜0.50 帯を統合） */
+  --m-faint: oklch(0.51 0.04 268); /* 微メタ（AA下限・約4.8:1） */
+  --m-accent-ink: oklch(0.45 0.09 268); /* アクセント色のテキスト/チップ（hash/likes/tag/spin/date） */
+  --m-accent: oklch(0.55 0.09 268); /* アクセント装飾（カーソル/ドット/グロー・非テキスト） */
+  --m-line: oklch(0.6 0.05 268); /* 強めの罫線（node/hover border） */
+  --m-hairline: oklch(0.84 0.02 262); /* hairline（旧 0.80〜0.85 帯を統合） */
+  --m-surface: rgba(255, 255, 255, 0.65); /* 半透明パネル面（旧 .5〜.68 を統合） */
   --m-bg: #eef1f4;
   --m-pad: clamp(20px, 4.5vw, 48px); /* コンテンツ左右パディング（基準 48px） */
+
+  /* タイポスケール（役割6段。display系は各要素の clamp を維持） */
+  --fs-caption: 11px; /* バッジ・チップ・微小メタ（旧 9.5〜11px を統合） */
+  --fs-meta: 12.5px; /* メタ情報・$プロンプト・ナビ・補助本文（旧 11.5〜12.5px） */
+  --fs-ui: 14px; /* カード見出し・フォーム・時計/気温（旧 13〜15px） */
+  --fs-body: 16px; /* 本文（commit body・prose・入力。iOS ズーム防止も兼ねる） */
+  --fs-h3: 20px; /* prose 見出し・小型見出し（旧 19〜22px。プロフィール名 22→20 を含む） */
 
   min-height: 100vh;
   background: var(--m-bg);
@@ -105,8 +113,8 @@
   align-items: center;
   gap: 14px;
   padding: 13px var(--m-pad);
-  border-bottom: 1px solid oklch(0.84 0.02 262);
-  background: rgba(255, 255, 255, 0.55);
+  border-bottom: 1px solid var(--m-hairline);
+  background: var(--m-surface);
   backdrop-filter: blur(14px);
 }
 .mist .dots { display: flex; gap: 7px; flex: none; }
@@ -117,14 +125,14 @@
 .mist .dots span:nth-child(1) { background: oklch(0.75 0.04 268 / 0.6); }
 .mist .dots span:nth-child(2) { background: oklch(0.82 0.03 262 / 0.6); }
 .mist .dots span:nth-child(3) { background: oklch(0.88 0.02 262 / 0.6); }
-.mist .tb-path { font-size: 11.5px; color: var(--m-sub); white-space: nowrap; }
+.mist .tb-path { font-size: var(--fs-meta); color: var(--m-sub); white-space: nowrap; }
 /* navwrap: 右寄せ＋SPで左右フェード（横スクロールの続きを示唆） */
 .mist .navwrap { position: relative; margin-left: auto; min-width: 0; display: flex; }
 .mist .nav {
   display: flex;
   gap: 3px;
-  font-size: 11.5px;
-  color: oklch(0.48 0.04 268);
+  font-size: var(--fs-meta);
+  color: var(--m-sub);
   overflow-x: auto;
   scrollbar-width: none;
   /* ::after(±10px) をスクロールポート内に収めるための余白。負の margin で相殺しレイアウト高さは不変 */
@@ -166,7 +174,7 @@
   flex-direction: column;
   padding: 28px var(--m-pad) 0;
 }
-.mist .prompt { font-size: 12.5px; color: oklch(0.5 0.06 268); animation: m-fadeup 0.6s ease-out both; }
+.mist .prompt { font-size: var(--fs-meta); color: var(--m-sub); animation: m-fadeup 0.6s ease-out both; }
 .mist .nameblock {
   display: flex;
   flex-direction: column;
@@ -207,7 +215,7 @@
   min-height: 20px; /* タイプ前でも高さを確保（CLS 対策） */
   animation: m-fadeup 0.7s ease-out 0.18s both;
 }
-.mist .tagline .jp { font-size: 12.5px; color: oklch(0.45 0.04 268); }
+.mist .tagline .jp { font-size: var(--fs-meta); color: var(--m-sub); }
 /* jp 末尾の細カーソル（タグライン打鍵中） */
 .mist .jpcaret {
   display: inline-block;
@@ -220,8 +228,8 @@
 }
 /* ロール（英字）は名前・タグライン完了後にフェードイン */
 .mist .tagline .en {
-  font-size: 11px;
-  color: oklch(0.51 0.05 268); /* AA: #eef1f4 上で約4.8:1 */
+  font-size: var(--fs-caption);
+  color: var(--m-faint); /* AA: #eef1f4 上で約4.8:1 */
   opacity: 0;
   transition: opacity 0.5s ease;
 }
@@ -235,28 +243,28 @@
   gap: 8px 16px;
   margin: 26px var(--m-pad) 0;
   padding: 9px 18px;
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--m-surface);
   backdrop-filter: blur(12px);
   border: 1px solid var(--m-hairline);
-  font-size: 11.5px;
+  font-size: var(--fs-meta);
   animation: m-fadeup 0.7s ease-out 0.26s both;
 }
-.mist .env .cmd { display: flex; align-items: center; gap: 9px; color: oklch(0.4 0.06 270); }
+.mist .env .cmd { display: flex; align-items: center; gap: 9px; color: var(--m-sub); }
 /* ブライユ・スピナー（幅固定で回転してもガタつかない） */
-.mist .spin { width: 13px; font-weight: 600; color: oklch(0.5 0.09 268); }
+.mist .spin { width: 13px; font-weight: 600; color: var(--m-accent-ink); }
 /* NOTICE スロット（ラベル + 日付バッジ + メッセージ + カーソル） */
 .mist .rotwrap {
   display: inline-flex;
   align-items: center;
   gap: 9px;
   min-width: 290px;
-  color: oklch(0.4 0.06 270);
+  color: var(--m-sub);
 }
 .mist .ndate {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 10.5px;
+  font-size: var(--fs-caption);
   font-weight: 600;
-  color: var(--m-accent);
+  color: var(--m-accent-ink);
   letter-spacing: 0.03em;
 }
 .mist .tcur {
@@ -269,29 +277,29 @@
 }
 .mist .divider { width: 1px; align-self: stretch; background: var(--m-hairline); }
 .mist .env .kv { color: var(--m-faint); }
-.mist .env .kv b { color: oklch(0.35 0.08 270); font-weight: 600; }
+.mist .env .kv b { color: var(--m-ink-2); font-weight: 600; }
 .mist .env .vals {
   margin-left: auto;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 11px;
-  color: oklch(0.35 0.07 270);
+  color: var(--m-ink-2);
 }
-.mist .env .icon { display: flex; color: oklch(0.42 0.08 270); }
+.mist .env .icon { display: flex; color: var(--m-sub); }
 .mist .env .icon .rays { transform-origin: 32px 32px; animation: m-spin 28s linear infinite; }
-.mist .env .temp { font-family: var(--font-outfit), sans-serif; font-size: 14.5px; font-weight: 700; }
+.mist .env .temp { font-family: var(--font-outfit), sans-serif; font-size: var(--fs-ui); font-weight: 700; }
 .mist .env .wx { color: var(--m-faint); }
 .mist .env .sep { opacity: 0.35; }
 .mist .env .date { font-family: var(--font-outfit), sans-serif; font-weight: 600; letter-spacing: 0.03em; }
 .mist .env .time {
   font-family: var(--font-outfit), sans-serif;
-  font-size: 15px;
+  font-size: var(--fs-ui);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 .mist .env .attribution {
-  font-size: 9.5px;
+  font-size: var(--fs-caption);
   color: var(--m-faint);
   text-decoration: underline dotted;
   text-underline-offset: 2px;
@@ -324,8 +332,8 @@
   gap: 10px;
   margin-bottom: 12px;
 }
-.mist .sechead .cmd { font-size: 12.5px; color: oklch(0.5 0.06 268); }
-.mist .more-link { position: relative; font-size: 10.5px; color: oklch(0.5 0.05 268); text-decoration: none; white-space: nowrap; }
+.mist .sechead .cmd { font-size: var(--fs-meta); color: var(--m-sub); }
+.mist .more-link { position: relative; font-size: var(--fs-caption); color: var(--m-sub); text-decoration: none; white-space: nowrap; }
 /* タップ領域拡張（見た目不変） */
 .mist .more-link::after { content: ''; position: absolute; top: -14px; right: -8px; bottom: -11px; left: -8px; }
 .mist .more-link:hover { color: var(--m-ink); }
@@ -357,12 +365,12 @@
   gap: 10px;
   padding-bottom: 16px;
 }
-.mist .loghead .cmd { font-size: 12.5px; color: oklch(0.5 0.06 268); }
-.mist .filters { display: flex; gap: 5px; font-size: 10.5px; }
+.mist .loghead .cmd { font-size: var(--fs-meta); color: var(--m-sub); }
+.mist .filters { display: flex; gap: 5px; font-size: var(--fs-caption); }
 .mist .filters button {
   position: relative;
   padding: 5px 12px;
-  border: 1px solid oklch(0.82 0.02 262);
+  border: 1px solid var(--m-hairline);
   background: none;
   color: var(--m-sub);
   font-family: inherit;
@@ -381,7 +389,7 @@
 .mist .commits {
   display: flex;
   flex-direction: column;
-  border-left: 2px solid oklch(0.8 0.03 265);
+  border-left: 2px solid var(--m-hairline);
   margin-left: 6px;
 }
 .mist .commit {
@@ -392,8 +400,8 @@
   padding: 20px 18px 20px 30px;
   transition: background 0.2s;
 }
-.mist .commit + .commit { border-top: 1px dashed oklch(0.82 0.02 262); }
-.mist .commit:hover { background: rgba(255, 255, 255, 0.6); }
+.mist .commit + .commit { border-top: 1px dashed var(--m-hairline); }
+.mist .commit:hover { background: var(--m-surface); }
 .mist .commit .node {
   position: absolute;
   left: -7px;
@@ -402,16 +410,16 @@
   height: 12px;
   border-radius: 50%;
   background: var(--m-bg);
-  border: 2.5px solid oklch(0.6 0.05 268);
+  border: 2.5px solid var(--m-line);
 }
 .mist .commit.head .node {
   background: var(--m-accent);
   border-color: var(--m-bg);
-  box-shadow: 0 0 10px oklch(0.55 0.09 268 / 0.5);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--m-accent) 50%, transparent);
 }
-.mist .commit .meta { font-size: 11.5px; color: var(--m-faint); line-height: 2; }
+.mist .commit .meta { font-size: var(--fs-meta); color: var(--m-faint); line-height: 2; }
 .mist .commit .hash {
-  color: oklch(0.45 0.09 268);
+  color: var(--m-accent-ink);
   background: oklch(0.92 0.02 262 / 0.8);
   padding: 2px 8px;
 }
@@ -420,10 +428,10 @@
   padding: 2px 8px;
   background: var(--m-ink);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--fs-caption);
 }
 .mist .commit .body {
-  font-size: 16px;
+  font-size: var(--fs-body);
   font-weight: 600;
   line-height: 1.8;
   color: var(--m-ink);
@@ -435,9 +443,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--m-faint);
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--m-surface);
   border: 1px solid var(--m-hairline);
   padding: 4px 11px;
   font-family: inherit;
@@ -447,13 +455,15 @@
 /* タップ領域拡張（見た目不変。単独配置のため全方向に拡張して44px以上に） */
 .mist .commit .likes::after { content: ''; position: absolute; top: -7px; right: -11px; bottom: -11px; left: -11px; }
 .mist .commit .likes:hover:not(:disabled) {
-  color: oklch(0.45 0.09 268);
+  color: var(--m-accent-ink);
   border-color: var(--m-accent);
+  /* 状態色は base(--m-surface) と別意図で literal 維持: hover=明るい白ウォッシュ */
   background: rgba(255, 255, 255, 0.9);
 }
 .mist .commit .likes.liked {
-  color: oklch(0.45 0.09 268);
+  color: var(--m-accent-ink);
   border-color: var(--m-accent);
+  /* liked=アクセントのチップ地（hash/tagchip の 0.92 tint と同族の装飾例外） */
   background: oklch(0.92 0.03 268 / 0.6);
 }
 .mist .commit .likes:disabled { cursor: default; }
@@ -499,7 +509,7 @@
 .mist .loadmore {
   align-self: flex-start;
   margin: 20px 0 0 30px;
-  font-size: 11.5px;
+  font-size: var(--fs-meta);
   padding: 10px 20px;
   border: 1px solid var(--m-ink);
   cursor: pointer;
@@ -511,7 +521,7 @@
   text-decoration: none;
 }
 .mist .loadmore:hover { background: var(--m-ink); color: #fff; }
-.mist .loadmore .n { color: oklch(0.55 0.05 268); }
+.mist .loadmore .n { color: var(--m-faint); }
 .mist .loadmore:hover .n { color: rgba(255, 255, 255, 0.7); }
 
 /* ── 右端固定プロフィール列 ─────────────────── */
@@ -524,11 +534,11 @@
   flex-direction: column;
   gap: 10px;
   padding: 20px 22px;
-  background: rgba(255, 255, 255, 0.68);
+  background: var(--m-surface);
   backdrop-filter: blur(14px);
   border: 1px solid var(--m-hairline);
 }
-.mist .card .cmd { font-size: 11.5px; color: oklch(0.5 0.06 268); }
+.mist .card .cmd { font-size: var(--fs-meta); color: var(--m-sub); }
 .mist .who { display: flex; align-items: center; gap: 13px; }
 .mist .avatar {
   position: relative;
@@ -536,16 +546,16 @@
   height: 54px;
   flex: none;
   overflow: hidden;
-  border: 1px solid oklch(0.8 0.03 265);
+  border: 1px solid var(--m-hairline);
   background: oklch(0.9 0.02 262);
 }
-.mist .who .nm { font-size: 14px; font-weight: 700; }
-.mist .who .rl { font-size: 10.5px; color: var(--m-faint); }
-.mist .bio { margin: 0; font-size: 11.5px; line-height: 1.9; color: oklch(0.48 0.04 268); }
-.mist .socials { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10.5px; }
+.mist .who .nm { font-size: var(--fs-ui); font-weight: 700; }
+.mist .who .rl { font-size: var(--fs-caption); color: var(--m-faint); }
+.mist .bio { margin: 0; font-size: var(--fs-meta); line-height: 1.9; color: var(--m-sub); }
+.mist .socials { display: flex; flex-wrap: wrap; gap: 6px; font-size: var(--fs-caption); }
 .mist .socials a {
   padding: 7px 12px;
-  border: 1px solid oklch(0.82 0.02 262);
+  border: 1px solid var(--m-hairline);
   color: inherit;
   text-decoration: none;
   transition: all 0.2s;
@@ -562,10 +572,10 @@
 .mist .gal .g:hover { filter: brightness(0.94); }
 .mist .gal .g em {
   position: absolute; left: 8px; bottom: 8px; z-index: 1;
-  font-style: normal; font-size: 9.5px; color: oklch(0.4 0.05 268);
+  font-style: normal; font-size: var(--fs-caption); color: var(--m-sub);
   background: rgba(255, 255, 255, 0.85); padding: 2px 7px;
 }
-.mist .substream { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 8px; font-size: 11.5px; color: oklch(0.5 0.06 268); }
+.mist .substream { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 8px; font-size: var(--fs-meta); color: var(--m-sub); }
 .mist .streamwrap { position: relative; overflow: hidden; }
 .mist .streamrow { display: flex; gap: 8px; width: max-content; animation: m-marquee 34s linear infinite; }
 .mist .sph { position: relative; display: block; width: 180px; height: 120px; flex: none; overflow: hidden; border: 0; transition: filter 0.25s; }
@@ -576,18 +586,18 @@
 
 /* ── Portal カード（Blog/Events/Products。サムネ必須・無ければ文字カバー） ── */
 .mist .portal .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
-.mist .pcard { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--m-hairline); background: rgba(255, 255, 255, 0.68); text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s, transform 0.2s; }
-.mist .pcard:hover { border-color: oklch(0.6 0.05 268); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+.mist .pcard { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--m-hairline); background: var(--m-surface); text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s, transform 0.2s; }
+.mist .pcard:hover { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
 .mist .pcard .thumb { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-bottom: 1px solid var(--m-hairline); background: oklch(0.9 0.02 262); }
 .mist .pcard .thumb img { transition: filter 0.25s; }
 .mist .pcard:hover .thumb img { filter: brightness(0.95); }
 .mist .pcard .thumb.txt { display: flex; align-items: center; justify-content: center; text-align: center; padding: 14px; background: repeating-linear-gradient(135deg, oklch(0.9 0.02 262) 0 10px, oklch(0.93 0.012 262) 10px 20px); }
-.mist .pcard .thumb.txt span { font-size: 13px; font-weight: 700; line-height: 1.5; color: oklch(0.4 0.06 270); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.mist .pcard .thumb .badge { position: absolute; left: 8px; top: 8px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; padding: 2px 7px; background: rgba(255, 255, 255, 0.85); color: oklch(0.42 0.06 270); }
+.mist .pcard .thumb.txt span { font-size: var(--fs-ui); font-weight: 700; line-height: 1.5; color: var(--m-sub); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.mist .pcard .thumb .badge { position: absolute; left: 8px; top: 8px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-caption); padding: 2px 7px; background: rgba(255, 255, 255, 0.85); color: var(--m-sub); }
 .mist .pcard .thumb .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
 .mist .pcard .b { display: flex; flex-direction: column; gap: 5px; padding: 11px 13px; }
-.mist .pcard .bt { font-size: 13px; font-weight: 700; line-height: 1.5; color: var(--m-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.mist .pcard .bm { font-size: 10.5px; color: var(--m-faint); }
+.mist .pcard .bt { font-size: var(--fs-ui); font-weight: 700; line-height: 1.5; color: var(--m-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mist .pcard .bm { font-size: var(--fs-caption); color: var(--m-faint); }
 
 /* ── footer ───────────────────────────────── */
 .mist .footer {
@@ -598,10 +608,10 @@
   margin: 40px var(--m-pad) 0;
   padding: 18px 0 24px;
   border-top: 1px solid var(--m-hairline);
-  font-size: 11px;
+  font-size: var(--fs-caption);
   color: var(--m-faint);
 }
-.mist .footer .ex { color: oklch(0.5 0.06 268); }
+.mist .footer .ex { color: var(--m-sub); }
 .mist .footer i { font-family: Georgia, serif; }
 
 /* ── reduced motion ───────────────────────── */
@@ -649,9 +659,9 @@
   gap: 14px;
   padding-bottom: 22px;
   margin-bottom: 28px;
-  border-bottom: 1px dashed oklch(0.82 0.02 262);
+  border-bottom: 1px dashed var(--m-hairline);
 }
-.mist .pagehead .cmd { display: block; font-size: 12.5px; color: oklch(0.5 0.06 268); margin-bottom: 10px; }
+.mist .pagehead .cmd { display: block; font-size: var(--fs-meta); color: var(--m-sub); margin-bottom: 10px; }
 .mist .pagehead h1 {
   margin: 0;
   font-family: var(--font-outfit), sans-serif;
@@ -672,11 +682,11 @@
   background: var(--m-accent);
   animation: m-pulseglow 1.1s steps(2) infinite;
 }
-.mist .pagehead .desc { margin: 9px 0 0; font-size: 12px; line-height: 1.7; color: var(--m-faint); }
+.mist .pagehead .desc { margin: 9px 0 0; font-size: var(--fs-meta); line-height: 1.7; color: var(--m-faint); }
 .mist .pagehead .actions { display: flex; align-items: center; gap: 10px; }
 
 /* 空状態 */
-.mist .empty { font-size: 12.5px; color: var(--m-faint); padding: 8px 0; }
+.mist .empty { font-size: var(--fs-meta); color: var(--m-faint); padding: 8px 0; }
 
 /* カードグリッド */
 .mist .cardgrid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); }
@@ -687,14 +697,14 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.68);
+  background: var(--m-surface);
   backdrop-filter: blur(14px);
   border: 1px solid var(--m-hairline);
   text-decoration: none;
   color: inherit;
   transition: border-color 0.2s, background 0.2s, transform 0.2s;
 }
-.mist .ccard:hover { border-color: oklch(0.6 0.05 268); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+.mist .ccard:hover { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
 .mist .ccard .thumb {
   position: relative;
   width: 100%;
@@ -706,22 +716,22 @@
 .mist .ccard .thumb img { transition: filter 0.25s; }
 .mist .ccard:hover .thumb img { filter: brightness(0.95); }
 .mist .ccard .cbody { display: flex; flex-direction: column; gap: 7px; padding: 15px 17px; }
-.mist .ccard .cmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 11px; color: var(--m-faint); }
-.mist .ccard .ctitle { font-size: 14px; font-weight: 700; line-height: 1.5; color: var(--m-ink); }
-.mist .ccard .cexcerpt { font-size: 12px; line-height: 1.8; color: oklch(0.48 0.04 268); }
+.mist .ccard .cmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--fs-caption); color: var(--m-faint); }
+.mist .ccard .ctitle { font-size: var(--fs-ui); font-weight: 700; line-height: 1.5; color: var(--m-ink); }
+.mist .ccard .cexcerpt { font-size: var(--fs-meta); line-height: 1.8; color: var(--m-sub); }
 /* カード内のカテゴリ/タグチップ（mono） */
 .mist .tagchip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   padding: 2px 8px;
-  font-size: 10.5px;
-  color: oklch(0.45 0.09 268);
+  font-size: var(--fs-caption);
+  color: var(--m-accent-ink);
   background: oklch(0.92 0.02 262 / 0.8);
 }
 .mist .livebadge {
   padding: 2px 8px;
-  font-size: 10px;
+  font-size: var(--fs-caption);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: #fff;
@@ -753,15 +763,15 @@
 
 /* フォーム（letter） */
 .mist .mform { display: flex; flex-direction: column; gap: 14px; }
-.mist .mform label { display: flex; flex-direction: column; gap: 6px; font-size: 11.5px; color: oklch(0.5 0.06 268); }
+.mist .mform label { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-meta); color: var(--m-sub); }
 .mist .mform input,
 .mist .mform textarea {
   font-family: inherit;
   /* 16px 未満だと iOS Safari がフォーカス時に強制ズームするため 16px 固定 */
-  font-size: 16px;
+  font-size: var(--fs-body);
   color: var(--m-ink);
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--m-surface);
   border: 1px solid var(--m-hairline);
   transition: border-color 0.2s;
 }
@@ -772,7 +782,7 @@
   align-self: flex-start;
   margin-top: 4px;
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: var(--fs-meta);
   padding: 10px 20px;
   border: 1px solid var(--m-ink);
   background: none;
@@ -782,18 +792,18 @@
 }
 .mist .mform .submit:hover:not(:disabled) { background: var(--m-ink); color: #fff; }
 .mist .mform .submit:disabled { opacity: 0.5; cursor: default; }
-.mist .formnote { font-size: 11.5px; color: var(--m-faint); }
+.mist .formnote { font-size: var(--fs-meta); color: var(--m-faint); }
 
 /* 記事詳細（posts/[slug]） */
 .mist .article { width: 100%; max-width: 760px; margin: 0 auto; }
 .mist .article .cover { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--m-hairline); margin-bottom: 22px; }
 .mist .article h1 { margin: 0 0 8px; font-family: var(--font-outfit), sans-serif; font-size: clamp(24px, 3.6vw, 32px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; color: var(--m-ink); }
 .mist .article .amETA,
-.mist .article .ameta { font-size: 11.5px; color: var(--m-faint); margin-bottom: 24px; }
-.mist .article .prose { font-size: 15.5px; line-height: 1.95; color: oklch(0.34 0.05 270); }
+.mist .article .ameta { font-size: var(--fs-meta); color: var(--m-faint); margin-bottom: 24px; }
+.mist .article .prose { font-size: var(--fs-body); line-height: 1.95; color: var(--m-ink-2); }
 .mist .article .prose p { margin: 0 0 1.2em; }
-.mist .article .prose h2 { font-family: var(--font-outfit), sans-serif; font-size: 19px; font-weight: 700; margin: 1.8em 0 0.6em; color: var(--m-ink); }
-.mist .article .prose h3 { font-size: 16px; font-weight: 700; margin: 1.6em 0 0.5em; color: var(--m-ink); }
+.mist .article .prose h2 { font-family: var(--font-outfit), sans-serif; font-size: var(--fs-h3); font-weight: 700; margin: 1.8em 0 0.6em; color: var(--m-ink); }
+.mist .article .prose h3 { font-size: var(--fs-body); font-weight: 700; margin: 1.6em 0 0.5em; color: var(--m-ink); }
 .mist .article .prose img { max-width: 100%; height: auto; border: 1px solid var(--m-hairline); }
 
 /* 戻りリンク（loadmore と同意匠の小型ボタン） */
@@ -801,7 +811,7 @@
   align-self: flex-start;
   display: inline-block;
   margin-top: 28px;
-  font-size: 11.5px;
+  font-size: var(--fs-meta);
   padding: 9px 18px;
   border: 1px solid var(--m-ink);
   color: inherit;

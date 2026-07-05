@@ -299,7 +299,7 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
         })}
 
         {shown.length === 0 && (
-          <p className="commit jp" style={{ fontSize: 12.5, color: 'var(--m-faint)' }}>
+          <p className="commit jp" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-faint)' }}>
             該当する投稿がありません
           </p>
         )}

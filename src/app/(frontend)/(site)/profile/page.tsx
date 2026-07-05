@@ -138,7 +138,7 @@ export default async function ProfilePage() {
             <h2
               style={{
                 fontFamily: 'var(--font-outfit), sans-serif',
-                fontSize: 22,
+                fontSize: 'var(--fs-h3)',
                 fontWeight: 700,
                 letterSpacing: '-0.01em',
                 margin: 0,
@@ -146,7 +146,7 @@ export default async function ProfilePage() {
             >
               {profileData.name}
             </h2>
-            <p className="jp" style={{ margin: '6px 0 18px', fontSize: 11.5, color: 'var(--m-faint)' }}>
+            <p className="jp" style={{ margin: '6px 0 18px', fontSize: 'var(--fs-meta)', color: 'var(--m-faint)' }}>
               {profileData.nameJapanese}・{profileData.title}
             </p>
             <p
