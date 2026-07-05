@@ -113,11 +113,15 @@ async function fetchTopPageData() {
       payload.count({ collection: 'media', where: GALLERY_WHERE }),
       payload.find({
         collection: 'media',
-        limit: 10,
+        limit: 14,
         sort: '-createdAt',
         where: GALLERY_WHERE,
       }),
-      payload.findGlobal({ slug: 'site-settings' }),
+      // 設定はスキーマ変更（新カラム）未適用でもトップ全体を巻き込まないよう握りつぶし、既定値へ縮退
+      payload.findGlobal({ slug: 'site-settings' }).catch((e) => {
+        console.error('site-settings fetch failed (using defaults):', e)
+        return null
+      }),
       // お知らせ（NOTICE）: 公開分を新しい順に。
       // notices テーブル未マイグレーション時でもトップ全体を巻き込まないよう独立して握りつぶす
       payload
@@ -155,6 +159,8 @@ async function fetchTopPageData() {
     role: heroData?.roleEn || '— web engineer, tokyo',
   }
 
+  const spotifyUrl = settings?.spotify?.playlistUrl ?? null
+
   const profileData = settings?.profile
   const profileImage = profileData?.profileImage
   const profile = {
@@ -175,6 +181,7 @@ async function fetchTopPageData() {
     notices,
     hero,
     profile,
+    spotifyUrl,
   }
 }
 
@@ -196,10 +203,12 @@ export default async function Home() {
         role: '— web engineer, tokyo',
       },
       profile: {} as never,
+      spotifyUrl: null,
     }
   }
 
-  const { posts, entriesTotal, photosTotal, gallery, streak, notices, hero, profile } = data
+  const { posts, entriesTotal, photosTotal, gallery, streak, notices, hero, profile, spotifyUrl } =
+    data
 
   return (
     <div className={`mist ${mistFontVars}`}>
@@ -227,7 +236,12 @@ export default async function Home() {
           {/* ── メイングリッド: git log 風タイムライン + 右レール ── */}
           <div className="main">
             <MistLogTimeline posts={posts} total={entriesTotal} />
-            <MistRail profile={profile} photos={gallery} photosTotal={photosTotal} />
+            <MistRail
+              profile={profile}
+              photos={gallery}
+              photosTotal={photosTotal}
+              spotifyUrl={spotifyUrl}
+            />
           </div>
 
           {/* ── ギャラリーストリーム ── */}
