@@ -1,0 +1,529 @@
+/* ──────────────────────────────────────────────
+   Mist Terminal ― トップページ専用スタイル
+   （docs/design-reference-top.html の hifi 移植）
+
+   デザイントークン（docs/README.md 参照）:
+   ink:        oklch(0.30 0.08 272)  — 群青（テキスト/ベタ面）
+   ink-soft:   oklch(0.45 0.07 268)  — アウトライン文字・準アクセント
+   sub:        oklch(0.50 0.04 268)  — 補助テキスト
+   faint:      oklch(0.55 0.04 268)  — メタ情報
+   hairline:   oklch(0.85 0.02 262)  — 罫線
+   bg:         #eef1f4               — ベース
+   accent-dot: oklch(0.55 0.09 268)  — カーソル/ドット
+
+   ライトターミナル意匠のためダークモードでも配色は固定。
+   すべて .mist 配下にスコープする。
+─────────────────────────────────────────────── */
+
+@keyframes m-blobdrift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(60px, -40px) scale(1.15); }
+  66% { transform: translate(-50px, 30px) scale(0.92); }
+}
+@keyframes m-blobdrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-70px, 50px) scale(1.2); }
+  75% { transform: translate(40px, -30px) scale(0.9); }
+}
+@keyframes m-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes m-pulseglow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes m-fadeup {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes m-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mist {
+  --m-ink: oklch(0.3 0.08 272);
+  --m-sub: oklch(0.5 0.05 268);
+  --m-faint: oklch(0.55 0.04 268);
+  --m-hairline: oklch(0.85 0.02 262);
+  --m-accent: oklch(0.55 0.09 268);
+  --m-bg: #eef1f4;
+  --m-pad: clamp(20px, 4.5vw, 48px); /* コンテンツ左右パディング（基準 48px） */
+
+  min-height: 100vh;
+  background: #e4e7ec;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  color: var(--m-ink);
+  color-scheme: light; /* ライトターミナル固定（フォーム・スクロールバーも明るく） */
+}
+
+/* 日本語テキスト（デザイン指定: Noto Sans JP） */
+.mist .jp { font-family: var(--font-noto-jp), 'Hiragino Kaku Gothic ProN', sans-serif; }
+
+.mist .page {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  background: var(--m-bg);
+  min-height: 100vh;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(30, 40, 80, 0.14);
+}
+
+/* mist blobs */
+.mist .mist1,
+.mist .mist2 {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.mist .mist1 {
+  top: -140px; right: -120px; width: 620px; height: 620px;
+  background: radial-gradient(circle, oklch(0.9 0.03 255 / 0.6), transparent 65%);
+  filter: blur(60px);
+  animation: m-blobdrift 24s ease-in-out infinite;
+}
+.mist .mist2 {
+  bottom: -160px; left: -140px; width: 580px; height: 580px;
+  background: radial-gradient(circle, oklch(0.91 0.025 285 / 0.5), transparent 65%);
+  filter: blur(65px);
+  animation: m-blobdrift2 28s ease-in-out infinite;
+}
+
+.mist .inner { position: relative; display: flex; flex-direction: column; }
+
+/* ── window title bar ─────────────────────── */
+.mist .titlebar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px var(--m-pad);
+  border-bottom: 1px solid oklch(0.84 0.02 262);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(14px);
+}
+.mist .dots { display: flex; gap: 7px; flex: none; }
+.mist .dots span {
+  width: 11px; height: 11px; border-radius: 50%;
+  border: 1px solid oklch(0.65 0.05 268 / 0.5);
+}
+.mist .dots span:nth-child(1) { background: oklch(0.75 0.04 268 / 0.6); }
+.mist .dots span:nth-child(2) { background: oklch(0.82 0.03 262 / 0.6); }
+.mist .dots span:nth-child(3) { background: oklch(0.88 0.02 262 / 0.6); }
+.mist .tb-path { font-size: 11.5px; color: var(--m-sub); white-space: nowrap; }
+.mist .nav {
+  margin-left: auto;
+  display: flex;
+  gap: 3px;
+  font-size: 11.5px;
+  color: oklch(0.48 0.04 268);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mist .nav::-webkit-scrollbar { display: none; }
+.mist .nav a {
+  padding: 6px 13px;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.mist .nav a.on,
+.mist .nav a:hover { background: var(--m-ink); color: #fff; }
+
+/* ── hero ─────────────────────────────────── */
+.mist .hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 52px var(--m-pad) 0;
+}
+.mist .prompt { font-size: 12.5px; color: oklch(0.5 0.06 268); animation: m-fadeup 0.6s ease-out both; }
+.mist .nameblock {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+  animation: m-fadeup 0.7s ease-out 0.08s both;
+}
+.mist .name-outline,
+.mist .name-fill {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: clamp(46px, 9.2vw, 108px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.mist .name-outline {
+  line-height: 0.95;
+  color: transparent;
+  -webkit-text-stroke: 1.5px oklch(0.45 0.07 268 / 0.8);
+  user-select: none;
+}
+.mist .name-fill { line-height: 0.98; color: var(--m-ink); }
+.mist .cursor {
+  display: inline-block;
+  width: clamp(19px, 3.7vw, 44px);
+  height: clamp(34px, 6.8vw, 80px);
+  background: var(--m-accent);
+  margin-left: 14px;
+  vertical-align: baseline;
+  animation: m-pulseglow 1.3s steps(2) infinite;
+}
+.mist .tagline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 20px;
+  animation: m-fadeup 0.7s ease-out 0.18s both;
+}
+.mist .tagline .jp { font-size: 12.5px; color: oklch(0.45 0.04 268); }
+.mist .tagline .en { font-size: 11px; color: oklch(0.55 0.05 268); }
+
+/* ── status strip ─────────────────────────── */
+.mist .status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 22px;
+  margin-top: 26px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--m-hairline);
+  animation: m-fadeup 0.7s ease-out 0.26s both;
+  font-size: 11.5px;
+}
+.mist .livedot {
+  width: 7px; height: 7px; flex: none; border-radius: 50%;
+  background: var(--m-accent);
+  animation: m-pulseglow 2.2s ease-in-out infinite;
+}
+.mist .status .lab { display: flex; align-items: center; gap: 9px; color: oklch(0.4 0.06 270); }
+.mist .status .kv { color: var(--m-faint); }
+.mist .status .kv b { color: oklch(0.35 0.08 270); }
+.mist .contrib {
+  display: grid;
+  grid-template-columns: repeat(30, 1fr);
+  gap: 3px;
+  flex: 1;
+  max-width: 330px;
+  min-width: 180px;
+  margin-left: auto;
+}
+.mist .contrib i { aspect-ratio: 1; border-radius: 2px; }
+
+/* ── live env bar ─────────────────────────── */
+.mist .env {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 12px var(--m-pad) 0;
+  padding: 9px 18px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--m-hairline);
+  font-size: 11.5px;
+  animation: m-fadeup 0.7s ease-out 0.32s both;
+}
+.mist .env .cmd { display: flex; align-items: center; gap: 9px; color: oklch(0.5 0.06 268); }
+.mist .env .vals {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 11px;
+  color: oklch(0.35 0.07 270);
+}
+.mist .env .icon { display: flex; color: oklch(0.42 0.08 270); }
+.mist .env .icon .rays { transform-origin: 32px 32px; animation: m-spin 28s linear infinite; }
+.mist .env .temp { font-family: var(--font-outfit), sans-serif; font-size: 14.5px; font-weight: 700; }
+.mist .env .wx { color: var(--m-faint); }
+.mist .env .sep { opacity: 0.35; }
+.mist .env .date { font-family: var(--font-outfit), sans-serif; font-weight: 600; letter-spacing: 0.03em; }
+.mist .env .time {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.mist .env .attribution {
+  font-size: 9.5px;
+  color: var(--m-faint);
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+/* ── main grid ────────────────────────────── */
+.mist .main {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 36px;
+  padding: 44px var(--m-pad) 0;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .mist .main { grid-template-columns: 1fr 320px; }
+}
+
+/* git log 風タイムライン */
+.mist .loghead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 16px;
+}
+.mist .loghead .cmd { font-size: 12.5px; color: oklch(0.5 0.06 268); }
+.mist .filters { display: flex; gap: 5px; font-size: 10.5px; }
+.mist .filters button {
+  padding: 5px 12px;
+  border: 1px solid oklch(0.82 0.02 262);
+  background: none;
+  color: var(--m-sub);
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.mist .filters button.on,
+.mist .filters button:hover {
+  background: var(--m-ink);
+  color: #fff;
+  border-color: var(--m-ink);
+}
+.mist .commits {
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid oklch(0.8 0.03 265);
+  margin-left: 6px;
+}
+.mist .commit {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 18px 20px 30px;
+  transition: background 0.2s;
+}
+.mist .commit + .commit { border-top: 1px dashed oklch(0.82 0.02 262); }
+.mist .commit:hover { background: rgba(255, 255, 255, 0.6); }
+.mist .commit .node {
+  position: absolute;
+  left: -7px;
+  top: 26px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--m-bg);
+  border: 2.5px solid oklch(0.6 0.05 268);
+}
+.mist .commit.head .node {
+  background: var(--m-accent);
+  border-color: var(--m-bg);
+  box-shadow: 0 0 10px oklch(0.55 0.09 268 / 0.5);
+}
+.mist .commit .meta { font-size: 11.5px; color: var(--m-faint); line-height: 2; }
+.mist .commit .hash {
+  color: oklch(0.45 0.09 268);
+  background: oklch(0.92 0.02 262 / 0.8);
+  padding: 2px 8px;
+}
+.mist .commit .headtag {
+  margin-left: 6px;
+  padding: 2px 8px;
+  background: var(--m-ink);
+  color: #fff;
+  font-size: 10px;
+}
+.mist .commit .body {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.8;
+  color: var(--m-ink);
+}
+.mist .commit .likes {
+  align-self: flex-start;
+  font-size: 11px;
+  color: var(--m-faint);
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.mist .commit .likes:hover,
+.mist .commit .likes.liked { color: oklch(0.45 0.09 268); }
+.mist .commit .likes:disabled { cursor: default; }
+.mist .photos { display: flex; gap: 10px; }
+.mist .photos .ph {
+  position: relative;
+  height: 180px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  padding: 0;
+  cursor: zoom-in;
+  transition: filter 0.25s;
+}
+.mist .photos .ph:hover { filter: brightness(0.94); }
+@media (max-width: 640px) {
+  .mist .photos .ph { height: 130px; }
+}
+.mist .loadmore {
+  align-self: flex-start;
+  margin: 20px 0 0 30px;
+  font-size: 11.5px;
+  padding: 10px 20px;
+  border: 1px solid var(--m-ink);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: none;
+  font-family: inherit;
+  color: inherit;
+  display: inline-block;
+  text-decoration: none;
+}
+.mist .loadmore:hover { background: var(--m-ink); color: #fff; }
+.mist .loadmore .n { color: oklch(0.55 0.05 268); }
+.mist .loadmore:hover .n { color: rgba(255, 255, 255, 0.7); }
+
+/* ── right rail ───────────────────────────── */
+.mist .rail { display: flex; flex-direction: column; gap: 16px; }
+@media (min-width: 1024px) {
+  .mist .rail { position: sticky; top: 16px; }
+}
+.mist .card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px;
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--m-hairline);
+}
+.mist .card .cmd { font-size: 11.5px; color: oklch(0.5 0.06 268); }
+.mist .who { display: flex; align-items: center; gap: 13px; }
+.mist .avatar {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid oklch(0.8 0.03 265);
+  background: oklch(0.9 0.02 262);
+}
+.mist .who .nm { font-size: 14px; font-weight: 700; }
+.mist .who .rl { font-size: 10.5px; color: var(--m-faint); }
+.mist .bio { margin: 0; font-size: 11.5px; line-height: 1.9; color: oklch(0.48 0.04 268); }
+.mist .socials { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10.5px; }
+.mist .socials a {
+  padding: 7px 12px;
+  border: 1px solid oklch(0.82 0.02 262);
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.mist .socials a:hover { background: var(--m-ink); color: #fff; border-color: var(--m-ink); }
+.mist .gal-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mist .gal-mini .tile { position: relative; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.95); }
+.mist .gal-mini .wide { grid-column: span 2; height: 120px; }
+.mist .gal-mini .sq { aspect-ratio: 1; }
+.mist .gal-mini .more {
+  position: relative;
+  aspect-ratio: 1;
+  background: var(--m-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 11px;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+.mist .gal-mini .more:hover { background: oklch(0.38 0.08 272); }
+.mist .gal-link { font-size: 10.5px; color: oklch(0.5 0.05 268); text-decoration: none; }
+.mist .lsrow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-top: 1px dashed var(--m-hairline);
+  color: oklch(0.42 0.05 268);
+  text-decoration: none;
+  font-size: 11.5px;
+  transition: all 0.2s;
+}
+.mist .lsrow:hover { color: var(--m-ink); padding-left: 6px; }
+
+/* ── gallery stream ───────────────────────── */
+.mist .stream { display: flex; flex-direction: column; gap: 12px; padding: 48px 0 0; }
+.mist .stream .cmd { padding: 0 var(--m-pad); font-size: 12.5px; color: oklch(0.5 0.06 268); }
+.mist .streamwrap { position: relative; overflow: hidden; }
+.mist .streamrow { display: flex; gap: 10px; width: max-content; animation: m-marquee 42s linear infinite; }
+.mist .sph {
+  position: relative;
+  width: 260px;
+  height: 170px;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  transition: filter 0.25s;
+}
+.mist .sph:hover { filter: brightness(0.94); }
+.mist .sph em {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  z-index: 1;
+  font-style: normal;
+  font-size: 9.5px;
+  color: oklch(0.45 0.05 268);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 3px 8px;
+}
+.mist .fadeL,
+.mist .fadeR {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  pointer-events: none;
+}
+.mist .fadeL { left: 0; background: linear-gradient(90deg, var(--m-bg), transparent); }
+.mist .fadeR { right: 0; background: linear-gradient(270deg, var(--m-bg), transparent); }
+
+/* ── footer ───────────────────────────────── */
+.mist .footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 40px var(--m-pad) 0;
+  padding: 18px 0 24px;
+  border-top: 1px solid var(--m-hairline);
+  font-size: 11px;
+  color: var(--m-faint);
+}
+.mist .footer .ex { color: oklch(0.5 0.06 268); }
+.mist .footer i { font-family: Georgia, serif; }
+
+/* ── reduced motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .mist .streamrow,
+  .mist .mist1,
+  .mist .mist2,
+  .mist .cursor,
+  .mist .livedot,
+  .mist .env .icon .rays {
+    animation: none !important;
+  }
+  .mist .prompt,
+  .mist .nameblock,
+  .mist .tagline,
+  .mist .status,
+  .mist .env {
+    animation-duration: 0.01s !important;
+    animation-delay: 0s !important;
+  }
+}

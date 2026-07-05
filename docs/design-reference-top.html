@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Reference — Mist Terminal Top (10a)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS (see README.md)
+   ink:        oklch(0.30 0.08 272)  — 群青(テキスト/ベタ面)
+   ink-soft:   oklch(0.45 0.07 268)  — アウトライン文字・準アクセント
+   sub:        oklch(0.50 0.04 268)  — 補助テキスト
+   faint:      oklch(0.55 0.04 268)  — メタ情報
+   hairline:   oklch(0.85 0.02 262)  — 罫線
+   bg:         #eef1f4               — ベース
+   panel:      rgba(255,255,255,.65〜.68) + blur — 半透明パネル
+   accent-dot: oklch(0.55 0.09 268)  — カーソル/ドット
+============================================================ */
+*{box-sizing:border-box}
+body{margin:0;background:#e4e7ec;font-family:'IBM Plex Mono',ui-monospace,monospace;color:oklch(0.3 0.08 272)}
+.page{position:relative;max-width:1180px;margin:24px auto;background:#eef1f4;min-height:900px;overflow:hidden;box-shadow:0 30px 80px rgba(30,40,80,.14)}
+/* mist blobs */
+@keyframes blobdrift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(60px,-40px) scale(1.15)}66%{transform:translate(-50px,30px) scale(.92)}}
+@keyframes blobdrift2{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(-70px,50px) scale(1.2)}75%{transform:translate(40px,-30px) scale(.9)}}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes pulseglow{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes fadeup{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mist1{position:absolute;top:-140px;right:-120px;width:620px;height:620px;border-radius:50%;background:radial-gradient(circle, oklch(0.9 0.03 255 / .6), transparent 65%);filter:blur(60px);animation:blobdrift 24s ease-in-out infinite;pointer-events:none}
+.mist2{position:absolute;bottom:-160px;left:-140px;width:580px;height:580px;border-radius:50%;background:radial-gradient(circle, oklch(0.91 0.025 285 / .5), transparent 65%);filter:blur(65px);animation:blobdrift2 28s ease-in-out infinite;pointer-events:none}
+.inner{position:relative;display:flex;flex-direction:column}
+/* title bar */
+.titlebar{display:flex;align-items:center;gap:14px;padding:13px 48px;border-bottom:1px solid oklch(0.84 0.02 262);background:rgba(255,255,255,.55);backdrop-filter:blur(14px)}
+.dots{display:flex;gap:7px}
+.dots span{width:11px;height:11px;border-radius:50%;border:1px solid oklch(0.65 0.05 268 / .5)}
+.dots span:nth-child(1){background:oklch(0.75 0.04 268 / .6)}
+.dots span:nth-child(2){background:oklch(0.82 0.03 262 / .6)}
+.dots span:nth-child(3){background:oklch(0.88 0.02 262 / .6)}
+.tb-path{font-size:11.5px;color:oklch(0.5 0.04 268)}
+.nav{margin-left:auto;display:flex;gap:3px;font-size:11.5px;color:oklch(0.48 0.04 268)}
+.nav a{padding:6px 13px;color:inherit;text-decoration:none;transition:all .2s}
+.nav a.on,.nav a:hover{background:oklch(0.3 0.08 272);color:#fff}
+/* hero */
+.hero{position:relative;display:flex;flex-direction:column;padding:52px 48px 0}
+.prompt{font-size:12.5px;color:oklch(0.5 0.06 268);animation:fadeup .6s ease-out both}
+.nameblock{display:flex;flex-direction:column;margin-top:14px;animation:fadeup .7s ease-out .08s both}
+.name-outline{font-family:Outfit,sans-serif;font-size:108px;font-weight:700;letter-spacing:-.025em;line-height:.95;color:transparent;-webkit-text-stroke:1.5px oklch(0.45 0.07 268 / .8);user-select:none}
+.name-fill{font-family:Outfit,sans-serif;font-size:108px;font-weight:700;letter-spacing:-.025em;line-height:.98;color:oklch(0.3 0.08 272)}
+.cursor{display:inline-block;width:44px;height:80px;background:oklch(0.55 0.09 268);margin-left:14px;vertical-align:baseline;animation:pulseglow 1.3s steps(2) infinite}
+.tagline{display:flex;align-items:center;gap:18px;margin-top:20px;animation:fadeup .7s ease-out .18s both}
+.tagline .jp{font-size:12.5px;color:oklch(0.45 0.04 268);font-family:'Noto Sans JP',sans-serif}
+.tagline .en{font-size:11px;color:oklch(0.55 0.05 268)}
+/* status strip */
+.status{display:flex;align-items:center;gap:22px;margin-top:26px;padding:14px 20px;background:rgba(255,255,255,.65);backdrop-filter:blur(12px);border:1px solid oklch(0.85 0.02 262);animation:fadeup .7s ease-out .26s both;font-size:11.5px}
+.livedot{width:7px;height:7px;border-radius:50%;background:oklch(0.55 0.09 268);animation:pulseglow 2.2s ease-in-out infinite}
+.status .lab{display:flex;align-items:center;gap:9px;color:oklch(0.4 0.06 270)}
+.status .kv{color:oklch(0.55 0.04 268)}
+.status .kv b{color:oklch(0.35 0.08 270)}
+.contrib{display:grid;grid-template-columns:repeat(30,1fr);gap:3px;flex:1;max-width:330px;margin-left:auto}
+.contrib i{aspect-ratio:1;border-radius:2px}
+/* live env bar */
+.env{display:flex;align-items:center;gap:14px;margin:12px 48px 0;padding:9px 18px;background:rgba(255,255,255,.65);backdrop-filter:blur(12px);border:1px solid oklch(0.85 0.02 262);font-size:11.5px;animation:fadeup .7s ease-out .32s both}
+.env .cmd{display:flex;align-items:center;gap:9px;color:oklch(0.5 0.06 268)}
+.env .vals{margin-left:auto;display:flex;align-items:center;gap:11px;color:oklch(0.35 0.07 270)}
+.env .icon{display:flex;color:oklch(0.42 0.08 270)}
+.env .temp{font-family:Outfit,sans-serif;font-size:14.5px;font-weight:700}
+.env .wx{color:oklch(0.55 0.04 268);font-family:'Noto Sans JP',sans-serif}
+.env .sep{opacity:.35}
+.env .date{font-family:Outfit,sans-serif;font-weight:600;letter-spacing:.03em}
+.env .time{font-family:Outfit,sans-serif;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+/* main grid */
+.main{display:grid;grid-template-columns:1fr 320px;gap:36px;padding:44px 48px 0;align-items:start}
+.loghead{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px}
+.loghead .cmd{font-size:12.5px;color:oklch(0.5 0.06 268)}
+.filters{display:flex;gap:5px;font-size:10.5px}
+.filters span{padding:5px 12px;border:1px solid oklch(0.82 0.02 262);color:oklch(0.5 0.04 268);cursor:pointer;transition:all .2s}
+.filters span.on,.filters span:hover{background:oklch(0.3 0.08 272);color:#fff;border-color:oklch(0.3 0.08 272)}
+.commits{display:flex;flex-direction:column;border-left:2px solid oklch(0.8 0.03 265);margin-left:6px}
+.commit{position:relative;display:flex;flex-direction:column;gap:8px;padding:20px 18px 20px 30px;transition:background .2s}
+.commit+.commit{border-top:1px dashed oklch(0.82 0.02 262)}
+.commit:hover{background:rgba(255,255,255,.6)}
+.commit .node{position:absolute;left:-7px;top:26px;width:12px;height:12px;border-radius:50%;background:#eef1f4;border:2.5px solid oklch(0.6 0.05 268)}
+.commit.head .node{background:oklch(0.55 0.09 268);border-color:#eef1f4;box-shadow:0 0 10px oklch(0.55 0.09 268 / .5)}
+.commit .meta{font-size:11.5px;color:oklch(0.55 0.04 268)}
+.commit .hash{color:oklch(0.45 0.09 268);background:oklch(0.92 0.02 262 / .8);padding:2px 8px}
+.commit .headtag{margin-left:6px;padding:2px 8px;background:oklch(0.3 0.08 272);color:#fff;font-size:10px}
+.commit p{margin:0;font-family:'Noto Sans JP',sans-serif;font-size:16px;font-weight:600;line-height:1.8}
+.commit .likes{font-size:11px;color:oklch(0.55 0.04 268)}
+.photos{display:flex;gap:10px}
+.ph{border:1px solid rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;transition:filter .25s;font-size:10.5px;color:oklch(0.55 0.04 268)}
+.ph:hover{filter:brightness(.94)}
+.ph.a{background:repeating-linear-gradient(45deg, oklch(0.88 0.03 255 / .9) 0 12px, oklch(0.92 0.018 255 / .9) 12px 24px)}
+.ph.b{background:repeating-linear-gradient(45deg, oklch(0.9 0.02 285 / .9) 0 12px, oklch(0.93 0.012 285 / .9) 12px 24px)}
+.ph.c{background:repeating-linear-gradient(45deg, oklch(0.9 0.02 230 / .9) 0 12px, oklch(0.94 0.012 230 / .9) 12px 24px)}
+.loadmore{align-self:flex-start;margin:20px 0 0 30px;font-size:11.5px;padding:10px 20px;border:1px solid oklch(0.3 0.08 272);cursor:pointer;transition:all .2s;background:none;font-family:inherit;color:inherit}
+.loadmore:hover{background:oklch(0.3 0.08 272);color:#fff}
+.loadmore .n{color:oklch(0.55 0.05 268)}
+.loadmore:hover .n{color:rgba(255,255,255,.7)}
+/* right rail */
+.rail{display:flex;flex-direction:column;gap:16px;position:sticky;top:16px}
+.card{display:flex;flex-direction:column;gap:10px;padding:20px 22px;background:rgba(255,255,255,.68);backdrop-filter:blur(14px);border:1px solid oklch(0.85 0.02 262)}
+.card .cmd{font-size:11.5px;color:oklch(0.5 0.06 268)}
+.who{display:flex;align-items:center;gap:13px}
+.avatar{width:54px;height:54px;flex:none;background:repeating-linear-gradient(45deg, oklch(0.88 0.03 255 / .9) 0 9px, oklch(0.92 0.018 255 / .9) 9px 18px);border:1px solid oklch(0.8 0.03 265);display:flex;align-items:center;justify-content:center;font-size:8.5px;color:oklch(0.55 0.04 268)}
+.who .nm{font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700}
+.who .rl{font-size:10.5px;color:oklch(0.55 0.04 268)}
+.bio{margin:0;font-family:'Noto Sans JP',sans-serif;font-size:11.5px;line-height:1.9;color:oklch(0.48 0.04 268)}
+.socials{display:flex;gap:6px;font-size:10.5px}
+.socials a{padding:7px 12px;border:1px solid oklch(0.82 0.02 262);color:inherit;text-decoration:none;transition:all .2s}
+.socials a:hover{background:oklch(0.3 0.08 272);color:#fff;border-color:oklch(0.3 0.08 272)}
+.gal-mini{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gal-mini .wide{grid-column:span 2;height:120px}
+.gal-mini .sq{aspect-ratio:1}
+.gal-mini .more{position:relative;aspect-ratio:1;background:oklch(0.3 0.08 272);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;cursor:pointer;transition:background .2s}
+.gal-mini .more:hover{background:oklch(0.38 0.08 272)}
+.lsrow{display:flex;justify-content:space-between;padding:8px 0;border-top:1px dashed oklch(0.85 0.02 262);color:oklch(0.42 0.05 268);text-decoration:none;font-size:11.5px;transition:all .2s}
+.lsrow:hover{color:oklch(0.3 0.08 272);padding-left:6px}
+/* gallery stream */
+.stream{display:flex;flex-direction:column;gap:12px;padding:48px 0 0}
+.stream .cmd{padding:0 48px;font-size:12.5px;color:oklch(0.5 0.06 268)}
+.streamwrap{position:relative;overflow:hidden}
+.streamrow{display:flex;gap:10px;width:max-content;animation:marquee 42s linear infinite}
+.sph{position:relative;width:260px;height:170px;flex:none;border:1px solid rgba(255,255,255,.95)}
+.sph em{position:absolute;bottom:8px;left:10px;font-style:normal;font-size:9.5px;color:oklch(0.45 0.05 268);background:rgba(255,255,255,.85);padding:3px 8px}
+.fadeL{position:absolute;top:0;left:0;bottom:0;width:80px;background:linear-gradient(90deg,#eef1f4,transparent);pointer-events:none}
+.fadeR{position:absolute;top:0;right:0;bottom:0;width:80px;background:linear-gradient(270deg,#eef1f4,transparent);pointer-events:none}
+/* footer */
+.footer{display:flex;align-items:center;justify-content:space-between;margin:40px 48px 0;padding:18px 0 24px;border-top:1px solid oklch(0.85 0.02 262);font-size:11px;color:oklch(0.55 0.04 268)}
+.footer .ex{color:oklch(0.5 0.06 268)}
+.footer i{font-family:Georgia,serif}
+@media (prefers-reduced-motion: reduce){
+  .streamrow,.mist1,.mist2,.cursor,.livedot{animation:none!important}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="mist1"></div><div class="mist2"></div>
+  <div class="inner">
+
+    <!-- window title bar -->
+    <div class="titlebar">
+      <div class="dots"><span></span><span></span><span></span></div>
+      <span class="tb-path">makoto@tokyo: ~/life — <span id="tb-time">--:--:--</span></span>
+      <nav class="nav">
+        <a class="on" href="#">./timeline</a><a href="#">./posts</a><a href="#">./gallery</a><a href="#">./events</a><a href="#">./products</a><a href="#">./profile</a><a href="#">./letter</a>
+      </nav>
+    </div>
+
+    <!-- hero -->
+    <div class="hero">
+      <span class="prompt">~/life $ whoami</span>
+      <div class="nameblock">
+        <span class="name-outline">MAKOTO</span>
+        <span class="name-fill">IWABUCHI<span class="cursor"></span></span>
+      </div>
+      <div class="tagline">
+        <span class="jp">日々の記録、ときどき写真。つぶやきくらいの気軽さで。</span>
+        <span class="en">— web engineer, tokyo</span>
+      </div>
+      <div class="status">
+        <span class="lab"><span class="livedot"></span>STATUS: アドベントカレンダー執筆中</span>
+        <span class="kv">entries: <b>128</b></span>
+        <span class="kv">photos: <b>342</b></span>
+        <span class="kv">streak: <b>47d</b></span>
+        <div class="contrib" id="contrib"></div>
+      </div>
+    </div>
+
+    <!-- live env: real date/time + location + weather -->
+    <div class="env">
+      <span class="cmd"><span class="livedot"></span>$ date &amp;&amp; weather</span>
+      <span class="vals">
+        <span class="icon" id="wx-icon"></span>
+        <span class="temp" id="wx-temp">--°</span>
+        <span class="wx"><span id="wx-label">—</span> · <span id="wx-place">取得中…</span></span>
+        <span class="sep">|</span>
+        <span class="date" id="live-date"></span>
+        <span class="time" id="live-time">--:--:--</span>
+      </span>
+    </div>
+
+    <!-- timeline: git log -->
+    <div class="main">
+      <div>
+        <div class="loghead">
+          <span class="cmd">~/life $ git log --diary --photos</span>
+          <div class="filters"><span class="on">--all</span><span>--diary</span><span>--photo</span><span>--build</span></div>
+        </div>
+        <div class="commits">
+          <div class="commit head">
+            <span class="node"></span>
+            <span class="meta"><span class="hash">a3f8c21</span> · 2025-12-06 sat 18:26 · 日記 <span class="headtag">HEAD</span></span>
+            <p>アドベントカレンダーを書きたい</p>
+            <span class="likes">♡ 28</span>
+          </div>
+          <div class="commit">
+            <span class="node"></span>
+            <span class="meta"><span class="hash">9b2e4d7</span> · 2025-10-12 sun 14:14 · おでかけ +2 photos</span>
+            <p>那須のグランピングに行ってきた!</p>
+            <div class="photos">
+              <div class="ph a" style="flex:1.5;height:180px">photo: グランピング</div>
+              <div class="ph b" style="flex:1;height:180px">photo 2</div>
+            </div>
+            <span class="likes">♡ 1</span>
+          </div>
+          <div class="commit">
+            <span class="node"></span>
+            <span class="meta"><span class="hash">c7d1a09</span> · 2025-07-31 thu 21:06 · 日記</span>
+            <p>上野にある北欧サウナマジでいい満足度高い</p>
+            <span class="likes">♡ 6</span>
+          </div>
+          <div class="commit">
+            <span class="node"></span>
+            <span class="meta"><span class="hash">e12f88b</span> · 2025-07-11 fri 21:45 · 制作</span>
+            <p>このサイトのバグ改修もひと段落したし、あとはSEO….</p>
+            <span class="likes">♡ 18</span>
+          </div>
+        </div>
+        <button class="loadmore">$ load --more <span class="n">(all 128)</span></button>
+      </div>
+
+      <!-- right rail -->
+      <div class="rail">
+        <div class="card">
+          <span class="cmd">$ cat profile.txt</span>
+          <div class="who">
+            <div class="avatar">avatar</div>
+            <div><div class="nm">いわぶちまこと</div><div class="rl">web engineer</div></div>
+          </div>
+          <p class="bio">フロントエンド好き。Payload CMS × Next.js製のライフログ。</p>
+          <div class="socials"><a href="#">x ↗</a><a href="#">instagram ↗</a><a href="#">github ↗</a></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:baseline;justify-content:space-between">
+            <span class="cmd">$ ls ./gallery</span>
+            <a href="#" style="font-size:10.5px;color:oklch(0.5 0.05 268);text-decoration:none">342 files →</a>
+          </div>
+          <div class="gal-mini">
+            <div class="ph a wide">img_1206.jpg</div>
+            <div class="ph b sq">img_1012</div>
+            <div class="more">+340</div>
+          </div>
+        </div>
+        <div class="card" style="gap:0">
+          <span class="cmd" style="padding-bottom:6px">$ ls ./more</span>
+          <a class="lsrow" href="#">posts/<span>→</span></a>
+          <a class="lsrow" href="#">events/<span>→</span></a>
+          <a class="lsrow" href="#">products/<span>→</span></a>
+          <a class="lsrow" href="#">letter/<span>→</span></a>
+        </div>
+      </div>
+    </div>
+
+    <!-- gallery stream -->
+    <div class="stream">
+      <span class="cmd">~/life $ open ./gallery --stream</span>
+      <div class="streamwrap">
+        <div class="streamrow" id="streamrow">
+          <div class="sph ph a"><em>img_001 — 那須</em></div>
+          <div class="sph ph b"><em>img_002 — 上野</em></div>
+          <div class="sph ph c"><em>img_003 — 街</em></div>
+          <div class="sph ph a"><em>img_004 — 空</em></div>
+          <div class="sph ph b"><em>img_005 — 制作</em></div>
+        </div>
+        <div class="fadeL"></div><div class="fadeR"></div>
+      </div>
+    </div>
+
+    <!-- footer -->
+    <div class="footer">
+      <span>© 2026 makoto iwabuchi — <i>slowly, but daily.</i></span>
+      <span class="ex">$ exit 0</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ---- contribution grid (デモ用パターン。実装ではentriesの日次集計から生成) ----
+(function(){
+  var levels=[0,1,0,3,2,0,1,0,2,3,0,1,2,0,3,0,1,2,0,2,3,0,1,3,0,2,0,1,3,2];
+  var colors=['oklch(0.88 0.015 262)','oklch(0.72 0.05 268)','oklch(0.58 0.07 268)','oklch(0.42 0.09 270)'];
+  document.getElementById('contrib').innerHTML=levels.map(function(l){return '<i style="background:'+colors[l]+'"></i>';}).join('');
+})();
+
+// ---- marquee: 無限ループ用に内容を複製 ----
+(function(){
+  var row=document.getElementById('streamrow');
+  row.innerHTML+=row.innerHTML;
+})();
+
+// ---- live clock ----
+function tick(){
+  var n=new Date();
+  var days=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  var p=function(v){return String(v).padStart(2,'0');};
+  var t=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
+  document.getElementById('live-time').textContent=t;
+  document.getElementById('tb-time').textContent=t;
+  document.getElementById('live-date').textContent=n.getFullYear()+'.'+p(n.getMonth()+1)+'.'+p(n.getDate())+' '+days[n.getDay()];
+}
+setInterval(tick,1000);tick();
+
+// ---- weather (Open-Meteo, APIキー不要) + 現在地 ----
+function wxLabel(c){if(c===0)return '快晴';if(c<=2)return '晴れ';if(c===3)return 'くもり';if(c<=48)return '霧';if(c<=57)return '霧雨';if(c<=67)return '雨';if(c<=77)return '雪';if(c<=82)return 'にわか雨';if(c<=86)return '雪';return '雷雨';}
+function wxKind(c){if(c<=1)return 'sun';if(c===2)return 'partly';if(c===3)return 'cloud';if(c<=48)return 'fog';if(c<=67)return 'rain';if(c<=77)return 'snow';if(c<=82)return 'rain';if(c<=86)return 'snow';return 'thunder';}
+function wxIcon(kind){
+  var S='fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"';
+  var cloud='<path d="M19 44a9 9 0 0 1 .8-17.9A13.5 13.5 0 0 1 46 27.5 9.5 9.5 0 0 1 45 46H20Z" '+S+'/>';
+  var open='<svg width="24" height="24" viewBox="0 0 64 64" style="display:block">',close='</svg>';
+  if(kind==='sun'||!kind){
+    var rays='';[0,45,90,135,180,225,270,315].forEach(function(a){rays+='<line x1="32" y1="6.5" x2="32" y2="13" transform="rotate('+a+' 32 32)" '+S+'/>';});
+    return open+'<g style="transform-origin:32px 32px;animation:spin 28s linear infinite">'+rays+'</g><circle cx="32" cy="32" r="11.5" '+S+'/>'+close;
+  }
+  if(kind==='partly'){
+    var r2='';[0,60,120,180,240,300].forEach(function(a){r2+='<line x1="22" y1="6.5" x2="22" y2="10.5" transform="rotate('+a+' 22 21)" '+S+'/>';});
+    return open+'<circle cx="22" cy="21" r="7.5" '+S+'/>'+r2+'<g transform="translate(6 8) scale(.86)">'+cloud+'</g>'+close;
+  }
+  if(kind==='fog')return open+'<g transform="translate(0 -6) scale(.92)">'+cloud+'</g><line x1="17" y1="50" x2="47" y2="50" '+S+'/><line x1="22" y1="57" x2="42" y2="57" '+S+'/>'+close;
+  if(kind==='rain')return open+'<g transform="translate(0 -5)">'+cloud+'</g><line x1="24" y1="47" x2="21" y2="56" '+S+'/><line x1="33" y1="47" x2="30" y2="56" '+S+'/><line x1="42" y1="47" x2="39" y2="56" '+S+'/>'+close;
+  if(kind==='snow')return open+'<g transform="translate(0 -5)">'+cloud+'</g><circle cx="24" cy="52" r="2" fill="currentColor"/><circle cx="33" cy="56" r="2" fill="currentColor"/><circle cx="42" cy="52" r="2" fill="currentColor"/>'+close;
+  if(kind==='thunder')return open+'<g transform="translate(0 -6)">'+cloud+'</g><polyline points="33 42 27 52 34 52 29 61" '+S+'/>'+close;
+  return open+cloud+close;
+}
+document.getElementById('wx-icon').innerHTML=wxIcon('sun');
+function useCoords(lat,lon){
+  fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weather_code')
+    .then(function(r){return r.json();})
+    .then(function(d){var c=d&&d.current;if(!c)return;
+      document.getElementById('wx-temp').textContent=Math.round(c.temperature_2m)+'°C';
+      document.getElementById('wx-label').textContent=wxLabel(c.weather_code);
+      document.getElementById('wx-icon').innerHTML=wxIcon(wxKind(c.weather_code));
+    }).catch(function(){});
+  fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat+'&longitude='+lon+'&localityLanguage=ja')
+    .then(function(r){return r.json();})
+    .then(function(d){var p=(d&&(d.city||d.locality||d.principalSubdivision))||'';
+      if(p)document.getElementById('wx-place').textContent=p;
+    }).catch(function(){});
+}
+var placed=false;
+function fallback(){if(placed)return;placed=true;document.getElementById('wx-place').textContent='東京';useCoords(35.6812,139.7671);}
+if(navigator.geolocation){
+  navigator.geolocation.getCurrentPosition(
+    function(pos){placed=true;useCoords(pos.coords.latitude,pos.coords.longitude);},
+    fallback,{timeout:5000});
+  setTimeout(fallback,6000);
+}else{fallback();}
+</script>
+</body>
+</html>
