@@ -8,12 +8,12 @@ import type { Event } from '@/payload-types'
 import { toCFUrl } from '@/lib/cfUrl'
 import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
 
-const PLATFORMS: Record<string, { name: string; dotClass: string }> = {
-  twitch: { name: 'Twitch', dotClass: 'bg-purple-500' },
-  youtube: { name: 'YouTube', dotClass: 'bg-red-500' },
-  nico: { name: 'ニコニコ', dotClass: 'bg-orange-500' },
-  offline: { name: '現地イベント', dotClass: 'bg-emerald-500' },
-  other: { name: 'その他', dotClass: 'bg-slate-400' },
+const PLATFORMS: Record<string, { name: string; dot: string }> = {
+  twitch: { name: 'Twitch', dot: 'oklch(0.55 0.2 300)' },
+  youtube: { name: 'YouTube', dot: 'oklch(0.6 0.22 25)' },
+  nico: { name: 'ニコニコ', dot: 'oklch(0.68 0.16 55)' },
+  offline: { name: '現地イベント', dot: 'oklch(0.65 0.16 155)' },
+  other: { name: 'その他', dot: 'oklch(0.6 0.03 260)' },
 }
 
 export default function EventCard({ e }: { e: Event }) {
@@ -31,68 +31,90 @@ export default function EventCard({ e }: { e: Event }) {
       href={e.externalUrl || `/in_event`}
       target={e.externalUrl ? '_blank' : undefined}
       rel={e.externalUrl ? 'noopener noreferrer' : undefined}
-      className="card-link group block"
+      className="ccard"
     >
-      <article className="glass-card fade-in-up overflow-hidden">
-        {/* サムネイル */}
-        <div className="relative aspect-[16/9] overflow-hidden">
-          {thumbnailUrl ? (
-            <Image
-              src={thumbnailUrl}
-              alt={e.title}
-              fill
-              sizes="(max-width: 640px) 100vw, 480px"
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+      {/* サムネイル */}
+      <div className="thumb">
+        {thumbnailUrl ? (
+          <Image
+            src={thumbnailUrl}
+            alt={e.title}
+            fill
+            sizes="(max-width: 720px) 100vw, 480px"
+            className="object-cover"
+          />
+        ) : (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--m-faint)',
+            }}
+          >
+            <Calendar size={38} strokeWidth={1.5} />
+          </div>
+        )}
+
+        {/* LIVEバッジ */}
+        {isLive && (
+          <span
+            className="livebadge"
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: 10,
+              zIndex: 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <span
+              className="livedot"
+              style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }}
             />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center bg-[color:var(--chip-bg)] text-muted">
-              <Calendar size={40} strokeWidth={1.5} />
-            </div>
-          )}
+            LIVE
+          </span>
+        )}
+      </div>
 
-          {/* LIVEバッジ */}
-          {isLive && (
-            <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full bg-red-500/90 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-              LIVE
-            </span>
-          )}
-        </div>
+      {/* 本文 */}
+      <div className="cbody">
+        <span className="cmeta" style={{ justifyContent: 'space-between' }}>
+          <span className="tagchip">
+            <span
+              style={{ width: 6, height: 6, borderRadius: '50%', background: platform.dot }}
+            />
+            {platform.name}
+          </span>
+          {e.externalUrl && <ExternalLink size={13} strokeWidth={1.5} />}
+        </span>
 
-        {/* 本文 */}
-        <div className="space-y-2.5 p-5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="chip">
-              <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${platform.dotClass}`} />
-              {platform.name}
-            </span>
-            {e.externalUrl && (
-              <ExternalLink
-                size={14}
-                strokeWidth={1.5}
-                className="shrink-0 text-muted transition-opacity group-hover:opacity-70"
-              />
-            )}
-          </div>
+        <span className="ctitle jp line-clamp-2">{e.title}</span>
 
-          <h2 className="line-clamp-2 text-base font-semibold leading-snug">{e.title}</h2>
+        {e.summary && <span className="cexcerpt jp line-clamp-2">{e.summary}</span>}
 
-          {e.summary && (
-            <p className="line-clamp-2 text-sm leading-relaxed text-muted">{e.summary}</p>
-          )}
-
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[color:var(--glass-border)] pt-2.5 text-xs text-muted">
-            <span className="inline-flex items-center gap-1.5">
-              <Calendar size={13} strokeWidth={1.5} />
-              {date}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Clock size={13} strokeWidth={1.5} />
-              {time}
-            </span>
-          </div>
-        </div>
-      </article>
+        <span
+          className="cmeta"
+          style={{
+            borderTop: '1px solid var(--m-hairline)',
+            paddingTop: 10,
+            marginTop: 2,
+          }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <Calendar size={12} strokeWidth={1.5} />
+            {date}
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <Clock size={12} strokeWidth={1.5} />
+            {time}
+          </span>
+        </span>
+      </div>
     </Link>
   )
 }

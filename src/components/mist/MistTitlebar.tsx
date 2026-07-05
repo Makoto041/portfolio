@@ -1,34 +1,41 @@
 // src/components/mist/MistTitlebar.tsx
-// トップページ用ウィンドウタイトルバー（macOS風ドット + ライブ時刻 + ターミナル風ナビ）
+// ウィンドウタイトルバー（macOS風ドット + ライブ時刻 + ターミナル風ナビ）。
+// 全ページ共通シェル（MistShell）で使用するため、active はパスから判定する。
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
 // トップページ＝Timeline のため ./timeline はトップ（/）を指す
 const NAV = [
-  { label: './timeline', href: '/', on: true },
-  { label: './posts', href: '/posts', on: false },
-  { label: './gallery', href: '/gallery', on: false },
-  { label: './events', href: '/in_event', on: false },
-  { label: './products', href: '/products', on: false },
-  { label: './profile', href: '/profile', on: false },
-  { label: './letter', href: '/letter', on: false },
+  { label: './timeline', href: '/' },
+  { label: './posts', href: '/posts' },
+  { label: './gallery', href: '/gallery' },
+  { label: './events', href: '/in_event' },
+  { label: './products', href: '/products' },
+  { label: './profile', href: '/profile' },
+  { label: './letter', href: '/letter' },
 ] as const
 
-function fmtTime(d: Date) {
-  const p = (v: number) => String(v).padStart(2, '0')
-  return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+function isActive(pathname: string, href: string) {
+  if (href === '/') return pathname === '/'
+  return pathname === href || pathname.startsWith(`${href}/`)
 }
 
 export default function MistTitlebar() {
-  // SSRとの不一致を避けるためマウント後に時計を開始する
-  const [time, setTime] = useState('--:--:--')
+  const pathname = usePathname() ?? '/'
+  // SSRとの不一致を避けるためマウント後に時計を開始する（秒なし・30s 更新）
+  const [time, setTime] = useState('--:--')
 
   useEffect(() => {
-    const tick = () => setTime(fmtTime(new Date()))
-    tick()
-    const id = setInterval(tick, 1000)
+    const fmt = () => {
+      const d = new Date()
+      const p = (v: number) => String(v).padStart(2, '0')
+      return `${p(d.getHours())}:${p(d.getMinutes())}`
+    }
+    setTime(fmt())
+    const id = setInterval(() => setTime(fmt()), 30000)
     return () => clearInterval(id)
   }, [])
 
@@ -43,11 +50,19 @@ export default function MistTitlebar() {
         makoto@tokyo: ~/life — <span suppressHydrationWarning>{time}</span>
       </span>
       <nav className="nav" aria-label="メインナビゲーション">
-        {NAV.map(({ label, href, on }) => (
-          <Link key={href} href={href} className={on ? 'on' : undefined} aria-current={on ? 'page' : undefined}>
-            {label}
-          </Link>
-        ))}
+        {NAV.map(({ label, href }) => {
+          const on = isActive(pathname, href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={on ? 'on' : undefined}
+              aria-current={on ? 'page' : undefined}
+            >
+              {label}
+            </Link>
+          )
+        })}
       </nav>
     </div>
   )

@@ -69,7 +69,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
-const WRAP = 'pt-2 pb-16'
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
   // Next.js v15+: params は Promise になっているので await して展開
@@ -118,33 +117,39 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <main className="pb-16">
-        <section className={WRAP}>
+      <main className="content">
+        <article className="article">
+          <span className="cmd" style={{ fontSize: 12.5, color: 'oklch(0.5 0.06 268)' }}>
+            ~/life $ cat ./posts/{slug}
+          </span>
           {post.coverImage?.url && (
-            <div className="relative w-full h-64 mb-6">
+            <div className="cover" style={{ marginTop: 18 }}>
               <Image
                 src={toCFUrl(post.coverImage.url)}
                 alt={post.title}
                 fill
-                className="object-cover rounded-md"
+                sizes="760px"
+                className="object-cover"
               />
             </div>
           )}
 
-          <h1 className="text-2xl font-semibold tracking-wide mb-2">{post.title}</h1>
-          <time className="text-xs opacity-60 mb-6 block">
-            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
+          <h1 className="jp" style={{ marginTop: post.coverImage?.url ? 0 : 18 }}>
+            {post.title}
+          </h1>
+          <time className="ameta" dateTime={post.publishedAt ?? post.createdAt}>
+            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString('ja-JP')}
           </time>
 
           {/* renderRichText で Lexical の JSON を React 要素に変換 */}
-          <div className="prose max-w-none mb-8">
+          <div className="prose jp">
             <RenderRichTextWithModal nodes={(post.body as any)?.root?.children || []} />
           </div>
 
-          <Link href="/posts" className="underline">
-            ← 一覧に戻る
+          <Link href="/posts" className="backlink">
+            ← cd ./posts
           </Link>
-        </section>
+        </article>
       </main>
     </>
   )

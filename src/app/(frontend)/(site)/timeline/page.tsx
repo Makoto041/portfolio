@@ -1,10 +1,9 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import PageHeader from '@/components/layout/PageHeader'
-import WeatherWidgetClient from '@/components/widgets/WeatherWidgetClient'
-import TimelineList from '@/components/timeline/TimelineList'
+import MistPageHead from '@/components/mist/MistPageHead'
+import MistLogTimeline from '@/components/mist/MistLogTimeline'
 import AdminLinks from '@/components/admin/AdminLinks'
 import { fetchLatest } from '@/lib/payload'
+import type { TimelineDoc } from '@/lib/payloadTypes'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -46,29 +45,20 @@ export default async function TimelinePage() {
   const { timeline } = await fetchLatest({
     timelineLimit: 100, // 全件取得
   })
+  const posts = timeline as unknown as TimelineDoc[]
 
   return (
-    <main className="pb-16">
-      <PageHeader
+    <main className="content">
+      <MistPageHead
+        cmd="git log --diary --photos"
         title="Timeline"
-        description="日々の記録"
-        actions={
-          <>
-            <AdminLinks />
-            <WeatherWidgetClient />
-          </>
-        }
+        desc="日々の記録"
+        actions={<AdminLinks />}
       />
 
-      {/* 読みやすさのため本文は中央寄せの読み幅に */}
-      <div className="mx-auto w-full max-w-2xl">
-        <TimelineList initialTimeline={timeline} />
-
-        <div className="mt-16 text-center">
-          <Link href="/" className="pill text-muted">
-            ← TOPページへ
-          </Link>
-        </div>
+      {/* トップと同じ git log 風タイムライン（読み幅を確保） */}
+      <div style={{ maxWidth: 840 }}>
+        <MistLogTimeline posts={posts} total={posts.length} showHead={false} />
       </div>
     </main>
   )

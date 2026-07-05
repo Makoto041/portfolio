@@ -7,33 +7,37 @@ import { toCFUrl } from '@/lib/cfUrl'
 
 export default function PostsList({ posts }: { posts: BlogPost[] }) {
   if (!posts?.length) {
-    // 万一 posts が未定義なら
-    return <div>投稿がありません</div>
+    return <p className="empty">$ no posts found</p>
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2">
+    <div className="cardgrid">
       {posts.map((post) => (
         <Link
           key={post.id}
           href={post.slug ? `/posts/${post.slug}` : '/maintenance'}
-          className="glass hover:shadow-[0_12px_32px_rgba(0,0,0,.18)] transition rounded-lg overflow-hidden p-6 flex flex-col"
+          className="ccard"
         >
           {post.coverImage?.url && (
-            <div className="relative w-full h-48 mb-4">
+            <div className="thumb">
               <Image
                 src={toCFUrl(post.coverImage.url)}
                 alt={post.title}
                 fill
-                className="object-cover rounded-md"
+                sizes="(max-width:720px) 100vw, 320px"
+                className="object-cover"
               />
             </div>
           )}
-          <h2 className="text-xl font-semibold mb-2 line-clamp-2">{post.title}</h2>
-          <time className="text-xs opacity-60 mb-4">
-            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
-          </time>
-          <p className="text-sm flex-1 line-clamp-3">{post.excerpt}</p>
+          <div className="cbody">
+            <span className="cmeta">
+              <time dateTime={post.publishedAt ?? post.createdAt}>
+                {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString('ja-JP')}
+              </time>
+            </span>
+            <span className="ctitle jp">{post.title}</span>
+            {post.excerpt && <span className="cexcerpt jp line-clamp-3">{post.excerpt}</span>}
+          </div>
         </Link>
       ))}
     </div>

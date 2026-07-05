@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import type { Metadata } from 'next'
-import PageHeader from '@/components/layout/PageHeader'
+import MistPageHead from '@/components/mist/MistPageHead'
 import { fetchLatest } from '@/lib/payload'
 import { Suspense } from 'react'
 import PostsList from './PostsList'
@@ -47,8 +47,8 @@ export default async function BlogPage() {
   const { posts } = await fetchLatest({ blogLimit: 10 })
 
   return (
-    <main className="pb-16">
-      <PageHeader title="Blog" description="考えていることを書き留めておく場所" />
+    <main className="content">
+      <MistPageHead cmd="cat ./posts" title="Blog" desc="考えていることを書き留めておく場所" />
       {/* Suspense でラップ！ */}
       <Suspense fallback={<PostsListLoading />}>
         <PostsList posts={posts} />

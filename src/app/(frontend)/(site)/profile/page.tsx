@@ -7,7 +7,7 @@ export const revalidate = 0
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import PageHeader from '@/components/layout/PageHeader'
+import MistPageHead from '@/components/mist/MistPageHead'
 import { toCFUrl } from '@/lib/cfUrl'
 import { getPayloadClient } from '@/lib/payloadClient'
 
@@ -68,8 +68,6 @@ export async function generateMetadata(): Promise<Metadata> {
     }
   }
 }
-const WRAP = 'mx-auto w-full max-w-[28rem] flex flex-col items-center text-center'
-const CARD = 'glass-card p-8 flex flex-col items-center w-full'
 
 export default async function ProfilePage() {
   let profileData = {
@@ -126,36 +124,51 @@ export default async function ProfilePage() {
   return (
     <>
       <link rel="preload" as="image" href={profileImageUrl} />
-      <main className="pb-16">
-        <PageHeader title="Profile" />
-        <section className={WRAP}>
-          <div className={CARD}>
-            <div className="relative w-40 h-40 rounded-full mb-6 overflow-hidden">
+      <main className="content">
+        <MistPageHead cmd="cat ./profile.txt" title="Profile" />
+        <section className="single">
+          <div
+            className="card"
+            style={{ alignItems: 'center', textAlign: 'center', padding: '32px 28px', gap: 0 }}
+          >
+            <div
+              className="avatar"
+              style={{ width: 140, height: 140, borderRadius: '50%', marginBottom: 22 }}
+            >
               <Image
                 src={profileImageUrl}
                 alt={`${profileData.nameJapanese}（${profileData.name}）のプロフィール写真`}
-                width={160}
-                height={160}
-                sizes="160px"
+                width={140}
+                height={140}
+                sizes="140px"
                 priority
                 className="object-cover w-full h-full"
               />
             </div>
-            <h2 className="text-2xl font-semibold mb-1">{profileData.name}</h2>
-            <p className="mb-4 text-sm text-muted">{profileData.nameJapanese}・{profileData.title}</p>
-            <p className="mb-6 text-sm leading-relaxed opacity-80">
+            <h2
+              style={{
+                fontFamily: 'var(--font-outfit), sans-serif',
+                fontSize: 22,
+                fontWeight: 700,
+                letterSpacing: '-0.01em',
+                margin: 0,
+              }}
+            >
+              {profileData.name}
+            </h2>
+            <p className="jp" style={{ margin: '6px 0 18px', fontSize: 11.5, color: 'var(--m-faint)' }}>
+              {profileData.nameJapanese}・{profileData.title}
+            </p>
+            <p
+              className="bio jp"
+              style={{ marginBottom: 22, textAlign: 'center', maxWidth: 380 }}
+            >
               {profileData.description}
             </p>
-            <div className="flex gap-3 flex-wrap justify-center">
+            <div className="socials" style={{ justifyContent: 'center' }}>
               {profileData.socialLinks.map((link: any, index: number) => (
-                <Link
-                  key={index}
-                  href={link.url}
-                  className="chip transition-opacity hover:opacity-70"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {getPlatformDisplayName(link.platform, link.displayName)}
+                <Link key={index} href={link.url} target="_blank" rel="noopener noreferrer">
+                  {getPlatformDisplayName(link.platform, link.displayName)} ↗
                 </Link>
               ))}
             </div>

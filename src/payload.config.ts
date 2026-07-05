@@ -25,6 +25,7 @@ import { BlogMedia } from './collections/BlogMedia'
 import Letter from './collections/Letters'
 import { Events } from './collections/Events'
 import { Products } from './collections/Products'
+import { Notices } from './collections/Notices'
 
 // Globals
 import { SiteSettings } from './globals/SiteSettings'
@@ -58,7 +59,7 @@ export default buildConfig({
   },
 
   // コレクション定義
-  collections: [Users, Media, TimelinePosts, BlogPosts, BlogMedia, Letter, Events, Products],
+  collections: [Users, Media, TimelinePosts, BlogPosts, BlogMedia, Letter, Events, Products, Notices],
   
   // グローバル設定
   globals: [SiteSettings],

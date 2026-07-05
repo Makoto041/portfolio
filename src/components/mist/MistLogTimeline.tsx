@@ -126,9 +126,11 @@ type Props = {
   posts: TimelineDoc[]
   /** タイムライン全投稿数（load --more の (all n) 表示に使う） */
   total: number
+  /** loghead（git log 見出し + フィルタ）を表示するか。/timeline ページでは false */
+  showHead?: boolean
 }
 
-export default function MistLogTimeline({ posts, total }: Props) {
+export default function MistLogTimeline({ posts, total, showHead = true }: Props) {
   const [filter, setFilter] = useState('all')
   const [visible, setVisible] = useState(PAGE_SIZE)
   const [modalImg, setModalImg] = useState<string | null>(null)
@@ -155,7 +157,7 @@ export default function MistLogTimeline({ posts, total }: Props) {
       />
 
       <div className="loghead">
-        <span className="cmd">~/life $ git log --diary --photos</span>
+        {showHead && <span className="cmd">~/life $ git log --diary --photos</span>}
         <div className="filters" role="group" aria-label="投稿カテゴリで絞り込み">
           {FILTERS.map(({ key, label }) => (
             <button
