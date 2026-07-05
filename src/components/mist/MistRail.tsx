@@ -30,8 +30,8 @@ const MORE_LINKS = [
   { label: 'letter/', href: '/letter' },
 ] as const
 
-// 右レールに並べるギャラリーのサムネ枚数（残りは +n タイルに集約）
-const RAIL_THUMBS = 5
+// 右レールに並べるギャラリーのサムネ枚数（残りは +n タイルに集約。3列グリッド＝8枚+残数で3行）
+const RAIL_THUMBS = 8
 
 /** Spotify 共有URL → 埋め込みURL。playlist/album/track/artist に対応。不正なら null */
 function spotifyEmbedUrl(url?: string | null): string | null {
