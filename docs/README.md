@@ -2,14 +2,16 @@
 
 iwabuchi-makoto.com のトップページ(Timeline メイン)リデザイン実装依頼パッケージ。
 
+> **既に初版を実装済みの方へ**: 初版ハンドオフからの変更点だけを `CHANGELOG.md` にまとめてあります。差分改修はそちらを参照してください(このREADMEは現行の完全仕様)。
+
 ## Overview
 
 個人ライフログサイトのトップページを「ライトターミナル」テイストに刷新する。
 コンセプト: **群青×ミストの透明感 × ターミナル/git log のメタファー**。
 Timeline(気軽な日記投稿)が主役。Gallery・Posts・Profile などの既存セクションは右レール+写真ストリームで露出させる。
 
-- 名前の露出は控えめだが、ヒーローの巨大タイポは `MAKOTO IWABUCHI`(サイト名ロゴとしての扱い)
-- 現行サイトにある **現在地・天気・日時のライブ表示機能は踏襲**(本デザインでは細い1行バー)
+- ワードマーク「MAKOTO(アウトライン)+ IWABUCHI(ベタ)」はヒーローに表示。ヘッダーはターミナルパスを常駐させ、ページ本体は**コンテンツ(Timeline)最優先**
+- 現行サイトにある **現在地・天気・日時のライブ表示機能は踏襲**(ステータスバー右側に統合)
 
 ## About the Design Files
 
@@ -26,29 +28,27 @@ Timeline(気軽な日記投稿)が主役。Gallery・Posts・Profile などの�
 
 ### トップページ(= Timeline)
 
-デザイン基準幅: **1180px**(コンテンツ左右パディング 48px)。ベース背景 `#eef1f4`。
+レイアウト: **ブラウザ横幅いっぱいのフルブリード**(中央寄せの固定幅ではない)。コンテンツ左右パディング 48px を保ったまま画面幅に合わせて伸縮する。メイングリッドは `1fr 320px`(右レール320px固定・左可変)。ベース背景 `#eef1f4`。最小幅は 1080px 程度を目安(ナビ・バーの折り返し防止)。
 背景に2つの「ミストブロブ」(半透明の放射グラデ円、blur 60-65px)が 24s/28s でゆっくり漂う。
 
 上から:
 
 1. **ウィンドウタイトルバー** (`position: static`、背景 `rgba(255,255,255,.55)` + `backdrop-filter: blur(14px)`、下罫線 hairline)
    - 左: macOS風ドット3つ(11px円、ミスト色濃淡、1px縁)
-   - `makoto@tokyo: ~/life — {ライブ時刻}` (11.5px, sub色)
+   - ターミナルパス `makoto@tokyo: ~/life — {ライブ時刻}` (11px, sub色, nowrap)。名前は下記ヒーローの大型ワードマークが担うため、ヘッダーにロゴは置かない
    - 右: ナビ `./timeline ./posts ./gallery ./events ./products ./profile ./letter`
      - 11.5px mono、パディング 6px 13px、角丸なし
      - 現在ページ&hover: 背景 ink・文字白(transition all .2s)
-2. **ヒーロー** (padding 52px 48px 0)
-   - プロンプト行 `~/life $ whoami` (12.5px)
-   - `MAKOTO` — Outfit 700 / 108px / letter-spacing -.025em / **アウトライン文字**(`-webkit-text-stroke: 1.5px oklch(0.45 0.07 268 / .8)`、fill transparent)
-   - `IWABUCHI` — 同サイズの**ベタ(ink)** + 直後に **点滅カーソルブロック**(44×80px、accent-dot色、`steps(2)` 1.3s点滅)
-   - タグライン: 「日々の記録、ときどき写真。つぶやきくらいの気軽さで。」(Noto Sans JP 12.5px) + `— web engineer, tokyo` (11px)
-   - **ステータスストリップ**: 半透明白パネル(`.65` + blur12) 1行 — 点滅ドット + `STATUS: アドベントカレンダー執筆中` / `entries: 128` / `photos: 342` / `streak: 47d` / 右端に**草グリッド**(30セル、aspect 1、gap 3px、群青4段階の濃淡)
-     - 草は実データ: エントリの日次投稿数を4段階にマップ
-3. **ライブ環境バー**(現行機能の踏襲。margin 12px 48px 0、半透明白パネル 1行、padding 9px 18px、11.5px)
-   - 左: 点滅ドット + `$ date && weather`
-   - 右寄せ: **天気SVGアイコン(24px)** / 気温(Outfit 700 14.5px) / `晴れ · 東京`(Noto Sans JP) / `|` / 日付 `YYYY.MM.DD DAY` / 時刻 `HH:MM:SS`(Outfit 700 15px, tabular-nums, 秒まで毎秒更新)
+2. **ヒーロー**(padding 28px 48px 0)— コンテンツの顔。上から `~/life $ whoami`(12.5px) → **大型ワードマーク**(`MAKOTO` 108px アウトライン stroke 1.5px / `IWABUCHI` 108px inkベタ + 点滅ブロックカーソル 44×80px) → タグライン。
+   - **ワードマークとタグラインは初期ロードでタイプライター表示**(下記モーション参照)
+   - タグライン `日々の記録、ときどき写真。つぶやきくらいの気軽さで。`(Noto Sans JP 12.5px)と `— web engineer, tokyo`(11px)は **Payload CMS 編集可能フィールド**
+3. **ステータス/ライブ環境バー**(ヒーロー直下、margin-top 26px の1行パネル。草グリッドは廃止)
+   - パネル: 半透明白(`.65`)+ blur12 + hairline枠、padding 9px 18px、11.5px、gap 16px
+   - 左(ローテーションスロット): スピナー + `NOTICE` + 日付バッジ + `{メッセージ}` — `NOTICE`ラベルは固定、**日付・メッセージは項目ごとに切替**(下記モーション参照。スロットは min-width 290px)
+   - 縦罵線で区切り、その右に `entries: 128` `photos: 342` `streak: 47d` を**常時並列表示**(ローテーションしない)
+   - 右寄せ(ライブ環境・現行機能の踏襲、**固定表示**): **天気SVGアイコン(24px)** / 気温(Outfit 700 14px) / `くもり · 東京`(Noto Sans JP) / `|` / 日付 `YYYY.MM.DD DAY` / 時刻 `HH:MM`(Outfit 700 14-15px, tabular-nums。**秒なし・アニメなし**)
    - 詳細は「Interactions & Behavior > ライブ環境情報」参照
-4. **メイングリッド** `grid-template-columns: 1fr 320px; gap: 36px`
+4. **メイングリッド** `grid-template-columns: 1fr 320px; gap: 36px`(padding-top 32px)
    - **左: git log 風タイムライン**
      - ヘッダ行: `~/life $ git log --diary --photos` + フィルタチップ `--all --diary --photo --build`(10.5px、1px枠、選択&hoverで ink反転)
      - コミット列: 左に `2px solid oklch(0.8 0.03 265)` の縦罫、各エントリに丸ノード(12px)。最新は accent-dot塗り+グロー、`HEAD` バッジ(ink地・白字10px)
@@ -75,15 +75,25 @@ Timeline(気軽な日記投稿)が主役。Gallery・Posts・Profile などの�
 - **点滅カーソル**: `steps(2)` 1.3s 無限
 - **点滅ドット**: opacity .5↔1、1.6〜2.2s ease-in-out
 - **マーキー**: 42s linear infinite。`prefers-reduced-motion: reduce` で停止(ブロブ・点滅も停止)
-- **登場アニメ**: ヒーロー要素は `fadeup`(24px下から、.6-.7s、80ms刻みの stagger)
+- **登場アニメ**: ヒーロー要素は `fadeup`(24px下から、.6-.7s、stagger)
+- **ワードマーク+タグラインのタイプライター(初期ロード)**: 読み込み後約300msで開始→ `MAKOTO` → `IWABUCHI` の順に90ms/字でタイプ(ブロックカーソルが行末に、MAKOTO完了で下段へ移動)→ 約260ms後にタグライン本文を70ms/字でタイプ(末尾にカーソル)→ 完了で `— web engineer, tokyo` をフェードイン。`prefers-reduced-motion` では全文即表示
+  - **レイアウトシフト防止**: 名前2行に `min-height`(`.95em`/`.98em`)、タグライン行に `min-height:20px` を与え、タイプ前の空状態でも高さを確保。ヒーロー総高さは一定(208px)で下の要素が動かない(CLS=0)
+- **NOTICEのローテーション(日付+コメント付き。entries/photos/streakは対象外で常時表示)**:
+  - ブライユ・スピナー `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`(10フレーム、90ms間隔、accent色、幅固定13px)が常時回転
+  - `NOTICE` ラベルは固定(「お知らせ」の意)。直後に **日付バッジ**(例 `12.06`、Outfit 600 10.5px、accent色)、その後に**メッセージ本文**(Noto Sans JP)
+  - 項目例: `12.06 アドベントカレンダー執筆中です` / `11.28 年末の振り返り記事を準備中` / `11.20 ギャラリーに写真を50枚追加しました` / `11.12 コメント欄からのお便り、読んでます`
+  - メッセージ部分のみ75ms/字でタイプ → 約2秒ホールド → 次の日付+メッセージへ(日付は即時切替、メッセージはクリアして再タイプ)。末尾に点滅カーソル 6×12px・steps(2) 1.1s
+  - 実装では Payload のお知らせコレクション(date + body)を新しい順にローテーション
+  - entries/photos/streak は隣接する縦罵線の右に**常時並表示**(実データ)。こちらはアニメーションなし
+  - `prefers-reduced-motion` では静止(スピナーは●固定、NOTICEは先頭の日付+メッセージを固定表示)
 - **ミストブロブ**: `blobdrift` 24s / `blobdrift2` 28s(keyframes はリファレンスHTML参照)
 
 ### ライブ環境情報(現行サイト機能の踏襲)
 
-- **時計**: `setInterval` 1秒。表示 `YYYY.MM.DD DAY` + `HH:MM:SS`。タイトルバーの時刻も同期
-- **位置**: `navigator.geolocation.getCurrentPosition`(timeout 5s)。拒否/失敗/6s無応答 → **東京(35.6812, 139.7671)にフォールバック**し、表示名「東京」
+- **時計**: 表示 `YYYY.MM.DD DAY` + `HH:MM`(**秒なし・固定的な見た目**。内部的には30s間隔程度で更新して分を追従)。タイトルバーの時刻も同期
+- **位置**: `ipinfo.io` の IP ベース概算位置(許可ポップアップを出さない現行方針)。失敗時は **東京(35.6812, 139.7671)にフォールバック**し、表示名「東京」
 - **逆ジオコーディング**: `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=&longitude=&localityLanguage=ja` → `city || locality || principalSubdivision`
-- **天気**: `https://api.open-meteo.com/v1/forecast?latitude=&longitude=&current=temperature_2m,weather_code`(APIキー不要)
+- **天気**: 自サイトの `/api/weather` プロキシ経由で取得(open-meteo → met.no フォールバック、APIキー不要)
   - 気温: 四捨五入 + `°C`。取得前は `--°`
   - weather_code → ラベル: 0=快晴 / ≤2=晴れ / 3=くもり / ≤48=霧 / ≤57=霧雨 / ≤67=雨 / ≤77=雪 / ≤82=にわか雨 / ≤86=雪 / else=雷雨
   - weather_code → アイコン種別: sun / partly / cloud / fog / rain / snow / thunder
@@ -92,7 +102,9 @@ Timeline(気軽な日記投稿)が主役。Gallery・Posts・Profile などの�
 
 ## State Management
 
-- `now: Date` — 1sごと更新(unmount時にclearInterval)
+- `now: Date` — 30sごと更新(秒は表示しない。unmount時にclearInterval)
+- `nameTyped(0-14) / tagTyped` — ワードマーク→タグラインの逐次タイプ用。タグライン本文・ロール(`— web engineer, tokyo`)は **Payload 編集可能フィールド**として実装
+- `rotIdx / typed / hold` — NOTICEメッセージのローテーション用(75msティック1本でタイプ→ホールド→次へ)。entries/photos/streakはローテーション対象外(定数表示)
 - `place: string` — '取得中…' → 逆ジオ結果 or '東京'
 - `weather: { temp, label, kind }` — mount時に1回取得(+位置確定時)
 - タイムライン: Payload の entries コレクションから新しい順。`load --more` はページネーション(現行の挙動に合わせる)
@@ -104,12 +116,11 @@ Timeline(気軽な日記投稿)が主役。Gallery・Posts・Profile などの�
 
 - bg: `#eef1f4`
 - ink(主文字・ベタ面): `oklch(0.30 0.08 272)`(≈ #232b52)
-- ink-soft(アウトライン等): `oklch(0.45 0.07 268 / .8)`
+- ink-soft(準アクセント): `oklch(0.45 0.07 268 / .8)`
 - sub(プロンプト・補助): `oklch(0.50 0.04-0.06 268)`
 - faint(メタ): `oklch(0.55 0.04 268)`
 - hairline(罫線): `oklch(0.85 0.02 262)` / 濃いめ `oklch(0.84 0.02 262)`
 - accent-dot(カーソル/ドット/HEADノード): `oklch(0.55 0.09 268)`
-- 草グリッド4段階: `oklch(0.88 0.015 262)` → `oklch(0.72 0.05 268)` → `oklch(0.58 0.07 268)` → `oklch(0.42 0.09 270)`
 - パネル: `rgba(255,255,255,.55/.65/.68)` + `backdrop-filter: blur(12-14px)`
 - ハッシュチップ地: `oklch(0.92 0.02 262 / .8)`
 - ミスト: `oklch(0.90 0.03 255 / .6)` / `oklch(0.91 0.025 285 / .5)`
@@ -118,14 +129,14 @@ Timeline(気軽な日記投稿)が主役。Gallery・Posts・Profile などの�
 
 タイポグラフィ:
 
-- 英字/数字/UI: **Outfit**(400-700) — 巨大名前 108px/700/-.025em、時刻 15px/700/tabular-nums、日付見出し等 600
+- 英字/数字/UI: **Outfit**(400-700) — ロゴ 20px/700(MAKOTO=アウトライン stroke 1.2px、IWABUCHI=ベタ)、時刻 15px/700/tabular-nums、日付見出し等 600
 - 地の文(日本語): **Noto Sans JP** — エントリ本文 16px/600/1.8、bio 11.5px/1.9
 - モノスペース(プロンプト・メタ・ナビ): **IBM Plex Mono** — 10.5〜12.5px
 - 斜体の添え(フッター): Georgia italic
 
 スペーシング/その他:
 
-- コンテンツ左右 48px、セクション間 44-52px
+- コンテンツ左右 48px(フルブリード・画面幅に伸縮)、セクション間 44-52px
 - 角丸: **基本なし(0)**。円形要素(ドット/ノード/アバター以外の丸)のみ 50%
 - 影: 基本なし(ライブバーも影なし)。パネルは罫線+半透明で層を表現
 

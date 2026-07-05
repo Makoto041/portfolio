@@ -14,28 +14,28 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
 
   return (
     <>
-      {/* Masonry レイアウト */}
-      <div className="columns-2 gap-x-4 md:columns-3 lg:columns-4">
+      {/* Masonry レイアウト（Mist Terminal 意匠） */}
+      <div className="masonry">
         {gallery.map((m, idx) => {
           const src = toCFUrl(m.sizes?.thumbnail?.url ?? m.url ?? m.image?.url ?? '/fallback.jpg')
           return (
-            <div
+            <button
               key={m.id}
-              className="mb-4 break-inside-avoid cursor-pointer group rounded-lg overflow-hidden"
+              type="button"
+              className="tile"
+              aria-label="画像を拡大表示"
               onClick={() => setSelected(m)}
             >
-              <div className="relative w-full h-auto">
-                <Image
-                  src={src}
-                  alt={m.alt ?? ''}
-                  width={500}
-                  height={500}
-                  sizes="(min-width:1024px) 25vw, (min-width:768px) 33vw, 50vw"
-                  priority={idx === 0}
-                  className="object-cover w-full h-auto group-hover:scale-105 transition"
-                />
-              </div>
-            </div>
+              <Image
+                src={src}
+                alt={m.alt ?? ''}
+                width={500}
+                height={500}
+                sizes="(min-width:1080px) 25vw, (min-width:720px) 33vw, 50vw"
+                priority={idx === 0}
+                className="object-cover w-full h-auto"
+              />
+            </button>
           )
         })}
       </div>

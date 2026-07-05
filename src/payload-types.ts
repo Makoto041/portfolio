@@ -75,6 +75,7 @@ export interface Config {
     letter: Letter;
     events: Event;
     products: Product;
+    notices: Notice;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -89,6 +90,7 @@ export interface Config {
     letter: LetterSelect<false> | LetterSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    notices: NoticesSelect<false> | NoticesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -325,6 +327,24 @@ export interface Letter {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notices".
+ */
+export interface Notice {
+  id: number;
+  /**
+   * バーに「12.06」形式で表示されます
+   */
+  date: string;
+  /**
+   * 例: アドベントカレンダー執筆中です
+   */
+  body: string;
+  isPublic?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -361,6 +381,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'products';
         value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'notices';
+        value: number | Notice;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -552,6 +576,17 @@ export interface ProductsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "notices_select".
+ */
+export interface NoticesSelect<T extends boolean = true> {
+  date?: T;
+  body?: T;
+  isPublic?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
@@ -603,6 +638,16 @@ export interface SiteSetting {
         }[]
       | null;
   };
+  hero?: {
+    /**
+     * ヒーロー大型ワードマーク直下に表示される日本語コピー
+     */
+    tagline?: string | null;
+    /**
+     * タグライン横に添える英字ロール
+     */
+    roleEn?: string | null;
+  };
   seo: {
     siteTitle: string;
     siteDescription: string;
@@ -633,6 +678,12 @@ export interface SiteSettingsSelect<T extends boolean = true> {
               displayName?: T;
               id?: T;
             };
+      };
+  hero?:
+    | T
+    | {
+        tagline?: T;
+        roleEn?: T;
       };
   seo?:
     | T

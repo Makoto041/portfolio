@@ -96,6 +96,31 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
     {
+      name: 'hero',
+      type: 'group',
+      label: 'トップページ ヒーロー',
+      fields: [
+        {
+          name: 'tagline',
+          type: 'text',
+          label: 'タグライン',
+          defaultValue: '日々の記録、ときどき写真。つぶやきくらいの気軽さで。',
+          admin: {
+            description: 'ヒーロー大型ワードマーク直下に表示される日本語コピー',
+          },
+        },
+        {
+          name: 'roleEn',
+          type: 'text',
+          label: 'ロール（英字）',
+          defaultValue: '— web engineer, tokyo',
+          admin: {
+            description: 'タグライン横に添える英字ロール',
+          },
+        },
+      ],
+    },
+    {
       name: 'seo',
       type: 'group',
       label: 'SEO設定',

@@ -1,4 +1,4 @@
-import PageHeader from '@/components/layout/PageHeader'
+import MistPageHead from '@/components/mist/MistPageHead'
 import { fetchInEvent } from '@/lib/fetchInEvent'
 import EventCard from '@/components/cards/EventCard'
 
@@ -10,10 +10,10 @@ export default async function InEventPage() {
   const inEvent = await fetchInEvent()
 
   return (
-    <main className="pb-16">
-      <PageHeader title="Events" description="配信・イベントの記録" />
-      {inEvent.length === 0 && <p className="text-muted">現在予定されているイベントはありません。</p>}
-      <div className="grid gap-6 sm:grid-cols-2">
+    <main className="content">
+      <MistPageHead cmd="ls ./events" title="Events" desc="配信・イベントの記録" />
+      {inEvent.length === 0 && <p className="empty">$ no upcoming events</p>}
+      <div className="cardgrid">
         {inEvent.map((e) => (
           <EventCard key={e.id} e={e} />
         ))}

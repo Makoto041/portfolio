@@ -1,4 +1,4 @@
-import PageHeader from '@/components/layout/PageHeader'
+import MistPageHead from '@/components/mist/MistPageHead'
 import type { Metadata } from 'next'
 import { fetchProducts } from '@/lib/fetchProducts'
 import ProductCard from '@/components/cards/ProductCard'
@@ -41,10 +41,10 @@ export default async function ProductsPage() {
   const products = await fetchProducts()
 
   return (
-    <main className="pb-16">
-      <PageHeader title="Products" description="作ったもののログ" />
-      {products.length === 0 && <p className="text-muted">まだ公開されていません。</p>}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <main className="content">
+      <MistPageHead cmd="ls ./products" title="Products" desc="作ったもののログ" />
+      {products.length === 0 && <p className="empty">$ no products yet</p>}
+      <div className="cardgrid">
         {products.map((p) => (
           <ProductCard key={p.id} p={p} />
         ))}

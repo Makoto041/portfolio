@@ -2,10 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import PageHeader from '@/components/layout/PageHeader'
-
-const WRAP = 'mx-auto w-full max-w-[28rem] flex justify-center'
-const CARD = 'glass p-8 flex flex-col gap-4 w-full'
+import MistPageHead from '@/components/mist/MistPageHead'
 
 export default function LetterPage() {
   const [sent, setSent] = useState(false)
@@ -40,35 +37,35 @@ export default function LetterPage() {
   }
 
   return (
-    <main className="pb-16">
-      <PageHeader title="Letter" description="お便り・メッセージはこちらから" />
-      <section className={WRAP}>
-        <form onSubmit={handleSubmit} className={CARD}>
-          <h2 className="text-lg font-semibold">お便りを送る</h2>
-          <input
-            name="name"
-            type="text"
-            placeholder="お名前"
-            required
-            className="rounded-xl border border-[color:var(--card-border)] bg-white/50 p-2.5 text-sm transition-colors focus:border-[color:var(--accent)] focus:outline-none dark:bg-white/5"
-          />
-          <textarea
-            name="message"
-            placeholder="メッセージ"
-            rows={5}
-            required
-            className="rounded-xl border border-[color:var(--card-border)] bg-white/50 p-2.5 text-sm transition-colors focus:border-[color:var(--accent)] focus:outline-none dark:bg-white/5"
-          />
-          <button
-            type="submit"
-            className="pill mt-2 disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={loading}
-          >
-            {loading ? '送信中...' : '送信'}
-          </button>
-          {sent && <p className="mt-2 text-sm text-green-500">送信しました！</p>}
-          {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
-        </form>
+    <main className="content">
+      <MistPageHead cmd="vim ./letter" title="Letter" desc="お便り・メッセージはこちらから" />
+      <section className="single">
+        <div className="card" style={{ padding: '26px 26px' }}>
+          <span className="cmd">$ echo &quot;...&quot; &gt;&gt; letter</span>
+          <form onSubmit={handleSubmit} className="mform">
+            <label>
+              お名前
+              <input name="name" type="text" placeholder="name" required />
+            </label>
+            <label>
+              メッセージ
+              <textarea name="message" placeholder="message" rows={5} required />
+            </label>
+            <button type="submit" className="submit" disabled={loading}>
+              {loading ? '$ sending...' : '$ send --letter'}
+            </button>
+            {sent && (
+              <p className="formnote" style={{ color: 'oklch(0.6 0.14 155)' }}>
+                ✓ 送信しました！
+              </p>
+            )}
+            {error && (
+              <p className="formnote" style={{ color: 'oklch(0.6 0.18 25)' }}>
+                ✗ {error}
+              </p>
+            )}
+          </form>
+        </div>
       </section>
     </main>
   )
