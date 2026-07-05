@@ -140,7 +140,7 @@ async function fetchTopPageData() {
     productsRes,
   ] = await Promise.all([
       // Home は直近10件のダイジェスト（全件は専用の /timeline タブで）
-      payload.find({ collection: 'timeline', limit: 10, sort: '-publishedAt', depth: 2 }),
+      payload.find({ collection: 'timeline', limit: 6, sort: '-publishedAt', depth: 2 }),
       // 集計用は日付だけを軽量に取得（streak計算）
       payload.find({
         collection: 'timeline',

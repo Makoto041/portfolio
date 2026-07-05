@@ -605,6 +605,17 @@
 @media (hover: hover) {
   .mist .gal .g:hover { filter: brightness(0.94); }
 }
+
+/* ── SP 出し分け（D-4）: DOM はPC分をレンダリングし、SPは display:none で間引く。
+   Home の対象画像は loading="lazy" のため非表示分は取得されず転送量は増えない。
+   閾値は既存の 760px（homecols 縦積み点）を再利用。 */
+@media (max-width: 760px) {
+  /* タイムライン: PC 6 / SP 3（4件目以降を非表示。load --more の全件導線は維持） */
+  .mist .commits .commit:nth-child(n + 4) { display: none; }
+  /* ギャラリー: PC 9(big維持) / SP 6（big解除で等サイズ 2×3、7枚目以降を非表示） */
+  .mist .gal .g.big { grid-column: span 1; grid-row: span 1; }
+  .mist .gal .g:nth-child(n + 7) { display: none; }
+}
 .mist .gal .g em {
   position: absolute; left: 8px; bottom: 8px; z-index: 1;
   font-style: normal; font-size: var(--fs-caption); color: var(--m-sub);
