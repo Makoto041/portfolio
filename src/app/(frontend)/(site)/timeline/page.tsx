@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    // og:image は /api/og（1200×630 生成）を明示指定
+    // og:image は /og（1200×630 生成）を明示指定
     images: [OG_IMAGE],
   },
   twitter: {

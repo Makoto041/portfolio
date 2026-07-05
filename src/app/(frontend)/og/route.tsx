@@ -1,14 +1,15 @@
-// src/app/api/og/route.tsx
+// src/app/(frontend)/og/route.tsx
 // 全 frontend ルート共通の OGP 画像（1200×630）を next/og で動的生成する安定URLの
 // ルートハンドラ。旧 opengraph-image.tsx（ファイル規約）は openGraph キーが
 // セグメント間でシャロー置換されるとサブページで og:image が消える問題があったため、
-// 安定URL `/api/og` に一本化し、各ページの openGraph.images から明示的に参照する。
+// 安定URL `/og` に一本化し、各ページの openGraph.images から明示的に参照する。
 import { ImageResponse } from 'next/og'
 
 const size = { width: 1200, height: 630 }
 
 export function GET() {
-  return new ImageResponse(
+  try {
+    return new ImageResponse(
     (
       <div
         style={{
@@ -70,5 +71,10 @@ export function GET() {
         'Cache-Control': 'public, immutable, no-transform, max-age=31536000',
       },
     },
-  )
+    )
+  } catch (err) {
+    // ImageResponse(Satori) 生成失敗時もクラッシュさせず 500 を返す
+    console.error('OG image generation failed:', err)
+    return new Response('Failed to generate OG image', { status: 500 })
+  }
 }

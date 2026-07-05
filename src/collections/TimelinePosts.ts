@@ -120,7 +120,7 @@ export const TimelinePosts: CollectionConfig = {
   hooks: {
     // タイムライン投稿時に自動的に画像に「タイムライン専用」フラグを設定
     beforeChange: [beforeChangeHook],
-    afterChange: [afterChangeHook, ...revalidateTimeline.afterChange],
+    afterChange: [...revalidateTimeline.afterChange, afterChangeHook], // 再検証を先に（画像フラグ処理が例外でもキャッシュを更新）
     afterDelete: [...revalidateTimeline.afterDelete],
   },
   fields: [

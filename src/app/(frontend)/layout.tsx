@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     siteName: 'いわぶち',
     locale: 'ja_JP',
     type: 'website',
-    // og:image は /api/og（1200×630 生成）を明示指定。
+    // og:image は /og（1200×630 生成）を明示指定。
     // openGraph はセグメント間でシャロー置換されるため各ページに images を持たせる
     images: [OG_IMAGE],
   },
