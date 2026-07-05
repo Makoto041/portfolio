@@ -144,7 +144,8 @@ async function fetchTopPageData() {
     eventsRes,
     productsRes,
   ] = await Promise.all([
-      payload.find({ collection: 'timeline', limit: 50, sort: '-publishedAt', depth: 2 }),
+      // Home は直近10件のダイジェスト（全件は専用の /timeline タブで）
+      payload.find({ collection: 'timeline', limit: 10, sort: '-publishedAt', depth: 2 }),
       // 集計用は日付だけを軽量に取得（streak計算）
       payload.find({
         collection: 'timeline',
@@ -360,7 +361,7 @@ export default async function Home() {
           {/* ── メイン: [タイムライン | 中央(Gallery+Blog/Events/Products)] + 右固定プロフィール ── */}
           <div className="main">
             <div className="homecols">
-              <MistLogTimeline posts={posts} total={entriesTotal} />
+              <MistLogTimeline posts={posts} total={entriesTotal} compact />
               <div className="mid">
                 <MistGallery photos={gallery} photosTotal={photosTotal} />
                 <MistPortalSection
