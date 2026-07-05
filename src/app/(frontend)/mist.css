@@ -111,8 +111,8 @@
 .mist .titlebar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 13px var(--m-pad);
+  gap: 16px;
+  padding: 12px var(--m-pad);
   border-bottom: 1px solid var(--m-hairline);
   background: var(--m-surface);
   backdrop-filter: blur(14px);
@@ -121,7 +121,7 @@
   position: relative;
   z-index: 10;
 }
-.mist .dots { display: flex; gap: 7px; flex: none; }
+.mist .dots { display: flex; gap: 8px; flex: none; }
 .mist .dots span {
   width: 11px; height: 11px; border-radius: 50%;
   border: 1px solid oklch(0.65 0.05 268 / 0.5);
@@ -140,13 +140,13 @@
   overflow-x: auto;
   scrollbar-width: none;
   /* ::after(±10px) をスクロールポート内に収めるための余白。負の margin で相殺しレイアウト高さは不変 */
-  padding-block: 11px;
-  margin-block: -11px;
+  padding-block: 12px;
+  margin-block: -12px;
 }
 .mist .nav::-webkit-scrollbar { display: none; }
 .mist .nav a {
   position: relative;
-  padding: 6px 13px;
+  padding: 8px 12px;
   color: inherit;
   text-decoration: none;
   white-space: nowrap;
@@ -160,7 +160,7 @@
   position: relative;
   align-items: center;
   justify-content: center;
-  padding: 7px 11px;
+  padding: 8px 12px;
   border: 1px solid var(--m-hairline);
   background: var(--m-surface);
   color: var(--m-ink);
@@ -183,7 +183,7 @@
     right: 0;
     z-index: 30;
     min-width: 190px;
-    padding: 6px;
+    padding: 8px;
     margin: 0;
     overflow: visible;
     background: var(--m-surface);
@@ -192,7 +192,7 @@
     box-shadow: 0 10px 30px color-mix(in oklch, var(--m-ink) 12%, transparent);
   }
   /* 縦積みのため ::after(縦±10px) は隣接項目と重なる → 無効化し padding でタップ領域を確保 */
-  .mist .nav.open a { padding: 12px 14px; }
+  .mist .nav.open a { padding: 12px 16px; }
   .mist .nav.open a::after { content: none; }
 }
 .mist .nav a.on,
@@ -207,7 +207,7 @@
   .mist .compact-intro {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin: 12px var(--m-pad) 0;
     padding: 8px 12px;
     background: var(--m-surface);
@@ -217,9 +217,9 @@
   .mist .ci-meta { display: flex; flex-direction: column; min-width: 0; }
   .mist .ci-nm { font-weight: 700; font-size: var(--fs-ui); color: var(--m-ink); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mist .ci-rl { font-size: var(--fs-caption); color: var(--m-faint); }
-  .mist .ci-sns { display: flex; gap: 6px; margin-left: auto; flex: none; }
-  .mist .ci-sns a { position: relative; font-size: var(--fs-caption); color: var(--m-sub); border: 1px solid var(--m-hairline); padding: 6px 8px; text-decoration: none; line-height: 1; }
-  /* 見た目を変えずヒット領域を縦に拡張（横は gap 6px を超えないよう ±3px に留め隣接と重ねない） */
+  .mist .ci-sns { display: flex; gap: 8px; margin-left: auto; flex: none; }
+  .mist .ci-sns a { position: relative; font-size: var(--fs-caption); color: var(--m-sub); border: 1px solid var(--m-hairline); padding: 8px; text-decoration: none; line-height: 1; }
+  /* 見た目を変えずヒット領域を縦に拡張（横は gap 8px を超えないよう ±3px に留め隣接と重ねない） */
   .mist .ci-sns a::after { content: ''; position: absolute; inset: -12px -3px; }
 }
 
@@ -234,7 +234,7 @@
 .mist .nameblock {
   display: flex;
   flex-direction: column;
-  margin-top: 14px;
+  margin-top: 16px;
   animation: m-fadeup 0.7s ease-out 0.08s both;
 }
 .mist .name-outline,
@@ -258,7 +258,7 @@
   width: clamp(19px, 3.7vw, 44px);
   height: clamp(34px, 6.8vw, 80px);
   background: var(--m-accent);
-  margin-left: 14px;
+  margin-left: 16px;
   vertical-align: baseline;
   animation: m-pulseglow 1.3s steps(2) infinite;
 }
@@ -266,8 +266,8 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 18px;
-  margin-top: 18px;
+  gap: 8px 16px;
+  margin-top: 16px;
   min-height: 20px; /* タイプ前でも高さを確保（CLS 対策） */
   animation: m-fadeup 0.7s ease-out 0.18s both;
 }
@@ -297,22 +297,22 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 16px;
-  margin: 26px var(--m-pad) 0;
-  padding: 9px 18px;
+  margin: 24px var(--m-pad) 0;
+  padding: 8px 16px;
   background: var(--m-surface);
   backdrop-filter: blur(12px);
   border: 1px solid var(--m-hairline);
   font-size: var(--fs-meta);
   animation: m-fadeup 0.7s ease-out 0.26s both;
 }
-.mist .env .cmd { display: flex; align-items: center; gap: 9px; color: var(--m-sub); }
+.mist .env .cmd { display: flex; align-items: center; gap: 8px; color: var(--m-sub); }
 /* ブライユ・スピナー（幅固定で回転してもガタつかない） */
 .mist .spin { width: 13px; font-weight: 600; color: var(--m-accent-ink); }
 /* NOTICE スロット（ラベル + 日付バッジ + メッセージ + カーソル） */
 .mist .rotwrap {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   min-width: 290px;
   color: var(--m-sub);
 }
@@ -339,7 +339,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 11px;
+  gap: 4px 12px;
   color: var(--m-ink-2);
 }
 .mist .env .icon { display: flex; color: var(--m-sub); }
@@ -379,13 +379,13 @@
   gap: 40px;
   align-items: start;
 }
-.mist .mid { display: flex; flex-direction: column; gap: 34px; min-width: 0; }
+.mist .mid { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 /* セクション見出し（罫線なし・mono プロンプト） */
 .mist .sechead {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 12px;
 }
 .mist .sechead .cmd { font-size: var(--fs-meta); color: var(--m-sub); }
@@ -421,14 +421,14 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   padding-bottom: 16px;
 }
 .mist .loghead .cmd { font-size: var(--fs-meta); color: var(--m-sub); }
-.mist .filters { display: flex; gap: 5px; font-size: var(--fs-caption); }
+.mist .filters { display: flex; gap: 4px; font-size: var(--fs-caption); }
 .mist .filters button {
   position: relative;
-  padding: 5px 12px;
+  padding: 4px 12px;
   border: 1px solid var(--m-hairline);
   background: none;
   color: var(--m-sub);
@@ -456,14 +456,14 @@
   display: flex;
   flex-direction: column;
   border-left: 2px solid var(--m-hairline);
-  margin-left: 6px;
+  margin-left: 8px;
 }
 .mist .commit {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 20px 18px 20px 30px;
+  padding: 20px 16px 20px 32px;
   transition: background 0.2s;
 }
 .mist .commit + .commit { border-top: 1px dashed var(--m-hairline); }
@@ -492,7 +492,7 @@
   padding: 2px 8px;
 }
 .mist .commit .headtag {
-  margin-left: 6px;
+  margin-left: 8px;
   padding: 2px 8px;
   background: var(--m-ink);
   color: #fff;
@@ -510,12 +510,12 @@
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: var(--fs-caption);
   color: var(--m-faint);
   background: var(--m-surface);
   border: 1px solid var(--m-hairline);
-  padding: 4px 11px;
+  padding: 4px 12px;
   font-family: inherit;
   cursor: pointer;
   transition: all 0.2s;
@@ -585,9 +585,9 @@
 }
 .mist .loadmore {
   align-self: flex-start;
-  margin: 20px 0 0 30px;
+  margin: 20px 0 0 32px;
   font-size: var(--fs-meta);
-  padding: 10px 20px;
+  padding: 8px 20px;
   border: 1px solid var(--m-ink);
   cursor: pointer;
   transition: all 0.2s;
@@ -615,14 +615,14 @@
 .mist .card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 20px 22px;
+  gap: 8px;
+  padding: 20px 24px;
   background: var(--m-surface);
   backdrop-filter: blur(14px);
   border: 1px solid var(--m-hairline);
 }
 .mist .card .cmd { font-size: var(--fs-meta); color: var(--m-sub); }
-.mist .who { display: flex; align-items: center; gap: 13px; }
+.mist .who { display: flex; align-items: center; gap: 12px; }
 .mist .avatar {
   position: relative;
   width: 54px;
@@ -635,9 +635,9 @@
 .mist .who .nm { font-size: var(--fs-ui); font-weight: 700; }
 .mist .who .rl { font-size: var(--fs-caption); color: var(--m-faint); }
 .mist .bio { margin: 0; font-size: var(--fs-meta); line-height: 1.9; color: var(--m-sub); }
-.mist .socials { display: flex; flex-wrap: wrap; gap: 6px; font-size: var(--fs-caption); }
+.mist .socials { display: flex; flex-wrap: wrap; gap: 8px; font-size: var(--fs-caption); }
 .mist .socials a {
-  padding: 7px 12px;
+  padding: 8px 12px;
   border: 1px solid var(--m-hairline);
   color: inherit;
   text-decoration: none;
@@ -675,9 +675,9 @@
 .mist .gal .g em {
   position: absolute; left: 8px; bottom: 8px; z-index: 1;
   font-style: normal; font-size: var(--fs-caption); color: var(--m-sub);
-  background: rgba(255, 255, 255, 0.85); padding: 2px 7px;
+  background: rgba(255, 255, 255, 0.85); padding: 2px 8px;
 }
-.mist .substream { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 8px; font-size: var(--fs-meta); color: var(--m-sub); }
+.mist .substream { display: flex; align-items: baseline; gap: 8px; margin: 16px 0 8px; font-size: var(--fs-meta); color: var(--m-sub); }
 .mist .streamwrap { position: relative; overflow: hidden; }
 .mist .streamrow { display: flex; gap: 8px; width: max-content; animation: m-marquee 34s linear infinite; }
 .mist .sph { position: relative; display: block; width: 180px; height: 120px; flex: none; overflow: hidden; border: 0; transition: filter 0.25s; }
@@ -689,7 +689,7 @@
 .mist .fadeR { right: 0; background: linear-gradient(270deg, var(--m-bg), transparent); }
 
 /* ── Portal カード（Blog/Events/Products。サムネ必須・無ければ文字カバー） ── */
-.mist .portal .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.mist .portal .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
 .mist .pcard { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--m-hairline); background: var(--m-surface); text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s, transform 0.2s; }
 .mist .pcard:active { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
 @media (hover: hover) {
@@ -701,11 +701,11 @@
 @media (hover: hover) {
   .mist .pcard:hover .thumb img { filter: brightness(0.95); }
 }
-.mist .pcard .thumb.txt { display: flex; align-items: center; justify-content: center; text-align: center; padding: 14px; background: repeating-linear-gradient(135deg, oklch(0.9 0.02 262) 0 10px, oklch(0.93 0.012 262) 10px 20px); }
+.mist .pcard .thumb.txt { display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; background: repeating-linear-gradient(135deg, oklch(0.9 0.02 262) 0 10px, oklch(0.93 0.012 262) 10px 20px); }
 .mist .pcard .thumb.txt span { font-size: var(--fs-ui); font-weight: 700; line-height: 1.5; color: var(--m-sub); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.mist .pcard .thumb .badge { position: absolute; left: 8px; top: 8px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-caption); padding: 2px 7px; background: rgba(255, 255, 255, 0.85); color: var(--m-sub); }
+.mist .pcard .thumb .badge { position: absolute; left: 8px; top: 8px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-caption); padding: 2px 8px; background: rgba(255, 255, 255, 0.85); color: var(--m-sub); }
 .mist .pcard .thumb .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
-.mist .pcard .b { display: flex; flex-direction: column; gap: 5px; padding: 11px 13px; }
+.mist .pcard .b { display: flex; flex-direction: column; gap: 4px; padding: 12px; }
 .mist .pcard .bt { font-size: var(--fs-ui); font-weight: 700; line-height: 1.5; color: var(--m-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .mist .pcard .bm { font-size: var(--fs-caption); color: var(--m-faint); }
 
@@ -714,9 +714,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   margin: 40px var(--m-pad) 0;
-  padding: 18px 0 24px;
+  padding: 16px 0 24px;
   border-top: 1px solid var(--m-hairline);
   font-size: var(--fs-caption);
   color: var(--m-faint);
@@ -766,12 +766,12 @@
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 14px;
-  padding-bottom: 22px;
+  gap: 16px;
+  padding-bottom: 24px;
   margin-bottom: 28px;
   border-bottom: 1px dashed var(--m-hairline);
 }
-.mist .pagehead .cmd { display: block; font-size: var(--fs-meta); color: var(--m-sub); margin-bottom: 10px; }
+.mist .pagehead .cmd { display: block; font-size: var(--fs-meta); color: var(--m-sub); margin-bottom: 8px; }
 .mist .pagehead h1 {
   margin: 0;
   font-family: var(--font-outfit), sans-serif;
@@ -792,8 +792,8 @@
   background: var(--m-accent);
   animation: m-pulseglow 1.1s steps(2) infinite;
 }
-.mist .pagehead .desc { margin: 9px 0 0; font-size: var(--fs-meta); line-height: 1.7; color: var(--m-faint); }
-.mist .pagehead .actions { display: flex; align-items: center; gap: 10px; }
+.mist .pagehead .desc { margin: 8px 0 0; font-size: var(--fs-meta); line-height: 1.7; color: var(--m-faint); }
+.mist .pagehead .actions { display: flex; align-items: center; gap: 8px; }
 
 /* 空状態 */
 .mist .empty { font-size: var(--fs-meta); color: var(--m-faint); padding: 8px 0; }
@@ -831,7 +831,7 @@
 @media (hover: hover) {
   .mist .ccard:hover .thumb img { filter: brightness(0.95); }
 }
-.mist .ccard .cbody { display: flex; flex-direction: column; gap: 7px; padding: 15px 17px; }
+.mist .ccard .cbody { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 .mist .ccard .cmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--fs-caption); color: var(--m-faint); }
 .mist .ccard .ctitle { font-size: var(--fs-ui); font-weight: 700; line-height: 1.5; color: var(--m-ink); }
 .mist .ccard .cexcerpt { font-size: var(--fs-meta); line-height: 1.8; color: var(--m-sub); }
@@ -839,7 +839,7 @@
 .mist .tagchip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   padding: 2px 8px;
   font-size: var(--fs-caption);
   color: var(--m-accent-ink);
@@ -880,15 +880,15 @@
 .mist .single { width: 100%; max-width: 520px; margin: 0 auto; }
 
 /* フォーム（letter） */
-.mist .mform { display: flex; flex-direction: column; gap: 14px; }
-.mist .mform label { display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-meta); color: var(--m-sub); }
+.mist .mform { display: flex; flex-direction: column; gap: 16px; }
+.mist .mform label { display: flex; flex-direction: column; gap: 8px; font-size: var(--fs-meta); color: var(--m-sub); }
 .mist .mform input,
 .mist .mform textarea {
   font-family: inherit;
   /* 16px 未満だと iOS Safari がフォーカス時に強制ズームするため 16px 固定 */
   font-size: var(--fs-body);
   color: var(--m-ink);
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: var(--m-surface);
   border: 1px solid var(--m-hairline);
   transition: border-color 0.2s;
@@ -901,7 +901,7 @@
   margin-top: 4px;
   font-family: inherit;
   font-size: var(--fs-meta);
-  padding: 10px 20px;
+  padding: 8px 20px;
   border: 1px solid var(--m-ink);
   background: none;
   color: inherit;
@@ -918,7 +918,7 @@
 /* 記事詳細（posts/[slug]） */
 /* D-3: 本文行長を約42字/行に（prose 16px × 680px）。日本語可読の目安 35〜45字内 */
 .mist .article { width: 100%; max-width: 680px; margin: 0 auto; }
-.mist .article .cover { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--m-hairline); margin-bottom: 22px; }
+.mist .article .cover { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid var(--m-hairline); margin-bottom: 24px; }
 .mist .article h1 { margin: 0 0 8px; font-family: var(--font-outfit), sans-serif; font-size: clamp(24px, 3.6vw, 32px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; color: var(--m-ink); }
 .mist .article .amETA,
 .mist .article .ameta { font-size: var(--fs-meta); color: var(--m-faint); margin-bottom: 24px; }
@@ -934,7 +934,7 @@
   display: inline-block;
   margin-top: 28px;
   font-size: var(--fs-meta);
-  padding: 9px 18px;
+  padding: 8px 16px;
   border: 1px solid var(--m-ink);
   color: inherit;
   text-decoration: none;
