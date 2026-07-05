@@ -81,13 +81,14 @@ export default function MistRail({ profile, spotifyUrl }: Props) {
             className="spotify-embed"
             src={spotifyEmbed}
             height={352}
+            // Spotify 公式埋め込みに準拠し sandbox は付けない（allow="encrypted-media" 等で制御）。
+            // 参考: https://developer.spotify.com/documentation/embeds
+            // 理由: 再生には自オリジン(open.spotify.com)のストレージが必要で、sandbox で
+            //   allow-same-origin を外すと不透明オリジン化して再生不可。一方 allow-scripts+
+            //   allow-same-origin の併用は静的解析で「sandbox 実質無効化」と指摘される。
+            //   src は固定の信頼オリジンかつ cross-origin のため、フレーム内容から親DOMへは
+            //   到達できず、sandbox 無しでも自サイトへのアクセスは生じない。
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            // Spotify 公式埋め込みは sandbox 無しが既定だが、多層防御として付与している。
-            // allow-scripts + allow-same-origin は「sandbox 実質無効化」の指摘対象だが、
-            // Spotify プレイヤーは自オリジン(open.spotify.com)のセッション/ストレージに依存するため
-            // 両方が必須（allow-same-origin を外すと再生が動かない）。src は固定の信頼オリジンで、
-            // top-navigation/forms は sandbox で引き続き禁止される。
-            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"
             loading="lazy"
             title="Spotify プレイリスト"
           />
