@@ -2,7 +2,7 @@
 // git log 風タイムライン（フィルタチップ・コミット列・load more・いいね）
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import ImageModal from '@/components/gallery/ImageModal'
@@ -120,6 +120,76 @@ function MistLike({ id, initialLikes }: { id: string | number; initialLikes: num
   )
 }
 
+/* ── 写真ブロック（X/Threads 方式の枚数別レイアウト） ─────────
+   1枚: Media の width/height から縦横比を算出し、縦画像は高さ基準で
+        トリミングせず表示。横画像は幅いっぱい・比率は最大16:9でクランプ。
+   2〜4枚: グリッドで object-cover。 */
+type TLImage = {
+  id?: string
+  image: {
+    id?: string
+    url: string
+    sizes?: Record<string, { url: string }>
+    width?: number | null
+    height?: number | null
+  }
+}
+
+function PhotoGrid({
+  photos,
+  title,
+  onOpen,
+}: {
+  photos: TLImage[]
+  title?: string | null
+  onOpen: (url: string) => void
+}) {
+  const items = photos.slice(0, 4)
+  const n = items.length
+  if (n === 0) return null
+  const cls = n === 1 ? 'one' : n === 2 ? 'two' : n === 3 ? 'three' : 'four'
+
+  return (
+    <div className={`photos ${cls}`}>
+      {items.map((imgObj) => {
+        const im = imgObj.image
+        const url = im.sizes?.thumbnail?.url ?? im.url
+        let style: CSSProperties | undefined
+        if (n === 1) {
+          const raw = im.width && im.height ? im.width / im.height : 1.4
+          const ratio = Math.min(Math.max(raw, 0.5), 16 / 9) // 極端な縦長/横長をクランプ
+          style =
+            ratio <= 1
+              ? // 縦/正方: 高さ最大500px基準で幅を算出（トリミングしない）
+                { width: Math.round(500 * ratio), maxWidth: '100%', aspectRatio: String(ratio) }
+              : // 横: 幅いっぱい・高さ上限500px
+                { width: '100%', aspectRatio: String(ratio), maxHeight: 500 }
+        }
+        return (
+          <button
+            key={imgObj.id || im.id || url}
+            type="button"
+            className="ph"
+            style={style}
+            aria-label="画像を拡大表示"
+            onClick={() => onOpen(im.url)}
+          >
+            <Image
+              src={toCFUrl(url)}
+              alt={title ?? 'timeline photo'}
+              fill
+              sizes={n === 1 ? '(max-width: 640px) 100vw, 640px' : '(max-width: 640px) 50vw, 320px'}
+              quality={75}
+              className="object-cover"
+              loading="lazy"
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /* ── 本体 ─────────────────────────────────── */
 
 type Props = {
@@ -179,7 +249,7 @@ export default function MistLogTimeline({ posts, total, showHead = true }: Props
       <div className="commits">
         {shown.map((post) => {
           const isHead = post.id === headId
-          const photos = (post.images ?? []).filter((img) => img?.image?.url).slice(0, 3)
+          const photos = (post.images ?? []).filter((img) => img?.image?.url).slice(0, 4)
           const typeLabel = post.postType ? TYPE_LABELS[post.postType] : null
           return (
             <article key={post.id} className={`commit ${isHead ? 'head' : ''}`}>
@@ -214,31 +284,7 @@ export default function MistLogTimeline({ posts, total, showHead = true }: Props
               )}
 
               {photos.length > 0 && (
-                <div className="photos">
-                  {photos.map((imgObj, i) => {
-                    const url = imgObj.image.sizes?.thumbnail?.url ?? imgObj.image.url
-                    return (
-                      <button
-                        key={imgObj.id || imgObj.image.id}
-                        type="button"
-                        className="ph"
-                        style={{ flex: i === 0 ? 1.5 : 1 }}
-                        aria-label="画像を拡大表示"
-                        onClick={() => setModalImg(imgObj.image.url)}
-                      >
-                        <Image
-                          src={toCFUrl(url)}
-                          alt={post.title ?? 'timeline photo'}
-                          fill
-                          sizes="(max-width: 640px) 50vw, 400px"
-                          quality={75}
-                          className="object-cover"
-                          loading="lazy"
-                        />
-                      </button>
-                    )
-                  })}
-                </div>
+                <PhotoGrid photos={photos} title={post.title} onOpen={setModalImg} />
               )}
 
               <MistLike id={post.id} initialLikes={post.likes ?? 0} />

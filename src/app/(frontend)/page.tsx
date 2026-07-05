@@ -113,7 +113,7 @@ async function fetchTopPageData() {
       payload.count({ collection: 'media', where: GALLERY_WHERE }),
       payload.find({
         collection: 'media',
-        limit: 14,
+        limit: 20,
         sort: '-createdAt',
         where: GALLERY_WHERE,
       }),
