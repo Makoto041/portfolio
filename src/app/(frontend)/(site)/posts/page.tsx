@@ -4,6 +4,7 @@ export const revalidate = 60 // ISR: 更新時は各コレクションの afterC
 
 import type { Metadata } from 'next'
 import MistPageHead from '@/components/mist/MistPageHead'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { fetchLatest } from '@/lib/payload'
 import { Suspense } from 'react'
 import PostsList from './PostsList'
@@ -22,12 +23,14 @@ export const metadata: Metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    // og:image は opengraph-image.tsx（生成1200×630）が付与
+    // og:image は /api/og（1200×630 生成）を明示指定
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'ブログ | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
+    images: [OG_IMAGE_URL],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/posts',

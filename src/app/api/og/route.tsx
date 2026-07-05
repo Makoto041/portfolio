@@ -1,14 +1,13 @@
-// src/app/(frontend)/opengraph-image.tsx
-// 全 frontend ルート共通の OGP 画像（1200×630）を next/og で動的生成する。
-// 実寸460×460の myicon を 1200 と偽って配信していた問題を解消し、群青ブランドの
-// 正しい 16:9 シェア画像に一本化する（各ページで openGraph.images を上書きしない限りこれが使われる）。
+// src/app/api/og/route.tsx
+// 全 frontend ルート共通の OGP 画像（1200×630）を next/og で動的生成する安定URLの
+// ルートハンドラ。旧 opengraph-image.tsx（ファイル規約）は openGraph キーが
+// セグメント間でシャロー置換されるとサブページで og:image が消える問題があったため、
+// 安定URL `/api/og` に一本化し、各ページの openGraph.images から明示的に参照する。
 import { ImageResponse } from 'next/og'
 
-export const alt = '岩渕誠（いわぶちまこと） | ライフログ'
-export const size = { width: 1200, height: 630 }
-export const contentType = 'image/png'
+const size = { width: 1200, height: 630 }
 
-export default function OgImage() {
+export function GET() {
   return new ImageResponse(
     (
       <div
@@ -64,6 +63,12 @@ export default function OgImage() {
         </div>
       </div>
     ),
-    { ...size },
+    {
+      ...size,
+      headers: {
+        // 生成コストを抑えるため長めにキャッシュ（内容はほぼ不変）
+        'Cache-Control': 'public, immutable, no-transform, max-age=31536000',
+      },
+    },
   )
 }

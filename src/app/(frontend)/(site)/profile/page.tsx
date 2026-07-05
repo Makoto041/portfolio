@@ -8,6 +8,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import MistPageHead from '@/components/mist/MistPageHead'
 import { toCFUrl } from '@/lib/cfUrl'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { getPayloadClient } from '@/lib/payloadClient'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -35,12 +36,14 @@ export async function generateMetadata(): Promise<Metadata> {
         siteName,
         locale: 'ja_JP',
         type: 'profile',
-        // og:image は opengraph-image.tsx（生成1200×630）が付与
+        // og:image は /api/og（1200×630 生成）を明示指定
+        images: [OG_IMAGE],
       },
       twitter: {
         card: 'summary_large_image',
         title,
         description,
+        images: [OG_IMAGE_URL],
       },
       alternates: {
         canonical: 'https://iwabuchi-makoto.com/profile',

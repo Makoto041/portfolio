@@ -1,5 +1,6 @@
 import MistPageHead from '@/components/mist/MistPageHead'
 import type { Metadata } from 'next'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { fetchProducts } from '@/lib/fetchProducts'
 import ProductCard from '@/components/cards/ProductCard'
 
@@ -16,12 +17,14 @@ export const metadata: Metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    // og:image は opengraph-image.tsx（生成1200×630）が付与
+    // og:image は /api/og（1200×630 生成）を明示指定
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'プロダクト | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
+    images: [OG_IMAGE_URL],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/products',

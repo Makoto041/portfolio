@@ -7,6 +7,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayloadClient } from '@/lib/payloadClient'
 import { toCFUrl } from '@/lib/cfUrl'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import type { BlogPost } from '@/lib/payloadTypes'
 import { RenderRichTextWithModal } from '@/lib/renderRichTextWithModal'
 
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const ogTitle = `${post.title} | 岩渕誠（いわぶちまこと）`
   const description = post.excerpt || `${post.title}についての記事です。岩渕誠のブログより。`
   // 記事のカバー画像があれば OG に使う（実寸不定のため width/height は宣言せず platform に委ねる）。
-  // 無ければ opengraph-image.tsx の生成1200×630が使われる
+  // 無ければ /api/og の生成1200×630（OG_IMAGE）が使われる
   const imageUrl = post.coverImage?.url ? toCFUrl(post.coverImage.url) : null
   const url = `https://iwabuchi-makoto.com/posts/${slug}`
 
@@ -51,13 +52,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       type: 'article',
       publishedTime: post.publishedAt || post.createdAt,
       authors: ['いわぶちまこと'],
-      ...(imageUrl ? { images: [{ url: imageUrl, alt: post.title }] } : {}),
+      images: imageUrl ? [{ url: imageUrl, alt: post.title }] : [OG_IMAGE],
     },
     twitter: {
       card: 'summary_large_image',
       title: ogTitle,
       description,
-      ...(imageUrl ? { images: [imageUrl] } : {}),
+      images: imageUrl ? [imageUrl] : [OG_IMAGE_URL],
     },
     alternates: {
       canonical: url,

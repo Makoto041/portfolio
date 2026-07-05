@@ -30,9 +30,15 @@ export default function MistTitlebar() {
   const [time, setTime] = useState('--:--')
   // SPでナビが横スクロールするため、アクティブ項目を画面内（中央）へ寄せて存在を可視化
   const activeRef = useRef<HTMLAnchorElement>(null)
+  const navRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ inline: 'center', block: 'nearest' })
+    const nav = navRef.current
+    const active = activeRef.current
+    if (!nav || !active) return
+    // window/ページはスクロールさせず、横スクロールする .nav コンテナだけを動かす
+    const target = active.offsetLeft - (nav.clientWidth - active.clientWidth) / 2
+    nav.scrollLeft = Math.max(0, target)
   }, [pathname])
 
   useEffect(() => {
@@ -57,7 +63,7 @@ export default function MistTitlebar() {
         makoto@tokyo: ~/life — <span suppressHydrationWarning>{time}</span>
       </span>
       <div className="navwrap">
-        <nav className="nav" aria-label="メインナビゲーション">
+        <nav className="nav" aria-label="メインナビゲーション" ref={navRef}>
           {NAV.map(({ label, href }) => {
             const on = isActive(pathname, href)
             return (

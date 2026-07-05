@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import MistPageHead from '@/components/mist/MistPageHead'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import MistLogTimeline from '@/components/mist/MistLogTimeline'
 import AdminLinks from '@/components/admin/AdminLinks'
 import { fetchLatest } from '@/lib/payload'
@@ -21,12 +22,14 @@ export const metadata: Metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    // og:image は opengraph-image.tsx（生成1200×630）が付与
+    // og:image は /api/og（1200×630 生成）を明示指定
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'タイムライン | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠の日々の活動記録。リアルタイムで更新される思考の断片や日常の出来事を時系列で公開しています。',
+    images: [OG_IMAGE_URL],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/timeline',

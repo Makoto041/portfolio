@@ -3,6 +3,7 @@ import '../global.css'
 import type { Metadata } from 'next'
 import React from 'react'
 import { toCFUrl } from '@/lib/cfUrl'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
@@ -53,7 +54,9 @@ export const metadata: Metadata = {
     siteName: 'いわぶち',
     locale: 'ja_JP',
     type: 'website',
-    // og:image は opengraph-image.tsx（1200×630 生成）が全ルートに自動付与する
+    // og:image は /api/og（1200×630 生成）を明示指定。
+    // openGraph はセグメント間でシャロー置換されるため各ページに images を持たせる
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
@@ -61,7 +64,7 @@ export const metadata: Metadata = {
     description:
       '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
     creator: '@613_kmk', // JSON-LD sameAs と統一
-    // twitter:image は未指定時 og:image（生成1200×630）にフォールバックする
+    images: [OG_IMAGE_URL],
   },
 }
 

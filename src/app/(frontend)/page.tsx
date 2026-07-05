@@ -16,6 +16,7 @@ import MistGallery from '@/components/mist/MistGallery'
 import MistPortalSection, { type PortalItem } from '@/components/mist/MistPortalSection'
 import MistRail from '@/components/mist/MistRail'
 import type { TimelineDoc, MediaDoc, BlogPost, Event, Product } from '@/lib/payloadTypes'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 
 export const metadata = {
   title: '岩渕誠（いわぶちまこと） | ライフログ',
@@ -29,14 +30,15 @@ export const metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    // og:image は opengraph-image.tsx（1200×630 生成）が付与
+    // og:image は /api/og（1200×630 生成）を明示指定
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: '岩渕誠（いわぶちまこと） | ライフログ',
     description:
       '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録など日々の記録をタイムラインで残しています。',
-    // twitter:image は og:image（生成1200×630）にフォールバック
+    images: [OG_IMAGE_URL],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/',
