@@ -391,7 +391,9 @@
   .mist .env .rotwrap .jp { margin-left: 6px; }
   .mist .env .vals { flex-basis: 100%; margin-left: 0; } /* 天気・時計を独立行に（右寄せ解除） */
   .mist .env .sep { display: none; } /* 区切り「|」は段組みでは行境界が担うため非表示 */
-  .mist .env .wx { white-space: nowrap; } /* 天気ラベル・地名は内部改行させず、収まらなければ .dt を丸ごと次行へ */
+  /* 天気ラベル・地名は内部改行させず、収まらなければ .dt を丸ごと次行へ。
+     地名が極端に長い場合は .wx 自体が縮んで末尾…（横溢れ防止） */
+  .mist .env .wx { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* ── main: [content] + 右端固定プロフィール（フルブリード幅） ─────────── */
