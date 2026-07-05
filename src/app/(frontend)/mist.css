@@ -116,6 +116,10 @@
   border-bottom: 1px solid var(--m-hairline);
   background: var(--m-surface);
   backdrop-filter: blur(14px);
+  /* backdrop-filter がスタッキングコンテキストを作るため、ナビのドロップダウン(子)を
+     後続の hero/env(position:relative / backdrop-filter)より前面に出すには titlebar 自体を持ち上げる */
+  position: relative;
+  z-index: 10;
 }
 .mist .dots { display: flex; gap: 7px; flex: none; }
 .mist .dots span {
@@ -153,6 +157,7 @@
 /* ハンバーガーボタン（PC では非表示。SP で nav をドロップダウンに畳む） */
 .mist .navtoggle {
   display: none;
+  position: relative;
   align-items: center;
   justify-content: center;
   padding: 7px 11px;
@@ -163,6 +168,8 @@
   line-height: 1;
   cursor: pointer;
 }
+/* 見た目を変えずヒット領域を 44px 以上に拡張 */
+.mist .navtoggle::after { content: ''; position: absolute; inset: -4px -8px; }
 @media (max-width: 760px) {
   .mist .navtoggle { display: inline-flex; }
   /* 既定は閉（非表示）。開くと titlebar 直下に $ ls ./nav 風ドロップダウン */
@@ -211,7 +218,9 @@
   .mist .ci-nm { font-weight: 700; font-size: var(--fs-ui); color: var(--m-ink); line-height: 1.2; }
   .mist .ci-rl { font-size: var(--fs-caption); color: var(--m-faint); }
   .mist .ci-sns { display: flex; gap: 6px; margin-left: auto; flex: none; }
-  .mist .ci-sns a { font-size: var(--fs-caption); color: var(--m-sub); border: 1px solid var(--m-hairline); padding: 6px 8px; text-decoration: none; line-height: 1; }
+  .mist .ci-sns a { position: relative; font-size: var(--fs-caption); color: var(--m-sub); border: 1px solid var(--m-hairline); padding: 6px 8px; text-decoration: none; line-height: 1; }
+  /* 見た目を変えずヒット領域を 44px 相当に拡張 */
+  .mist .ci-sns a::after { content: ''; position: absolute; inset: -10px -4px; }
 }
 
 /* ── hero ─────────────────────────────────── */

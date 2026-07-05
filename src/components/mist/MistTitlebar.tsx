@@ -51,14 +51,15 @@ export default function MistTitlebar() {
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
-    const onClick = (e: MouseEvent) => {
+    // iOS Safari は非インタラクティブ要素への click を発火しないため pointerdown で外側判定
+    const onDown = (e: Event) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
     }
     document.addEventListener('keydown', onKey)
-    document.addEventListener('click', onClick)
+    document.addEventListener('pointerdown', onDown)
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.removeEventListener('click', onClick)
+      document.removeEventListener('pointerdown', onDown)
     }
   }, [open])
 
