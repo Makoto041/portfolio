@@ -219,7 +219,7 @@
   .mist .ci-rl { font-size: var(--fs-caption); color: var(--m-faint); }
   .mist .ci-sns { display: flex; gap: 8px; margin-left: auto; flex: none; }
   .mist .ci-sns a { position: relative; font-size: var(--fs-caption); color: var(--m-sub); border: 1px solid var(--m-hairline); padding: 8px; text-decoration: none; line-height: 1; }
-  /* 見た目を変えずヒット領域を縦に拡張（横は gap 6px を超えないよう ±3px に留め隣接と重ねない） */
+  /* 見た目を変えずヒット領域を縦に拡張（横は gap 8px を超えないよう ±3px に留め隣接と重ねない） */
   .mist .ci-sns a::after { content: ''; position: absolute; inset: -12px -3px; }
 }
 
