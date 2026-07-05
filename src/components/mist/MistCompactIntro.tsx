@@ -43,7 +43,8 @@ export default function MistCompactIntro({ profile }: { profile: ProfileData }) 
         {profile.title && <span className="ci-rl">{profile.title}</span>}
       </div>
       <div className="ci-sns">
-        {profile.socialLinks?.map(({ platform, url, displayName }) =>
+        {/* コンパクト行なので最大4件に制限（全件はフルの profile カードに表示） */}
+        {profile.socialLinks?.slice(0, 4).map(({ platform, url, displayName }) =>
           url ? (
             <a key={url} href={url} target="_blank" rel="noopener noreferrer" aria-label={displayName ?? platform ?? 'link'}>
               {displayName?.toLowerCase() || (platform ? PLATFORM_LABELS[platform] : null) || '↗'}

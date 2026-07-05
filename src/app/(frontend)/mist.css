@@ -215,12 +215,12 @@
   }
   .mist .ci-av { position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; border: 1px solid var(--m-hairline); flex: none; }
   .mist .ci-meta { display: flex; flex-direction: column; min-width: 0; }
-  .mist .ci-nm { font-weight: 700; font-size: var(--fs-ui); color: var(--m-ink); line-height: 1.2; }
+  .mist .ci-nm { font-weight: 700; font-size: var(--fs-ui); color: var(--m-ink); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .mist .ci-rl { font-size: var(--fs-caption); color: var(--m-faint); }
   .mist .ci-sns { display: flex; gap: 6px; margin-left: auto; flex: none; }
   .mist .ci-sns a { position: relative; font-size: var(--fs-caption); color: var(--m-sub); border: 1px solid var(--m-hairline); padding: 6px 8px; text-decoration: none; line-height: 1; }
-  /* 見た目を変えずヒット領域を 44px 相当に拡張 */
-  .mist .ci-sns a::after { content: ''; position: absolute; inset: -10px -4px; }
+  /* 見た目を変えずヒット領域を縦に拡張（横は gap 6px を超えないよう ±3px に留め隣接と重ねない） */
+  .mist .ci-sns a::after { content: ''; position: absolute; inset: -12px -3px; }
 }
 
 /* ── hero ─────────────────────────────────── */
