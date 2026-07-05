@@ -307,7 +307,12 @@
 }
 .mist .env .cmd { display: flex; align-items: center; gap: 8px; color: var(--m-sub); }
 /* ブライユ・スピナー（幅固定で回転してもガタつかない） */
-.mist .spin { width: 13px; font-weight: 600; color: var(--m-accent-ink); }
+.mist .spin { width: 13px; font-weight: 600; color: var(--m-accent-ink); flex-shrink: 0; }
+/* 固定幅マーカーは収縮させない（NOTICE 溢れ時に潰れるのを防ぎ、可変長は .jp だけが縮む） */
+.mist .ndate,
+.mist .tcur { flex-shrink: 0; }
+/* 日付＋時刻の折返し単位 */
+.mist .env .dt { display: inline-flex; align-items: center; gap: 12px; white-space: nowrap; }
 /* NOTICE スロット（ラベル + 日付バッジ + メッセージ + カーソル） */
 .mist .rotwrap {
   display: inline-flex;
@@ -359,6 +364,36 @@
   color: var(--m-faint);
   text-decoration: underline dotted;
   text-underline-offset: 2px;
+}
+
+/* SP: 環境バーが時間帯（＝可変長の NOTICE メッセージ）で段組みが揺れて2段化するのを防ぐ。
+   要素は削らず、NOTICE / stats / 天気・時計 をそれぞれ独立行に整列した安定レイアウトにする。
+   長い NOTICE メッセージは省略記号で丸め、他要素を押し出さない。 */
+@media (max-width: 760px) {
+  .mist .env { gap: 8px 12px; }
+  .mist .env .divider { display: none; } /* 縦罫線は横並び前提のため段組みでは不要 */
+  .mist .env .cmd { flex-basis: 100%; min-width: 0; align-items: flex-start; } /* NOTICE を独立行に（上揃え） */
+  /* NOTICE ラベル＋日付＋メッセージ全体を最大2行にクランプし、常に2行分の高さを確保。
+     短文でも高さが変わらず、長文でも他要素を押さないため段組みが時間帯で揺れない。 */
+  .mist .env .rotwrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    min-height: 3em; /* line-height 1.5 × 2 行 */
+    line-height: 1.5;
+  }
+  /* -webkit-box では gap が無効なので要素間隔を margin で確保 */
+  .mist .env .rotwrap .ndate,
+  .mist .env .rotwrap .jp { margin-left: 6px; }
+  .mist .env .vals { flex-basis: 100%; margin-left: 0; } /* 天気・時計を独立行に（右寄せ解除） */
+  .mist .env .sep { display: none; } /* 区切り「|」は段組みでは行境界が担うため非表示 */
+  /* 天気ラベル・地名は内部改行させず、収まらなければ .dt を丸ごと次行へ。
+     地名が極端に長い場合は .wx 自体が縮んで末尾…（横溢れ防止） */
+  .mist .env .wx { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* ── main: [content] + 右端固定プロフィール（フルブリード幅） ─────────── */
