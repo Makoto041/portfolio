@@ -3,9 +3,6 @@ import '../global.css'
 import type { Metadata } from 'next'
 import React from 'react'
 import localFont from 'next/font/local'
-import GlassNav from '@/components/layout/GlassNav'
-import SiteFooter from '@/components/layout/SiteFooter'
-import Breadcrumb from '@/components/layout/Breadcrumb'
 import { toCFUrl } from '@/lib/cfUrl'
 import { Providers } from '@/components/Providers'
 
@@ -201,19 +198,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
       <body className="antialiased overflow-x-hidden text-[color:var(--fg-base)]">
         <Providers>
-          {/* ── 上部グラスナビゲーション ── */}
-          <GlassNav />
-
-          {/* ── 1カラムのメインコンテンツ（各ページが <main> を持つため div）
-               全ページ同一のコンテナ幅にすることで、ページ遷移時の横ずれを防ぐ ── */}
-          <div className="mx-auto min-h-screen w-full max-w-5xl px-4 sm:px-6">
-            {/* パンくずはレイアウト層で一元描画（ページごとの位置ずれを防ぐ） */}
-            <Breadcrumb />
-            {children}
-          </div>
-
-          {/* ── フッター ── */}
-          <SiteFooter />
+          {/* ページシェル（ナビ・コンテナ・フッター）は (site) レイアウトが持つ。
+              トップページは Mist Terminal デザインの独自シェルで描画する */}
+          {children}
 
           {/* Portal root for modals */}
           <div id="modal-root"></div>
