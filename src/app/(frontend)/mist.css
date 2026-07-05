@@ -307,7 +307,12 @@
 }
 .mist .env .cmd { display: flex; align-items: center; gap: 8px; color: var(--m-sub); }
 /* ブライユ・スピナー（幅固定で回転してもガタつかない） */
-.mist .spin { width: 13px; font-weight: 600; color: var(--m-accent-ink); }
+.mist .spin { width: 13px; font-weight: 600; color: var(--m-accent-ink); flex-shrink: 0; }
+/* 固定幅マーカーは収縮させない（NOTICE 溢れ時に潰れるのを防ぎ、可変長は .jp だけが縮む） */
+.mist .ndate,
+.mist .tcur { flex-shrink: 0; }
+/* 日付＋時刻の折返し単位 */
+.mist .env .dt { display: inline-flex; align-items: center; gap: 12px; white-space: nowrap; }
 /* NOTICE スロット（ラベル + 日付バッジ + メッセージ + カーソル） */
 .mist .rotwrap {
   display: inline-flex;
@@ -376,6 +381,8 @@
     white-space: nowrap;
   }
   .mist .env .vals { flex-basis: 100%; margin-left: 0; } /* 天気・時計を独立行に（右寄せ解除） */
+  .mist .env .sep { display: none; } /* 区切り「|」は段組みでは行境界が担うため非表示 */
+  .mist .env .wx { white-space: nowrap; } /* 天気ラベル・地名は内部改行させず、収まらなければ .dt を丸ごと次行へ */
 }
 
 /* ── main: [content] + 右端固定プロフィール（フルブリード幅） ─────────── */

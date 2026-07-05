@@ -221,13 +221,16 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
         <span className="sep" aria-hidden>
           |
         </span>
-        <span className="date" suppressHydrationWarning>
-          {now
-            ? `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${DAYS[now.getDay()]}`
-            : ''}
-        </span>
-        <span className="time" suppressHydrationWarning>
-          {now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : '--:--'}
+        {/* 日付＋時刻は1つの折返し単位（.dt）にまとめ、SPで時刻だけが単独でぶら下がるのを防ぐ */}
+        <span className="dt">
+          <span className="date" suppressHydrationWarning>
+            {now
+              ? `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${DAYS[now.getDay()]}`
+              : ''}
+          </span>
+          <span className="time" suppressHydrationWarning>
+            {now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : '--:--'}
+          </span>
         </span>
       </span>
     </div>
