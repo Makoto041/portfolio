@@ -28,7 +28,7 @@ export default function EventCard({ e }: { e: Event }) {
 
   return (
     <Link
-      href={e.externalUrl || `/in_event`}
+      href={e.externalUrl || `/events`}
       target={e.externalUrl ? '_blank' : undefined}
       rel={e.externalUrl ? 'noopener noreferrer' : undefined}
       className="ccard"

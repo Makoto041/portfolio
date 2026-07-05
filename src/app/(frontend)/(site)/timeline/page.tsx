@@ -1,16 +1,17 @@
 import type { Metadata } from 'next'
 import MistPageHead from '@/components/mist/MistPageHead'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import MistLogTimeline from '@/components/mist/MistLogTimeline'
 import AdminLinks from '@/components/admin/AdminLinks'
 import { fetchLatest } from '@/lib/payload'
 import { getPayloadClient } from '@/lib/payloadClient'
 import type { TimelineDoc } from '@/lib/payloadTypes'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
 export const metadata: Metadata = {
-  title: 'タイムライン | 岩渕誠（いわぶちまこと）',
+  // template が「| 岩渕誠（いわぶちまこと）」を付与するためページ名のみ
+  title: 'タイムライン',
   description: '岩渕誠の日々の活動記録。リアルタイムで更新される思考の断片や日常の出来事を時系列で公開しています。',
   keywords: ['タイムライン', '日記', '岩渕誠', 'いわぶちまこと', '日常', '活動記録'],
   authors: [{ name: 'いわぶちまこと' }],
@@ -21,20 +22,14 @@ export const metadata: Metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    images: [
-      {
-        url: '/myicon.png',
-        width: 1200,
-        height: 630,
-        alt: 'いわぶちまこと タイムライン',
-      },
-    ],
+    // og:image は /og（1200×630 生成）を明示指定
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'タイムライン | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠の日々の活動記録。リアルタイムで更新される思考の断片や日常の出来事を時系列で公開しています。',
-    images: ['/myicon.png'],
+    images: [OG_IMAGE_URL],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/timeline',

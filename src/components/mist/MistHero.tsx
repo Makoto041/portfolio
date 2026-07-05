@@ -19,25 +19,28 @@ type Props = {
 }
 
 export default function MistHero({ tagline, role }: Props) {
-  const [nm, setNm] = useState('') // MAKOTO の表示分
-  const [iw, setIw] = useState('') // IWABUCHI の表示分
-  const [tag, setTag] = useState('') // タグライン本文の表示分
-  const [phase, setPhase] = useState<Phase>('name-top')
+  // 初期stateは「全文（完了状態）」。SSR/初回描画で h1 全文を出力し LCP/SEO を確保する。
+  // 動きが許可されている時のみ、マウント後にクリア→タイプ演出で上書きする。
+  const [nm, setNm] = useState(MK) // MAKOTO の表示分
+  const [iw, setIw] = useState(IW) // IWABUCHI の表示分
+  const [tag, setTag] = useState(tagline) // タグライン本文の表示分
+  const [phase, setPhase] = useState<Phase>('done')
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
-  // ── ワードマークのタイプ（マウント後 300ms で開始） ──
+  // ── ワードマークのタイプ（SSR全文をハイドレーション後に上書き） ──
   useEffect(() => {
     const reduce =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
-    if (reduce) {
-      setNm(MK)
-      setIw(IW)
-      setTag(tagline)
-      setPhase('done')
-      return
-    }
+    // 静止指定ならSSR全文のまま（アニメなし）
+    if (reduce) return
+
+    // SSR全文（LCP候補）を描画後にクリアし、タイプ演出で上書き
+    setNm('')
+    setIw('')
+    setTag('')
+    setPhase('name-top')
 
     const push = (fn: () => void, ms: number) => {
       timers.current.push(setTimeout(fn, ms))
@@ -68,7 +71,8 @@ export default function MistHero({ tagline, role }: Props) {
       step()
     }
 
-    push(typeMakoto, 300)
+    // SSR全文の描画直後にクリア→タイプするため開始は短めに（空表示のギャップを最小化）
+    push(typeMakoto, 100)
 
     return () => {
       timers.current.forEach(clearTimeout)

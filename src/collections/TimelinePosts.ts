@@ -3,6 +3,10 @@ import type { CollectionBeforeChangeHook, CollectionAfterChangeHook } from 'payl
 import { fetchUrlMetadata } from '@/lib/urlMetadata'
 import { extractUrlsFromRichText } from '@/lib/urlExtractor'
 import { anyone, adminOnly } from '@/lib/access'
+import { makeRevalidate } from '@/lib/revalidate'
+
+// タイムライン更新で Home（ダイジェスト/entries/streak）と専用タブを再検証
+const revalidateTimeline = makeRevalidate(['/', '/timeline'])
 
 interface TimelineData {
   text?: unknown
@@ -116,7 +120,8 @@ export const TimelinePosts: CollectionConfig = {
   hooks: {
     // タイムライン投稿時に自動的に画像に「タイムライン専用」フラグを設定
     beforeChange: [beforeChangeHook],
-    afterChange: [afterChangeHook],
+    afterChange: [...revalidateTimeline.afterChange, afterChangeHook], // 再検証を先に（画像フラグ処理が例外でもキャッシュを更新）
+    afterDelete: [...revalidateTimeline.afterDelete],
   },
   fields: [
     {

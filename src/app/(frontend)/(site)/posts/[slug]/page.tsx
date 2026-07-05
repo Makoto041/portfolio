@@ -1,6 +1,5 @@
 // src/app/(frontend)/posts/[slug]/page.tsx
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
 import Image from 'next/image'
 import Link from 'next/link'
@@ -8,6 +7,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayloadClient } from '@/lib/payloadClient'
 import { toCFUrl } from '@/lib/cfUrl'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import type { BlogPost } from '@/lib/payloadTypes'
 import { RenderRichTextWithModal } from '@/lib/renderRichTextWithModal'
 
@@ -24,23 +24,27 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!post) {
     return {
-      title: 'ページが見つかりません | 岩渕誠（いわぶちまこと）',
+      // template がブランド接尾辞を付与するためページ名のみ
+      title: 'ページが見つかりません',
       description: 'お探しのページは見つかりませんでした。',
     }
   }
 
-  const title = `${post.title} | いわぶちまこと`
+  // <title> は記事名のみ（template がブランド接尾辞を付与）。og/twitter はブランド付きの完全表記
+  const ogTitle = `${post.title} | 岩渕誠（いわぶちまこと）`
   const description = post.excerpt || `${post.title}についての記事です。岩渕誠のブログより。`
-  const imageUrl = post.coverImage?.url ? toCFUrl(post.coverImage.url) : '/myicon.png'
+  // 記事のカバー画像があれば OG に使う（実寸不定のため width/height は宣言せず platform に委ねる）。
+  // 無ければ /og の生成1200×630（OG_IMAGE）が使われる
+  const imageUrl = post.coverImage?.url ? toCFUrl(post.coverImage.url) : null
   const url = `https://iwabuchi-makoto.com/posts/${slug}`
 
   return {
-    title,
+    title: post.title,
     description,
     keywords: ['ブログ', '岩渕誠', 'いわぶちまこと', post.title],
     authors: [{ name: 'いわぶちまこと' }],
     openGraph: {
-      title,
+      title: ogTitle,
       description,
       url,
       siteName: 'いわぶちまこと',
@@ -48,20 +52,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       type: 'article',
       publishedTime: post.publishedAt || post.createdAt,
       authors: ['いわぶちまこと'],
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
+      images: imageUrl ? [{ url: imageUrl, alt: post.title }] : [OG_IMAGE],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: ogTitle,
       description,
-      images: [imageUrl],
+      images: imageUrl ? [imageUrl] : [OG_IMAGE_URL],
     },
     alternates: {
       canonical: url,

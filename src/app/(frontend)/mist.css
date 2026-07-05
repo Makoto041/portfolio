@@ -44,7 +44,7 @@
 .mist {
   --m-ink: oklch(0.3 0.08 272);
   --m-sub: oklch(0.5 0.05 268);
-  --m-faint: oklch(0.55 0.04 268);
+  --m-faint: oklch(0.51 0.04 268); /* #eef1f4 上で約4.8:1（AA）。9.5〜12pxのメタ情報に使用 */
   --m-hairline: oklch(0.85 0.02 262);
   --m-accent: oklch(0.55 0.09 268);
   --m-bg: #eef1f4;
@@ -118,22 +118,43 @@
 .mist .dots span:nth-child(2) { background: oklch(0.82 0.03 262 / 0.6); }
 .mist .dots span:nth-child(3) { background: oklch(0.88 0.02 262 / 0.6); }
 .mist .tb-path { font-size: 11.5px; color: var(--m-sub); white-space: nowrap; }
+/* navwrap: 右寄せ＋SPで左右フェード（横スクロールの続きを示唆） */
+.mist .navwrap { position: relative; margin-left: auto; min-width: 0; display: flex; }
 .mist .nav {
-  margin-left: auto;
   display: flex;
   gap: 3px;
   font-size: 11.5px;
   color: oklch(0.48 0.04 268);
   overflow-x: auto;
   scrollbar-width: none;
+  /* ::after(±10px) をスクロールポート内に収めるための余白。負の margin で相殺しレイアウト高さは不変 */
+  padding-block: 11px;
+  margin-block: -11px;
 }
 .mist .nav::-webkit-scrollbar { display: none; }
 .mist .nav a {
+  position: relative;
   padding: 6px 13px;
   color: inherit;
   text-decoration: none;
   white-space: nowrap;
   transition: all 0.2s;
+}
+/* 見た目を変えずヒット領域だけ縦に拡張し 44px 以上に（横は隣接のため触らない） */
+.mist .nav a::after { content: ''; position: absolute; inset: -10px 0; }
+@media (max-width: 760px) {
+  .mist .navwrap::before,
+  .mist .navwrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 22px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .mist .navwrap::before { left: 0; background: linear-gradient(to right, rgba(244, 246, 249, 0.95), transparent); }
+  .mist .navwrap::after { right: 0; background: linear-gradient(to left, rgba(244, 246, 249, 0.95), transparent); }
 }
 .mist .nav a.on,
 .mist .nav a:hover { background: var(--m-ink); color: #fff; }
@@ -200,7 +221,7 @@
 /* ロール（英字）は名前・タグライン完了後にフェードイン */
 .mist .tagline .en {
   font-size: 11px;
-  color: oklch(0.55 0.05 268);
+  color: oklch(0.51 0.05 268); /* AA: #eef1f4 上で約4.8:1 */
   opacity: 0;
   transition: opacity 0.5s ease;
 }
@@ -304,7 +325,9 @@
   margin-bottom: 12px;
 }
 .mist .sechead .cmd { font-size: 12.5px; color: oklch(0.5 0.06 268); }
-.mist .more-link { font-size: 10.5px; color: oklch(0.5 0.05 268); text-decoration: none; white-space: nowrap; }
+.mist .more-link { position: relative; font-size: 10.5px; color: oklch(0.5 0.05 268); text-decoration: none; white-space: nowrap; }
+/* タップ領域拡張（見た目不変） */
+.mist .more-link::after { content: ''; position: absolute; top: -14px; right: -8px; bottom: -11px; left: -8px; }
 .mist .more-link:hover { color: var(--m-ink); }
 /* 1080px 以下は main を1カラム（プロフィールを下に）、760px 以下は homecols も縦積みに */
 @media (max-width: 1080px) {
@@ -337,6 +360,7 @@
 .mist .loghead .cmd { font-size: 12.5px; color: oklch(0.5 0.06 268); }
 .mist .filters { display: flex; gap: 5px; font-size: 10.5px; }
 .mist .filters button {
+  position: relative;
   padding: 5px 12px;
   border: 1px solid oklch(0.82 0.02 262);
   background: none;
@@ -346,6 +370,8 @@
   cursor: pointer;
   transition: all 0.2s;
 }
+/* タップ領域を縦に拡張（見た目不変・横は隣接のため触らない） */
+.mist .filters button::after { content: ''; position: absolute; inset: -10px 0; }
 .mist .filters button.on,
 .mist .filters button:hover {
   background: var(--m-ink);
@@ -404,6 +430,7 @@
 }
 /* いいね: 押せると分かるよう枠付きチップ + hover 反転気味の強調 */
 .mist .commit .likes {
+  position: relative;
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
@@ -417,6 +444,8 @@
   cursor: pointer;
   transition: all 0.2s;
 }
+/* タップ領域拡張（見た目不変。単独配置のため全方向に拡張して44px以上に） */
+.mist .commit .likes::after { content: ''; position: absolute; top: -7px; right: -11px; bottom: -11px; left: -11px; }
 .mist .commit .likes:hover:not(:disabled) {
   color: oklch(0.45 0.09 268);
   border-color: var(--m-accent);
@@ -728,7 +757,8 @@
 .mist .mform input,
 .mist .mform textarea {
   font-family: inherit;
-  font-size: 13px;
+  /* 16px 未満だと iOS Safari がフォーカス時に強制ズームするため 16px 固定 */
+  font-size: 16px;
   color: var(--m-ink);
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.6);

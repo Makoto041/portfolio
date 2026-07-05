@@ -16,6 +16,7 @@ import MistGallery from '@/components/mist/MistGallery'
 import MistPortalSection, { type PortalItem } from '@/components/mist/MistPortalSection'
 import MistRail from '@/components/mist/MistRail'
 import type { TimelineDoc, MediaDoc, BlogPost, Event, Product } from '@/lib/payloadTypes'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 
 export const metadata = {
   title: '岩渕誠（いわぶちまこと） | ライフログ',
@@ -28,22 +29,16 @@ export const metadata = {
     url: 'https://iwabuchi-makoto.com',
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
-    images: [
-      {
-        url: 'https://iwabuchi-makoto.com/myicon.png',
-        width: 1200,
-        height: 630,
-        alt: 'OGP画像 - いわぶちまこと',
-      },
-    ],
     type: 'website',
+    // og:image は /og（1200×630 生成）を明示指定
+    images: [OG_IMAGE],
   },
   twitter: {
     card: 'summary_large_image',
     title: '岩渕誠（いわぶちまこと） | ライフログ',
     description:
       '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録など日々の記録をタイムラインで残しています。',
-    images: ['https://iwabuchi-makoto.com/myicon.png'],
+    images: [OG_IMAGE_URL],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/',
@@ -247,7 +242,7 @@ async function fetchTopPageData() {
     items: (eventsRes.docs as unknown as Event[]).map<PortalItem>((e) => ({
       key: String(e.id),
       title: e.title,
-      href: e.externalUrl || '/in_event',
+      href: e.externalUrl || '/events',
       external: !!e.externalUrl,
       thumbUrl: (typeof e.thumbnail === 'object' ? e.thumbnail?.url : null) ?? null,
       meta: fmtDate(e.startDate),
@@ -372,7 +367,7 @@ export default async function Home() {
                 />
                 <MistPortalSection
                   cmd="ls ./events"
-                  moreHref="/in_event"
+                  moreHref="/events"
                   moreLabel={`${events.total} files →`}
                   items={events.items}
                 />

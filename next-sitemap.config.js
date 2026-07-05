@@ -2,7 +2,7 @@
 export default {
   siteUrl: 'https://iwabuchi-makoto.com',
   generateRobotsTxt: true,
-  exclude: ['/admin/*', '/api/*'],
+  exclude: ['/admin/*', '/api/*', '/og'],
   robotsTxtOptions: {
     policies: [
       {
@@ -20,7 +20,7 @@ export default {
       '/gallery',
       '/products',
       '/profile',
-      '/in_event',
+      '/events',
     ]
     const results = await Promise.all(
       staticPaths.map((path) => config.transform(config, path)),

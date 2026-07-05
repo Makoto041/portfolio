@@ -44,3 +44,6 @@ next-env.d.ts
 # next-sitemap の生成物（postbuildで毎回生成されるためコミットしない）
 public/sitemap*.xml
 public/robots.txt
+
+# Payload のローカルアップロード（S3配信のため不要）
+/media/
