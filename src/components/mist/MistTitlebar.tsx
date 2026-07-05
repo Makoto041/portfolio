@@ -7,9 +7,10 @@ import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
-// トップページ＝Timeline のため ./timeline はトップ（/）を指す
+// Home（/ ＝ポータル）と Timeline（/timeline ＝全件の専用タブ）は別ページ
 const NAV = [
-  { label: './timeline', href: '/' },
+  { label: './home', href: '/' },
+  { label: './timeline', href: '/timeline' },
   { label: './posts', href: '/posts' },
   { label: './gallery', href: '/gallery' },
   { label: './events', href: '/in_event' },

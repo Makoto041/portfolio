@@ -198,9 +198,11 @@ type Props = {
   total: number
   /** loghead（git log 見出し + フィルタ）を表示するか。/timeline ページでは false */
   showHead?: boolean
+  /** Home 用ダイジェスト表示。フィルタ・追加読込を出さず、常に /timeline への導線を出す */
+  compact?: boolean
 }
 
-export default function MistLogTimeline({ posts, total, showHead = true }: Props) {
+export default function MistLogTimeline({ posts, total, showHead = true, compact = false }: Props) {
   const [filter, setFilter] = useState('all')
   const [visible, setVisible] = useState(PAGE_SIZE)
   const [modalImg, setModalImg] = useState<string | null>(null)
@@ -213,8 +215,9 @@ export default function MistLogTimeline({ posts, total, showHead = true }: Props
     return posts.filter((p) => p.postType && types.includes(p.postType))
   }, [posts, filter])
 
-  const shown = filtered.slice(0, visible)
-  const hasMoreLoaded = filtered.length > visible
+  // compact(Home)は取得件数=表示件数（limit 側で一元管理、PAGE_SIZE に縛られない）
+  const shown = compact ? filtered : filtered.slice(0, visible)
+  const hasMoreLoaded = !compact && filtered.length > visible
   const hasMoreOnServer = total > posts.length
 
   return (
@@ -228,22 +231,25 @@ export default function MistLogTimeline({ posts, total, showHead = true }: Props
 
       <div className="loghead">
         {showHead && <span className="cmd">~/life $ git log --diary --photos</span>}
-        <div className="filters" role="group" aria-label="投稿カテゴリで絞り込み">
-          {FILTERS.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              className={filter === key ? 'on' : undefined}
-              aria-pressed={filter === key}
-              onClick={() => {
-                setFilter(key)
-                setVisible(PAGE_SIZE)
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {/* フィルタは専用タイムラインタブ側で提供。Home(compact)では出さない */}
+        {!compact && (
+          <div className="filters" role="group" aria-label="投稿カテゴリで絞り込み">
+            {FILTERS.map(({ key, label }) => (
+              <button
+                key={key}
+                type="button"
+                className={filter === key ? 'on' : undefined}
+                aria-pressed={filter === key}
+                onClick={() => {
+                  setFilter(key)
+                  setVisible(PAGE_SIZE)
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="commits">
@@ -299,7 +305,12 @@ export default function MistLogTimeline({ posts, total, showHead = true }: Props
         )}
       </div>
 
-      {hasMoreLoaded ? (
+      {compact ? (
+        // Home ダイジェスト: 追加読込せず、常に専用タイムラインタブへ誘導
+        <Link href="/timeline" className="loadmore">
+          $ cd ./timeline <span className="n">(all {total}) →</span>
+        </Link>
+      ) : hasMoreLoaded ? (
         <button type="button" className="loadmore" onClick={() => setVisible((v) => v + PAGE_SIZE)}>
           $ load --more <span className="n">(all {total})</span>
         </button>

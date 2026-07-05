@@ -12,9 +12,10 @@ import MistTitlebar from '@/components/mist/MistTitlebar'
 import MistHero from '@/components/mist/MistHero'
 import MistStatusBar, { type NoticeItem } from '@/components/mist/MistStatusBar'
 import MistLogTimeline from '@/components/mist/MistLogTimeline'
+import MistGallery from '@/components/mist/MistGallery'
+import MistPortalSection, { type PortalItem } from '@/components/mist/MistPortalSection'
 import MistRail from '@/components/mist/MistRail'
-import MistStream from '@/components/mist/MistStream'
-import type { TimelineDoc, MediaDoc } from '@/lib/payloadTypes'
+import type { TimelineDoc, MediaDoc, BlogPost, Event, Product } from '@/lib/payloadTypes'
 
 export const metadata = {
   title: '岩渕誠（いわぶちまこと） | ライフログ',
@@ -82,6 +83,37 @@ function buildStreak(dates: string[]): number {
   return streak
 }
 
+/** `YYYY.MM.DD`（Asia/Tokyo） */
+function fmtDate(dateStr?: string): string {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  if (Number.isNaN(d.getTime())) return ''
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d)
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+  return `${get('year')}.${get('month')}.${get('day')}`
+}
+
+/** イベントのプラットフォーム → バッジ（ラベル + 識別色） */
+function platformBadge(platform?: string): { label: string; color: string } {
+  switch (platform) {
+    case 'twitch':
+      return { label: 'Twitch', color: 'oklch(0.55 0.2 300)' }
+    case 'youtube':
+      return { label: 'YouTube', color: 'oklch(0.6 0.22 25)' }
+    case 'nico':
+      return { label: 'ニコニコ', color: 'oklch(0.68 0.16 55)' }
+    case 'offline':
+      return { label: '現地', color: 'oklch(0.65 0.16 155)' }
+    default:
+      return { label: 'Event', color: 'oklch(0.6 0.03 260)' }
+  }
+}
+
 /** お知らせの日付を「MM.DD」バッジ文字列に（Asia/Tokyo） */
 function toBadge(dateStr: string): string {
   const d = new Date(dateStr)
@@ -98,9 +130,22 @@ function toBadge(dateStr: string): string {
 async function fetchTopPageData() {
   const payload = await getPayloadClient()
 
-  const [postsRes, statsRes, entriesCount, photosCount, galleryRes, settings, noticesRes] =
-    await Promise.all([
-      payload.find({ collection: 'timeline', limit: 50, sort: '-publishedAt', depth: 2 }),
+  // 別コレクションは失敗してもトップ全体を巻き込まないよう既定空へ縮退
+  const emptyDocs = { docs: [] as unknown[], totalDocs: 0 }
+  const [
+    postsRes,
+    statsRes,
+    entriesCount,
+    photosCount,
+    galleryRes,
+    settings,
+    noticesRes,
+    blogRes,
+    eventsRes,
+    productsRes,
+  ] = await Promise.all([
+      // Home は直近10件のダイジェスト（全件は専用の /timeline タブで）
+      payload.find({ collection: 'timeline', limit: 10, sort: '-publishedAt', depth: 2 }),
       // 集計用は日付だけを軽量に取得（streak計算）
       payload.find({
         collection: 'timeline',
@@ -136,6 +181,31 @@ async function fetchTopPageData() {
           console.error('Notices fetch failed (falling back to none):', e)
           return { docs: [] as { date: string; body: string }[] }
         }),
+      // Blog / Events / Products（トップに載せる分。depth:1 でサムネ関係を解決）
+      payload
+        .find({ collection: 'blogPosts', limit: 4, sort: '-publishedAt', depth: 1 })
+        .catch((e) => {
+          console.error('Blog fetch failed (section hidden):', e)
+          return emptyDocs
+        }),
+      payload
+        .find({
+          collection: 'events',
+          limit: 4,
+          sort: '-startDate',
+          depth: 1,
+          where: { isPublic: { equals: true } },
+        })
+        .catch((e) => {
+          console.error('Events fetch failed (section hidden):', e)
+          return emptyDocs
+        }),
+      payload
+        .find({ collection: 'products', limit: 4, sort: 'order', depth: 1 })
+        .catch((e) => {
+          console.error('Products fetch failed (section hidden):', e)
+          return emptyDocs
+        }),
     ])
 
   const posts = postsRes.docs as unknown as TimelineDoc[]
@@ -161,6 +231,41 @@ async function fetchTopPageData() {
 
   const spotifyUrl = settings?.spotify?.playlistUrl ?? null
 
+  // ── トップに載せる Blog / Events / Products ──
+  const blog = {
+    total: blogRes.totalDocs,
+    items: (blogRes.docs as unknown as BlogPost[]).map<PortalItem>((p) => ({
+      key: String(p.id),
+      title: p.title,
+      href: p.slug ? `/posts/${p.slug}` : '/posts',
+      thumbUrl: p.coverImage?.url ?? null,
+      meta: `${fmtDate(p.publishedAt ?? p.createdAt)} · Blog`,
+    })),
+  }
+  const events = {
+    total: eventsRes.totalDocs,
+    items: (eventsRes.docs as unknown as Event[]).map<PortalItem>((e) => ({
+      key: String(e.id),
+      title: e.title,
+      href: e.externalUrl || '/in_event',
+      external: !!e.externalUrl,
+      thumbUrl: (typeof e.thumbnail === 'object' ? e.thumbnail?.url : null) ?? null,
+      meta: fmtDate(e.startDate),
+      badge: platformBadge(e.platform),
+    })),
+  }
+  const products = {
+    total: productsRes.totalDocs,
+    items: (productsRes.docs as unknown as Product[]).map<PortalItem>((p) => ({
+      key: String(p.id),
+      title: p.name,
+      href: p.url || '/products',
+      external: !!p.url,
+      thumbUrl: (typeof p.image === 'object' ? p.image?.url : null) ?? null,
+      meta: p.tags?.slice(0, 3).join(' · ') || undefined,
+    })),
+  }
+
   const profileData = settings?.profile
   const profileImage = profileData?.profileImage
   const profile = {
@@ -182,8 +287,13 @@ async function fetchTopPageData() {
     hero,
     profile,
     spotifyUrl,
+    blog,
+    events,
+    products,
   }
 }
+
+const EMPTY_SECTION = { total: 0, items: [] as PortalItem[] }
 
 export default async function Home() {
   let data: Awaited<ReturnType<typeof fetchTopPageData>>
@@ -204,11 +314,26 @@ export default async function Home() {
       },
       profile: {} as never,
       spotifyUrl: null,
+      blog: EMPTY_SECTION,
+      events: EMPTY_SECTION,
+      products: EMPTY_SECTION,
     }
   }
 
-  const { posts, entriesTotal, photosTotal, gallery, streak, notices, hero, profile, spotifyUrl } =
-    data
+  const {
+    posts,
+    entriesTotal,
+    photosTotal,
+    gallery,
+    streak,
+    notices,
+    hero,
+    profile,
+    spotifyUrl,
+    blog,
+    events,
+    products,
+  } = data
 
   return (
     <div className={`mist ${mistFontVars}`}>
@@ -233,19 +358,34 @@ export default async function Home() {
             streak={streak}
           />
 
-          {/* ── メイングリッド: git log 風タイムライン + 右レール ── */}
+          {/* ── メイン: [タイムライン | 中央(Gallery+Blog/Events/Products)] + 右固定プロフィール ── */}
           <div className="main">
-            <MistLogTimeline posts={posts} total={entriesTotal} />
-            <MistRail
-              profile={profile}
-              photos={gallery}
-              photosTotal={photosTotal}
-              spotifyUrl={spotifyUrl}
-            />
+            <div className="homecols">
+              <MistLogTimeline posts={posts} total={entriesTotal} compact />
+              <div className="mid">
+                <MistGallery photos={gallery} photosTotal={photosTotal} />
+                <MistPortalSection
+                  cmd="ls ./posts"
+                  moreHref="/posts"
+                  moreLabel={`${blog.total} files →`}
+                  items={blog.items}
+                />
+                <MistPortalSection
+                  cmd="ls ./events"
+                  moreHref="/in_event"
+                  moreLabel={`${events.total} files →`}
+                  items={events.items}
+                />
+                <MistPortalSection
+                  cmd="ls ./products"
+                  moreHref="/products"
+                  moreLabel={`${products.total} files →`}
+                  items={products.items}
+                />
+              </div>
+            </div>
+            <MistRail profile={profile} spotifyUrl={spotifyUrl} />
           </div>
-
-          {/* ── ギャラリーストリーム ── */}
-          <MistStream photos={gallery} />
 
           {/* ── フッター ── */}
           <footer className="footer">

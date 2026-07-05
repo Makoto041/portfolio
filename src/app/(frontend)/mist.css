@@ -276,18 +276,53 @@
   text-underline-offset: 2px;
 }
 
-/* ── main grid（右レール 320px 固定・左可変） ─────────── */
+/* ── main: [content] + 右端固定プロフィール（フルブリード幅） ─────────── */
 .mist .main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 40px;
-  max-width: 1160px; /* フィード肥大化を防ぐ。左寄せ（hero と左端を揃える） */
-  padding: 32px var(--m-pad) 0;
+  padding: 28px var(--m-pad) 0;
   align-items: start;
 }
-/* 1080px 未満は1カラムに畳む */
+/* homecols: [読みやすいタイムライン] + [中央 Gallery/Blog/Events/Products]
+   ※ サブページの .content（flex縦積み）と衝突しないよう別名にする */
+.mist .homecols {
+  display: grid;
+  /* タイムラインは最大560pxで、狭い時は縮む（min 0）。中央は最小320pxを確保。
+     この組み合わせで中間幅(1080〜1360px)でも溢れず、タイムラインが肥大化もしない */
+  grid-template-columns: minmax(0, 560px) minmax(320px, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+.mist .mid { display: flex; flex-direction: column; gap: 34px; min-width: 0; }
+/* セクション見出し（罫線なし・mono プロンプト） */
+.mist .sechead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.mist .sechead .cmd { font-size: 12.5px; color: oklch(0.5 0.06 268); }
+.mist .more-link { font-size: 10.5px; color: oklch(0.5 0.05 268); text-decoration: none; white-space: nowrap; }
+.mist .more-link:hover { color: var(--m-ink); }
+/* 1080px 以下は main を1カラム（プロフィールを下に）、760px 以下は homecols も縦積みに */
 @media (max-width: 1080px) {
-  .mist .main { grid-template-columns: 1fr; max-width: none; }
+  .mist .main { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) {
+  .mist .homecols { grid-template-columns: 1fr; }
+}
+
+/* フォーカス可視（.content 依存の偶発的リングをやめ、mist スコープで明示） */
+.mist .pcard:focus-visible,
+.mist .gal .g:focus-visible,
+.mist .more-link:focus-visible,
+.mist .socials a:focus-visible,
+.mist .nav a:focus-visible,
+.mist .lsrow:focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 2px;
 }
 
 /* git log 風タイムライン */
@@ -450,10 +485,10 @@
 .mist .loadmore .n { color: oklch(0.55 0.05 268); }
 .mist .loadmore:hover .n { color: rgba(255, 255, 255, 0.7); }
 
-/* ── right rail ───────────────────────────── */
-.mist .rail { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 16px; }
+/* ── 右端固定プロフィール列 ─────────────────── */
+.mist .profilecol { position: sticky; top: 16px; align-self: start; display: flex; flex-direction: column; gap: 16px; }
 @media (max-width: 1080px) {
-  .mist .rail { position: static; }
+  .mist .profilecol { position: static; }
 }
 .mist .card {
   display: flex;
@@ -487,79 +522,43 @@
   transition: all 0.2s;
 }
 .mist .socials a:hover { background: var(--m-ink); color: #fff; border-color: var(--m-ink); }
-.mist .gal-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.mist .gal-mini .tile { position: relative; overflow: hidden; aspect-ratio: 1; border: 1px solid rgba(255, 255, 255, 0.95); outline: 1px solid var(--m-hairline); transition: filter 0.25s; }
-.mist .gal-mini .tile:hover { filter: brightness(0.94); }
-.mist .gal-mini .more {
-  position: relative;
-  aspect-ratio: 1;
-  background: var(--m-ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 11px;
-  text-decoration: none;
-  transition: background 0.2s;
-}
-.mist .gal-mini .more:hover { background: oklch(0.38 0.08 272); }
+/* Spotify プレイリスト埋め込み */
+.mist .spotify-embed { width: 100%; border: 0; border-radius: 12px; display: block; }
 
-/* Spotify プレイリスト埋め込み（右レール） */
-.mist .spotify-embed {
-  width: 100%;
-  border: 0;
-  border-radius: 12px;
-  display: block;
+/* ── Gallery コンポーネント（枠なし: 最近の静止画グリッド + 統合ストリーム） ── */
+/* minmax(140px): 中央が最小320pxのとき 2 列が成立し、先頭 .big(span 2) が溢れない */
+.mist .gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
+.mist .gal .g { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: 0; transition: filter 0.25s; }
+.mist .gal .g.big { grid-column: span 2; grid-row: span 2; }
+.mist .gal .g:hover { filter: brightness(0.94); }
+.mist .gal .g em {
+  position: absolute; left: 8px; bottom: 8px; z-index: 1;
+  font-style: normal; font-size: 9.5px; color: oklch(0.4 0.05 268);
+  background: rgba(255, 255, 255, 0.85); padding: 2px 7px;
 }
-.mist .gal-link { font-size: 10.5px; color: oklch(0.5 0.05 268); text-decoration: none; }
-.mist .lsrow {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-top: 1px dashed var(--m-hairline);
-  color: oklch(0.42 0.05 268);
-  text-decoration: none;
-  font-size: 11.5px;
-  transition: all 0.2s;
-}
-.mist .lsrow:hover { color: var(--m-ink); padding-left: 6px; }
-
-/* ── gallery stream ───────────────────────── */
-.mist .stream { display: flex; flex-direction: column; gap: 12px; padding: 48px 0 0; }
-.mist .stream .cmd { padding: 0 var(--m-pad); font-size: 12.5px; color: oklch(0.5 0.06 268); }
+.mist .substream { display: flex; align-items: baseline; gap: 8px; margin: 14px 0 8px; font-size: 11.5px; color: oklch(0.5 0.06 268); }
 .mist .streamwrap { position: relative; overflow: hidden; }
-.mist .streamrow { display: flex; gap: 10px; width: max-content; animation: m-marquee 42s linear infinite; }
-.mist .sph {
-  position: relative;
-  width: 260px;
-  height: 170px;
-  flex: none;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  transition: filter 0.25s;
-}
+.mist .streamrow { display: flex; gap: 8px; width: max-content; animation: m-marquee 34s linear infinite; }
+.mist .sph { position: relative; display: block; width: 180px; height: 120px; flex: none; overflow: hidden; border: 0; transition: filter 0.25s; }
 .mist .sph:hover { filter: brightness(0.94); }
-.mist .sph em {
-  position: absolute;
-  bottom: 8px;
-  left: 10px;
-  z-index: 1;
-  font-style: normal;
-  font-size: 9.5px;
-  color: oklch(0.45 0.05 268);
-  background: rgba(255, 255, 255, 0.85);
-  padding: 3px 8px;
-}
-.mist .fadeL,
-.mist .fadeR {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 80px;
-  pointer-events: none;
-}
+.mist .fadeL, .mist .fadeR { position: absolute; top: 0; bottom: 0; width: 56px; pointer-events: none; z-index: 1; }
 .mist .fadeL { left: 0; background: linear-gradient(90deg, var(--m-bg), transparent); }
 .mist .fadeR { right: 0; background: linear-gradient(270deg, var(--m-bg), transparent); }
+
+/* ── Portal カード（Blog/Events/Products。サムネ必須・無ければ文字カバー） ── */
+.mist .portal .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.mist .pcard { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--m-hairline); background: rgba(255, 255, 255, 0.68); text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s, transform 0.2s; }
+.mist .pcard:hover { border-color: oklch(0.6 0.05 268); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+.mist .pcard .thumb { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-bottom: 1px solid var(--m-hairline); background: oklch(0.9 0.02 262); }
+.mist .pcard .thumb img { transition: filter 0.25s; }
+.mist .pcard:hover .thumb img { filter: brightness(0.95); }
+.mist .pcard .thumb.txt { display: flex; align-items: center; justify-content: center; text-align: center; padding: 14px; background: repeating-linear-gradient(135deg, oklch(0.9 0.02 262) 0 10px, oklch(0.93 0.012 262) 10px 20px); }
+.mist .pcard .thumb.txt span { font-size: 13px; font-weight: 700; line-height: 1.5; color: oklch(0.4 0.06 270); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.mist .pcard .thumb .badge { position: absolute; left: 8px; top: 8px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; padding: 2px 7px; background: rgba(255, 255, 255, 0.85); color: oklch(0.42 0.06 270); }
+.mist .pcard .thumb .badge .dot { width: 6px; height: 6px; border-radius: 50%; }
+.mist .pcard .b { display: flex; flex-direction: column; gap: 5px; padding: 11px 13px; }
+.mist .pcard .bt { font-size: 13px; font-weight: 700; line-height: 1.5; color: var(--m-ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mist .pcard .bm { font-size: 10.5px; color: var(--m-faint); }
 
 /* ── footer ───────────────────────────────── */
 .mist .footer {
