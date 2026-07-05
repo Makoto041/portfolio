@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { anyone, adminOnly } from '@/lib/access'
+import { revalidatePaths } from '@/lib/revalidate'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
@@ -10,6 +11,15 @@ export const SiteSettings: GlobalConfig = {
   access: {
     read: anyone,
     update: adminOnly, // サイト設定の変更は管理者のみ
+  },
+  // hero/プロフィール/Spotify 設定の変更で Home とプロフィールを再検証
+  hooks: {
+    afterChange: [
+      async ({ doc }) => {
+        await revalidatePaths(['/', '/profile'])
+        return doc
+      },
+    ],
   },
   fields: [
     {

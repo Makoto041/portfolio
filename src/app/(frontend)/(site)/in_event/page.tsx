@@ -7,8 +7,7 @@ export const metadata = {
   title: 'イベント一覧',
   openGraph: { title: 'イベント一覧 | 岩渕誠（いわぶちまこと）' },
 }
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
 export default async function InEventPage() {
   const inEvent = await fetchInEvent()

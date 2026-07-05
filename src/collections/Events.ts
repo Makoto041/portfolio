@@ -1,6 +1,7 @@
 // src/collections/Events.ts
 import type { CollectionConfig } from 'payload'
 import { anyone, adminOnly } from '@/lib/access'
+import { makeRevalidate } from '@/lib/revalidate'
 
 export const Events: CollectionConfig = {
   slug: 'events',
@@ -15,6 +16,8 @@ export const Events: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
+  // イベント更新で Home（Events カード）とイベント一覧を再検証
+  hooks: makeRevalidate(['/', '/in_event']),
   fields: [
     { name: 'title', type: 'text', required: true, label: 'タイトル' },
     { name: 'summary', type: 'textarea', label: '概要' },

@@ -6,8 +6,7 @@ import { fetchLatest } from '@/lib/payload'
 import { getPayloadClient } from '@/lib/payloadClient'
 import type { TimelineDoc } from '@/lib/payloadTypes'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
 export const metadata: Metadata = {
   // template が「| 岩渕誠（いわぶちまこと）」を付与するためページ名のみ

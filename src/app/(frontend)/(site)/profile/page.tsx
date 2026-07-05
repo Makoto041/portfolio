@@ -1,8 +1,7 @@
 // ───────────────────────────────────────────
 // src/app/(frontend)/profile/page.tsx
 // ───────────────────────────────────────────
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
 import Image from 'next/image'
 import Link from 'next/link'

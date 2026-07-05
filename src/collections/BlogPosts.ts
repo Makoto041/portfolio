@@ -1,5 +1,6 @@
 import { CollectionConfig } from 'payload'
 import { anyone, adminOnly } from '@/lib/access'
+import { makeRevalidate } from '@/lib/revalidate'
 
 export const BlogPosts: CollectionConfig = {
   slug: 'blogPosts',
@@ -7,6 +8,10 @@ export const BlogPosts: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'publishedAt', 'author'],
   },
+  // 記事更新で Home（Blog カード）・一覧・該当記事ページを再検証
+  hooks: makeRevalidate(['/', '/posts'], (doc) =>
+    typeof doc?.slug === 'string' ? `/posts/${doc.slug}` : undefined,
+  ),
   fields: [
     {
       name: 'title',

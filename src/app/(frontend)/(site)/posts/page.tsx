@@ -1,7 +1,6 @@
 // src/app/(frontend)/posts/page.tsx
 // ───────────────────────────────────────────
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
 import type { Metadata } from 'next'
 import MistPageHead from '@/components/mist/MistPageHead'

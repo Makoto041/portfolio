@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, adminOnly } from '@/lib/access'
+import { makeRevalidate } from '@/lib/revalidate'
 
 export const Products: CollectionConfig = {
   slug: 'products',
@@ -10,6 +11,8 @@ export const Products: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
+  // プロダクト更新で Home（Products カード）と一覧を再検証
+  hooks: makeRevalidate(['/', '/products']),
   fields: [
     { name: 'name', type: 'text', required: true },
     { name: 'description', type: 'textarea' },

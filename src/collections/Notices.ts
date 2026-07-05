@@ -3,6 +3,7 @@
 // 新しい順にローテーション表示する（docs/CHANGELOG.md §3 参照）。
 import type { Access, CollectionConfig } from 'payload'
 import { adminOnly } from '@/lib/access'
+import { makeRevalidate } from '@/lib/revalidate'
 
 // 未ログインには公開分（isPublic:true）のみ返す。ログイン（管理者）は全件。
 // UI 側の where ではなくアクセス制御で非公開お知らせを保護する。
@@ -27,6 +28,8 @@ export const Notices: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
+  // お知らせ更新で Home（NOTICE バー）を再検証
+  hooks: makeRevalidate(['/']),
   fields: [
     {
       name: 'date',
