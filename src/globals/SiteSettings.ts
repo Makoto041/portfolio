@@ -16,7 +16,12 @@ export const SiteSettings: GlobalConfig = {
   hooks: {
     afterChange: [
       async ({ doc }) => {
-        await revalidatePaths(['/', '/profile'])
+        // 再検証失敗が保存操作の失敗として管理画面に伝播しないよう握りつぶす
+        try {
+          await revalidatePaths(['/', '/profile'])
+        } catch (e) {
+          console.error('SiteSettings revalidate failed:', e)
+        }
         return doc
       },
     ],
