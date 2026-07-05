@@ -648,6 +648,12 @@ export interface SiteSetting {
      */
     roleEn?: string | null;
   };
+  spotify?: {
+    /**
+     * Spotify の共有URL（例: https://open.spotify.com/playlist/XXXX）。設定するとトップページ右レールに埋め込み表示されます。未設定ならリンク一覧を表示。
+     */
+    playlistUrl?: string | null;
+  };
   seo: {
     siteTitle: string;
     siteDescription: string;
@@ -684,6 +690,11 @@ export interface SiteSettingsSelect<T extends boolean = true> {
     | {
         tagline?: T;
         roleEn?: T;
+      };
+  spotify?:
+    | T
+    | {
+        playlistUrl?: T;
       };
   seo?:
     | T

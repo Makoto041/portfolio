@@ -366,33 +366,48 @@
   line-height: 1.8;
   color: var(--m-ink);
 }
+/* いいね: 押せると分かるよう枠付きチップ + hover 反転気味の強調 */
 .mist .commit .likes {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   color: var(--m-faint);
-  background: none;
-  border: none;
-  padding: 0;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--m-hairline);
+  padding: 4px 11px;
   font-family: inherit;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
 }
-.mist .commit .likes:hover,
-.mist .commit .likes.liked { color: oklch(0.45 0.09 268); }
+.mist .commit .likes:hover:not(:disabled) {
+  color: oklch(0.45 0.09 268);
+  border-color: var(--m-accent);
+  background: rgba(255, 255, 255, 0.9);
+}
+.mist .commit .likes.liked {
+  color: oklch(0.45 0.09 268);
+  border-color: var(--m-accent);
+  background: oklch(0.92 0.03 268 / 0.6);
+}
 .mist .commit .likes:disabled { cursor: default; }
-.mist .photos { display: flex; gap: 10px; }
+/* 写真: 横幅いっぱいで極端な横長にならないよう最大幅と高さで比率を抑える */
+.mist .photos { display: flex; gap: 10px; max-width: 600px; }
 .mist .photos .ph {
   position: relative;
-  height: 180px;
+  height: 230px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.95);
+  outline: 1px solid var(--m-hairline);
   padding: 0;
   cursor: zoom-in;
   transition: filter 0.25s;
 }
 .mist .photos .ph:hover { filter: brightness(0.94); }
 @media (max-width: 640px) {
-  .mist .photos .ph { height: 130px; }
+  .mist .photos { max-width: none; }
+  .mist .photos .ph { height: 150px; }
 }
 .mist .loadmore {
   align-self: flex-start;
@@ -449,10 +464,9 @@
   transition: all 0.2s;
 }
 .mist .socials a:hover { background: var(--m-ink); color: #fff; border-color: var(--m-ink); }
-.mist .gal-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.mist .gal-mini .tile { position: relative; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.95); }
-.mist .gal-mini .wide { grid-column: span 2; height: 120px; }
-.mist .gal-mini .sq { aspect-ratio: 1; }
+.mist .gal-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.mist .gal-mini .tile { position: relative; overflow: hidden; aspect-ratio: 1; border: 1px solid rgba(255, 255, 255, 0.95); outline: 1px solid var(--m-hairline); transition: filter 0.25s; }
+.mist .gal-mini .tile:hover { filter: brightness(0.94); }
 .mist .gal-mini .more {
   position: relative;
   aspect-ratio: 1;
@@ -466,6 +480,14 @@
   transition: background 0.2s;
 }
 .mist .gal-mini .more:hover { background: oklch(0.38 0.08 272); }
+
+/* Spotify プレイリスト埋め込み（右レール） */
+.mist .spotify-embed {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  display: block;
+}
 .mist .gal-link { font-size: 10.5px; color: oklch(0.5 0.05 268); text-decoration: none; }
 .mist .lsrow {
   display: flex;

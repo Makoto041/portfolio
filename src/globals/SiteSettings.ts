@@ -121,6 +121,22 @@ export const SiteSettings: GlobalConfig = {
       ],
     },
     {
+      name: 'spotify',
+      type: 'group',
+      label: '右レール Spotify',
+      fields: [
+        {
+          name: 'playlistUrl',
+          type: 'text',
+          label: 'プレイリスト/アルバムURL',
+          admin: {
+            description:
+              'Spotify の共有URL（例: https://open.spotify.com/playlist/XXXX）。設定するとトップページ右レールに埋め込み表示されます。未設定ならリンク一覧を表示。',
+          },
+        },
+      ],
+    },
+    {
       name: 'seo',
       type: 'group',
       label: 'SEO設定',
