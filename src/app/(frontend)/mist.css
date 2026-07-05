@@ -56,7 +56,7 @@
   --fs-meta: 12.5px; /* メタ情報・$プロンプト・ナビ・補助本文（旧 11.5〜12.5px） */
   --fs-ui: 14px; /* カード見出し・フォーム・時計/気温（旧 13〜15px） */
   --fs-body: 16px; /* 本文（commit body・prose・入力。iOS ズーム防止も兼ねる） */
-  --fs-h3: 20px; /* prose 見出し（旧 19px） */
+  --fs-h3: 20px; /* prose 見出し・小型見出し（旧 19〜22px。プロフィール名 22→20 を含む） */
 
   min-height: 100vh;
   background: var(--m-bg);
@@ -401,7 +401,7 @@
   transition: background 0.2s;
 }
 .mist .commit + .commit { border-top: 1px dashed var(--m-hairline); }
-.mist .commit:hover { background: rgba(255, 255, 255, 0.6); }
+.mist .commit:hover { background: var(--m-surface); }
 .mist .commit .node {
   position: absolute;
   left: -7px;
@@ -415,7 +415,7 @@
 .mist .commit.head .node {
   background: var(--m-accent);
   border-color: var(--m-bg);
-  box-shadow: 0 0 10px oklch(0.55 0.09 268 / 0.5);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--m-accent) 50%, transparent);
 }
 .mist .commit .meta { font-size: var(--fs-meta); color: var(--m-faint); line-height: 2; }
 .mist .commit .hash {
@@ -769,7 +769,7 @@
   font-size: var(--fs-body);
   color: var(--m-ink);
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--m-surface);
   border: 1px solid var(--m-hairline);
   transition: border-color 0.2s;
 }
