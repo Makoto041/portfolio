@@ -130,6 +130,9 @@ export default function MistRail({ profile, photos, photosTotal, spotifyUrl }: P
             src={spotifyEmbed}
             height={352}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            // 多層防御: 埋め込み先(open.spotify.com 固定)に自サイトへのフルアクセスを与えない。
+            // Spotify プレイヤー動作に必要な最小権限のみ許可
+            sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"
             loading="lazy"
             title="Spotify プレイリスト"
           />
