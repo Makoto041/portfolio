@@ -98,6 +98,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }catch(e){}})()`,
           }}
         />
+        {/* iOS Safari は touchstart リスナーが無いと :active を描画しないため、
+            グローバルに空の passive リスナーを登録してタッチ押下フィードバックを有効化 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.addEventListener('touchstart',function(){},{passive:true})`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

@@ -165,7 +165,10 @@
   .mist .navwrap::after { right: 0; background: linear-gradient(to left, rgba(244, 246, 249, 0.95), transparent); }
 }
 .mist .nav a.on,
-.mist .nav a:hover { background: var(--m-ink); color: #fff; }
+.mist .nav a:active { background: var(--m-ink); color: #fff; }
+@media (hover: hover) {
+  .mist .nav a:hover { background: var(--m-ink); color: #fff; }
+}
 
 /* ── hero ─────────────────────────────────── */
 .mist .hero {
@@ -336,7 +339,10 @@
 .mist .more-link { position: relative; font-size: var(--fs-caption); color: var(--m-sub); text-decoration: none; white-space: nowrap; }
 /* タップ領域拡張（見た目不変） */
 .mist .more-link::after { content: ''; position: absolute; top: -14px; right: -8px; bottom: -11px; left: -8px; }
-.mist .more-link:hover { color: var(--m-ink); }
+.mist .more-link:active { color: var(--m-ink); }
+@media (hover: hover) {
+  .mist .more-link:hover { color: var(--m-ink); }
+}
 /* 1080px 以下は main を1カラム（プロフィールを下に）、760px 以下は homecols も縦積みに */
 @media (max-width: 1080px) {
   .mist .main { grid-template-columns: 1fr; }
@@ -381,10 +387,17 @@
 /* タップ領域を縦に拡張（見た目不変・横は隣接のため触らない） */
 .mist .filters button::after { content: ''; position: absolute; inset: -10px 0; }
 .mist .filters button.on,
-.mist .filters button:hover {
+.mist .filters button:active {
   background: var(--m-ink);
   color: #fff;
   border-color: var(--m-ink);
+}
+@media (hover: hover) {
+  .mist .filters button:hover {
+    background: var(--m-ink);
+    color: #fff;
+    border-color: var(--m-ink);
+  }
 }
 .mist .commits {
   display: flex;
@@ -401,7 +414,9 @@
   transition: background 0.2s;
 }
 .mist .commit + .commit { border-top: 1px dashed var(--m-hairline); }
-.mist .commit:hover { background: var(--m-surface); }
+@media (hover: hover) {
+  .mist .commit:hover { background: var(--m-surface); }
+}
 .mist .commit .node {
   position: absolute;
   left: -7px;
@@ -454,11 +469,18 @@
 }
 /* タップ領域拡張（見た目不変。単独配置のため全方向に拡張して44px以上に） */
 .mist .commit .likes::after { content: ''; position: absolute; top: -7px; right: -11px; bottom: -11px; left: -11px; }
-.mist .commit .likes:hover:not(:disabled) {
+.mist .commit .likes:active:not(:disabled) {
   color: var(--m-accent-ink);
   border-color: var(--m-accent);
-  /* 状態色は base(--m-surface) と別意図で literal 維持: hover=明るい白ウォッシュ */
   background: rgba(255, 255, 255, 0.9);
+}
+@media (hover: hover) {
+  .mist .commit .likes:hover:not(:disabled) {
+    color: var(--m-accent-ink);
+    border-color: var(--m-accent);
+    /* 状態色は base(--m-surface) と別意図で literal 維持: hover=明るい白ウォッシュ */
+    background: rgba(255, 255, 255, 0.9);
+  }
 }
 .mist .commit .likes.liked {
   color: var(--m-accent-ink);
@@ -480,7 +502,9 @@
   cursor: zoom-in;
   transition: filter 0.25s;
 }
-.mist .photos .ph:hover { filter: brightness(0.94); }
+@media (hover: hover) {
+  .mist .photos .ph:hover { filter: brightness(0.94); }
+}
 /* 1枚: インラインstyle（width/aspect-ratio/max-height）でサイズを決める */
 .mist .photos.one { font-size: 0; }
 .mist .photos.one .ph { display: block; }
@@ -520,9 +544,15 @@
   display: inline-block;
   text-decoration: none;
 }
-.mist .loadmore:hover { background: var(--m-ink); color: #fff; }
+.mist .loadmore:active { background: var(--m-ink); color: #fff; }
+@media (hover: hover) {
+  .mist .loadmore:hover { background: var(--m-ink); color: #fff; }
+}
 .mist .loadmore .n { color: var(--m-faint); }
-.mist .loadmore:hover .n { color: rgba(255, 255, 255, 0.7); }
+.mist .loadmore:active .n { color: rgba(255, 255, 255, 0.7); }
+@media (hover: hover) {
+  .mist .loadmore:hover .n { color: rgba(255, 255, 255, 0.7); }
+}
 
 /* ── 右端固定プロフィール列 ─────────────────── */
 .mist .profilecol { position: sticky; top: 16px; align-self: start; display: flex; flex-direction: column; gap: 16px; }
@@ -560,7 +590,10 @@
   text-decoration: none;
   transition: all 0.2s;
 }
-.mist .socials a:hover { background: var(--m-ink); color: #fff; border-color: var(--m-ink); }
+.mist .socials a:active { background: var(--m-ink); color: #fff; border-color: var(--m-ink); }
+@media (hover: hover) {
+  .mist .socials a:hover { background: var(--m-ink); color: #fff; border-color: var(--m-ink); }
+}
 /* Spotify プレイリスト埋め込み */
 .mist .spotify-embed { width: 100%; border: 0; border-radius: 12px; display: block; }
 
@@ -569,7 +602,9 @@
 .mist .gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
 .mist .gal .g { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: 0; transition: filter 0.25s; }
 .mist .gal .g.big { grid-column: span 2; grid-row: span 2; }
-.mist .gal .g:hover { filter: brightness(0.94); }
+@media (hover: hover) {
+  .mist .gal .g:hover { filter: brightness(0.94); }
+}
 .mist .gal .g em {
   position: absolute; left: 8px; bottom: 8px; z-index: 1;
   font-style: normal; font-size: var(--fs-caption); color: var(--m-sub);
@@ -579,7 +614,9 @@
 .mist .streamwrap { position: relative; overflow: hidden; }
 .mist .streamrow { display: flex; gap: 8px; width: max-content; animation: m-marquee 34s linear infinite; }
 .mist .sph { position: relative; display: block; width: 180px; height: 120px; flex: none; overflow: hidden; border: 0; transition: filter 0.25s; }
-.mist .sph:hover { filter: brightness(0.94); }
+@media (hover: hover) {
+  .mist .sph:hover { filter: brightness(0.94); }
+}
 .mist .fadeL, .mist .fadeR { position: absolute; top: 0; bottom: 0; width: 56px; pointer-events: none; z-index: 1; }
 .mist .fadeL { left: 0; background: linear-gradient(90deg, var(--m-bg), transparent); }
 .mist .fadeR { right: 0; background: linear-gradient(270deg, var(--m-bg), transparent); }
@@ -587,10 +624,16 @@
 /* ── Portal カード（Blog/Events/Products。サムネ必須・無ければ文字カバー） ── */
 .mist .portal .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
 .mist .pcard { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--m-hairline); background: var(--m-surface); text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s, transform 0.2s; }
-.mist .pcard:hover { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+.mist .pcard:active { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+@media (hover: hover) {
+  .mist .pcard:hover { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+}
 .mist .pcard .thumb { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-bottom: 1px solid var(--m-hairline); background: oklch(0.9 0.02 262); }
 .mist .pcard .thumb img { transition: filter 0.25s; }
-.mist .pcard:hover .thumb img { filter: brightness(0.95); }
+.mist .pcard:active .thumb img { filter: brightness(0.95); }
+@media (hover: hover) {
+  .mist .pcard:hover .thumb img { filter: brightness(0.95); }
+}
 .mist .pcard .thumb.txt { display: flex; align-items: center; justify-content: center; text-align: center; padding: 14px; background: repeating-linear-gradient(135deg, oklch(0.9 0.02 262) 0 10px, oklch(0.93 0.012 262) 10px 20px); }
 .mist .pcard .thumb.txt span { font-size: var(--fs-ui); font-weight: 700; line-height: 1.5; color: var(--m-sub); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .mist .pcard .thumb .badge { position: absolute; left: 8px; top: 8px; z-index: 1; display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-caption); padding: 2px 7px; background: rgba(255, 255, 255, 0.85); color: var(--m-sub); }
@@ -704,7 +747,10 @@
   color: inherit;
   transition: border-color 0.2s, background 0.2s, transform 0.2s;
 }
-.mist .ccard:hover { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+.mist .ccard:active { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+@media (hover: hover) {
+  .mist .ccard:hover { border-color: var(--m-line); background: rgba(255, 255, 255, 0.82); transform: translateY(-1px); }
+}
 .mist .ccard .thumb {
   position: relative;
   width: 100%;
@@ -714,7 +760,10 @@
   background: repeating-linear-gradient(45deg, oklch(0.9 0.02 262 / 0.6) 0 12px, oklch(0.93 0.012 262 / 0.6) 12px 24px);
 }
 .mist .ccard .thumb img { transition: filter 0.25s; }
-.mist .ccard:hover .thumb img { filter: brightness(0.95); }
+.mist .ccard:active .thumb img { filter: brightness(0.95); }
+@media (hover: hover) {
+  .mist .ccard:hover .thumb img { filter: brightness(0.95); }
+}
 .mist .ccard .cbody { display: flex; flex-direction: column; gap: 7px; padding: 15px 17px; }
 .mist .ccard .cmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--fs-caption); color: var(--m-faint); }
 .mist .ccard .ctitle { font-size: var(--fs-ui); font-weight: 700; line-height: 1.5; color: var(--m-ink); }
@@ -755,7 +804,9 @@
   cursor: zoom-in;
   transition: filter 0.25s;
 }
-.mist .masonry .tile:hover { filter: brightness(0.94); }
+@media (hover: hover) {
+  .mist .masonry .tile:hover { filter: brightness(0.94); }
+}
 .mist .masonry .tile img { display: block; }
 
 /* 中央寄せの単票（profile / letter） */
@@ -790,7 +841,10 @@
   cursor: pointer;
   transition: all 0.2s;
 }
-.mist .mform .submit:hover:not(:disabled) { background: var(--m-ink); color: #fff; }
+.mist .mform .submit:active:not(:disabled) { background: var(--m-ink); color: #fff; }
+@media (hover: hover) {
+  .mist .mform .submit:hover:not(:disabled) { background: var(--m-ink); color: #fff; }
+}
 .mist .mform .submit:disabled { opacity: 0.5; cursor: default; }
 .mist .formnote { font-size: var(--fs-meta); color: var(--m-faint); }
 
@@ -818,4 +872,7 @@
   text-decoration: none;
   transition: all 0.2s;
 }
-.mist .backlink:hover { background: var(--m-ink); color: #fff; }
+.mist .backlink:active { background: var(--m-ink); color: #fff; }
+@media (hover: hover) {
+  .mist .backlink:hover { background: var(--m-ink); color: #fff; }
+}
