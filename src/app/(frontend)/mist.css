@@ -728,7 +728,8 @@
 .mist .mform input,
 .mist .mform textarea {
   font-family: inherit;
-  font-size: 13px;
+  /* 16px 未満だと iOS Safari がフォーカス時に強制ズームするため 16px 固定 */
+  font-size: 16px;
   color: var(--m-ink);
   padding: 10px 12px;
   background: rgba(255, 255, 255, 0.6);
