@@ -48,7 +48,7 @@ export default function MistRail({ profile, spotifyUrl }: Props) {
             <div className="avatar">
               <Image
                 src={toCFUrl(profile.imageUrl)}
-                alt={profile.nameJapanese ?? 'avatar'}
+                alt={profile.nameJapanese ?? 'プロフィール画像'}
                 fill
                 sizes="54px"
                 className="object-cover"
@@ -82,7 +82,11 @@ export default function MistRail({ profile, spotifyUrl }: Props) {
             src={spotifyEmbed}
             height={352}
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            // 多層防御: 埋め込み先(open.spotify.com 固定)に自サイトへのフルアクセスを与えない
+            // Spotify 公式埋め込みは sandbox 無しが既定だが、多層防御として付与している。
+            // allow-scripts + allow-same-origin は「sandbox 実質無効化」の指摘対象だが、
+            // Spotify プレイヤーは自オリジン(open.spotify.com)のセッション/ストレージに依存するため
+            // 両方が必須（allow-same-origin を外すと再生が動かない）。src は固定の信頼オリジンで、
+            // top-navigation/forms は sandbox で引き続き禁止される。
             sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation"
             loading="lazy"
             title="Spotify プレイリスト"

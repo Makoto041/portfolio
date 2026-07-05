@@ -49,11 +49,11 @@ export default function MistGallery({
             key={p.id}
             href="/gallery"
             className={`g${i === 0 ? ' big' : ''}`}
-            aria-label={p.alt || 'gallery photo'}
+            aria-label={p.alt || 'ギャラリー写真'}
           >
             <Image
               src={toCFUrl(bestUrl(p))}
-              alt={p.alt || 'gallery photo'}
+              alt={p.alt || 'ギャラリー写真'}
               fill
               sizes={i === 0 ? '(max-width:1180px) 60vw, 320px' : '(max-width:1180px) 30vw, 160px'}
               quality={72}
