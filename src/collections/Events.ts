@@ -17,7 +17,7 @@ export const Events: CollectionConfig = {
     delete: adminOnly,
   },
   // イベント更新で Home（Events カード）とイベント一覧を再検証
-  hooks: makeRevalidate(['/', '/in_event']),
+  hooks: makeRevalidate(['/', '/events']),
   fields: [
     { name: 'title', type: 'text', required: true, label: 'タイトル' },
     { name: 'summary', type: 'textarea', label: '概要' },

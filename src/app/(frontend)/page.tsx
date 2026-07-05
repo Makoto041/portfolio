@@ -240,7 +240,7 @@ async function fetchTopPageData() {
     items: (eventsRes.docs as unknown as Event[]).map<PortalItem>((e) => ({
       key: String(e.id),
       title: e.title,
-      href: e.externalUrl || '/in_event',
+      href: e.externalUrl || '/events',
       external: !!e.externalUrl,
       thumbUrl: (typeof e.thumbnail === 'object' ? e.thumbnail?.url : null) ?? null,
       meta: fmtDate(e.startDate),
@@ -365,7 +365,7 @@ export default async function Home() {
                 />
                 <MistPortalSection
                   cmd="ls ./events"
-                  moreHref="/in_event"
+                  moreHref="/events"
                   moreLabel={`${events.total} files →`}
                   items={events.items}
                 />

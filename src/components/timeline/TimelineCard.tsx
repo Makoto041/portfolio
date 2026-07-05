@@ -45,7 +45,7 @@ function buildRelatedLinks(post: TimelineDoc): RelatedLink[] {
 
   const event = related.event
   if (event && typeof event === 'object' && 'title' in event) {
-    links.push({ label: event.title, href: '/in_event' })
+    links.push({ label: event.title, href: '/events' })
   }
   const blogPost = related.post
   if (blogPost && typeof blogPost === 'object' && 'title' in blogPost) {

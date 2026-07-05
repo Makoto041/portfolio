@@ -1,6 +1,6 @@
 /* ── フォント ──
-   本文フォント(Higure Gothic)は next/font/local で読み込み・最適化する
-   （(frontend)/layout.tsx 参照。--font-higure 変数として提供される） */
+   本文フォント: 通常ページは .mist（IBM Plex Mono / Noto Sans JP / Outfit）で描画。
+   .mist 外（error/404/modal）のみ下記 --font-body（システムJP）を使用 */
 
 /* ──────────────────────────────────────────────
    Quiet Glass ― 白・薄ブルー・薄グレー基調の
@@ -17,8 +17,8 @@
   --fg-light: #1c2733;
   --fg-dark: #e8eef5;
 
-  /* フォント（next/font/local が定義する --font-higure を参照） */
-  --font-body: var(--font-higure, 'Hiragino Kaku Gothic ProN'), sans-serif;
+  /* 本文フォント: 通常ページは .mist 側で上書きされる。ここは .mist 外（error/404/modal）用のシステムJPスタック */
+  --font-body: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'BIZ UDPGothic', 'Meiryo', sans-serif;
 
   /* アクセント（群青 / ウルトラマリン — サイトのシグネチャーカラー） */
   --accent: #3d5cc9;

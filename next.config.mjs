@@ -64,6 +64,10 @@ const nextConfig = {
       },
     ]
   },
+  // 旧 /in_event を /events へ恒久リダイレクト（ブックマーク・被リンク・SEO 維持）
+  async redirects() {
+    return [{ source: '/in_event', destination: '/events', permanent: true }]
+  },
   // ① CloudFront 画像を許可 + 外部ドメイン
   images: {
     remotePatterns: [
