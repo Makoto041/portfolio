@@ -28,9 +28,12 @@ export default function MistTitlebar() {
   const pathname = usePathname() ?? '/'
   // SSRとの不一致を避けるためマウント後に時計を開始する（秒なし・30s 更新）
   const [time, setTime] = useState('--:--')
-  // SPでナビが横スクロールするため、アクティブ項目を画面内（中央）へ寄せて存在を可視化
+  // SP: ハンバーガーメニューの開閉
+  const [open, setOpen] = useState(false)
+  // PC でナビがはみ出す場合にアクティブ項目を中央へ寄せる
   const activeRef = useRef<HTMLAnchorElement>(null)
   const navRef = useRef<HTMLElement>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const nav = navRef.current
@@ -40,6 +43,25 @@ export default function MistTitlebar() {
     const target = active.offsetLeft - (nav.clientWidth - active.clientWidth) / 2
     nav.scrollLeft = Math.max(0, target)
   }, [pathname])
+
+  // ページ遷移でメニューを閉じる
+  useEffect(() => setOpen(false), [pathname])
+
+  // 開いている間は Escape / 外側クリックで閉じる
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    // iOS Safari は非インタラクティブ要素への click を発火しないため pointerdown で外側判定
+    const onDown = (e: Event) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('pointerdown', onDown)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onDown)
+    }
+  }, [open])
 
   useEffect(() => {
     const fmt = () => {
@@ -62,8 +84,22 @@ export default function MistTitlebar() {
       <span className="tb-path max-sm:hidden">
         makoto@tokyo: ~/life — <span suppressHydrationWarning>{time}</span>
       </span>
-      <div className="navwrap">
-        <nav className="nav" aria-label="メインナビゲーション" ref={navRef}>
+      <div className="navwrap" ref={wrapRef}>
+        {/* SP: ハンバーガー（PC では CSS で非表示）。開くと $ ls ./nav 風のドロップダウン */}
+        <button
+          type="button"
+          className="navtoggle"
+          aria-label={open ? 'メニューを閉じる' : 'メニューを開く'}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {open ? '✕' : '☰'}
+        </button>
+        <nav
+          className={`nav${open ? ' open' : ''}`}
+          aria-label="メインナビゲーション"
+          ref={navRef}
+        >
           {NAV.map(({ label, href }) => {
             const on = isActive(pathname, href)
             return (
@@ -73,6 +109,7 @@ export default function MistTitlebar() {
                 ref={on ? activeRef : undefined}
                 className={on ? 'on' : undefined}
                 aria-current={on ? 'page' : undefined}
+                onClick={() => setOpen(false)}
               >
                 {label}
               </Link>
