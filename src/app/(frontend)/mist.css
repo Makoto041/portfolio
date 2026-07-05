@@ -361,6 +361,23 @@
   text-underline-offset: 2px;
 }
 
+/* SP: 環境バーが時間帯（＝可変長の NOTICE メッセージ）で段組みが揺れて2段化するのを防ぐ。
+   要素は削らず、NOTICE / stats / 天気・時計 をそれぞれ独立行に整列した安定レイアウトにする。
+   長い NOTICE メッセージは省略記号で丸め、他要素を押し出さない。 */
+@media (max-width: 760px) {
+  .mist .env { gap: 8px 12px; }
+  .mist .env .divider { display: none; } /* 縦罫線は横並び前提のため段組みでは不要 */
+  .mist .env .cmd { flex-basis: 100%; min-width: 0; } /* NOTICE を独立行に */
+  .mist .env .rotwrap { min-width: 0; flex: 1 1 auto; } /* PC の min-width:290px を解除 */
+  .mist .env .rotwrap .jp {
+    min-width: 0; /* 収まらない時だけ縮んで省略。カーソル(tcur)は末尾に付いたまま */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mist .env .vals { flex-basis: 100%; margin-left: 0; } /* 天気・時計を独立行に（右寄せ解除） */
+}
+
 /* ── main: [content] + 右端固定プロフィール（フルブリード幅） ─────────── */
 .mist .main {
   display: grid;
