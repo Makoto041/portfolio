@@ -457,11 +457,13 @@
 .mist .commit .likes:hover:not(:disabled) {
   color: var(--m-accent-ink);
   border-color: var(--m-accent);
+  /* 状態色は base(--m-surface) と別意図で literal 維持: hover=明るい白ウォッシュ */
   background: rgba(255, 255, 255, 0.9);
 }
 .mist .commit .likes.liked {
   color: var(--m-accent-ink);
   border-color: var(--m-accent);
+  /* liked=アクセントのチップ地（hash/tagchip の 0.92 tint と同族の装飾例外） */
   background: oklch(0.92 0.03 268 / 0.6);
 }
 .mist .commit .likes:disabled { cursor: default; }
