@@ -28,22 +28,15 @@ export const metadata = {
     url: 'https://iwabuchi-makoto.com',
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
-    images: [
-      {
-        url: 'https://iwabuchi-makoto.com/myicon.png',
-        width: 1200,
-        height: 630,
-        alt: 'OGP画像 - いわぶちまこと',
-      },
-    ],
     type: 'website',
+    // og:image は opengraph-image.tsx（1200×630 生成）が付与
   },
   twitter: {
     card: 'summary_large_image',
     title: '岩渕誠（いわぶちまこと） | ライフログ',
     description:
       '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録など日々の記録をタイムラインで残しています。',
-    images: ['https://iwabuchi-makoto.com/myicon.png'],
+    // twitter:image は og:image（生成1200×630）にフォールバック
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/',

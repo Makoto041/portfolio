@@ -4,7 +4,8 @@ import { fetchProducts } from '@/lib/fetchProducts'
 import ProductCard from '@/components/cards/ProductCard'
 
 export const metadata: Metadata = {
-  title: 'プロダクト | 岩渕誠（いわぶちまこと）',
+  // template が「| 岩渕誠（いわぶちまこと）」を付与するためページ名のみ
+  title: 'プロダクト',
   description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
   keywords: ['プロダクト', '制作物', '岩渕誠', 'いわぶちまこと', 'Webアプリ', 'ツール', 'サービス'],
   authors: [{ name: 'いわぶちまこと' }],
@@ -15,20 +16,12 @@ export const metadata: Metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    images: [
-      {
-        url: '/myicon.png',
-        width: 1200,
-        height: 630,
-        alt: 'いわぶちまこと プロダクト',
-      },
-    ],
+    // og:image は opengraph-image.tsx（生成1200×630）が付与
   },
   twitter: {
     card: 'summary_large_image',
     title: 'プロダクト | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠が開発・制作したプロダクトの一覧。Webアプリケーション、ツール、サービスなどを公開しています。',
-    images: ['/myicon.png'],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/products',

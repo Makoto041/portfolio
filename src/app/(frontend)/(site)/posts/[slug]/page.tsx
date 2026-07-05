@@ -24,23 +24,27 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   if (!post) {
     return {
-      title: 'ページが見つかりません | 岩渕誠（いわぶちまこと）',
+      // template がブランド接尾辞を付与するためページ名のみ
+      title: 'ページが見つかりません',
       description: 'お探しのページは見つかりませんでした。',
     }
   }
 
-  const title = `${post.title} | いわぶちまこと`
+  // <title> は記事名のみ（template がブランド接尾辞を付与）。og/twitter はブランド付きの完全表記
+  const ogTitle = `${post.title} | 岩渕誠（いわぶちまこと）`
   const description = post.excerpt || `${post.title}についての記事です。岩渕誠のブログより。`
-  const imageUrl = post.coverImage?.url ? toCFUrl(post.coverImage.url) : '/myicon.png'
+  // 記事のカバー画像があれば OG に使う（実寸不定のため width/height は宣言せず platform に委ねる）。
+  // 無ければ opengraph-image.tsx の生成1200×630が使われる
+  const imageUrl = post.coverImage?.url ? toCFUrl(post.coverImage.url) : null
   const url = `https://iwabuchi-makoto.com/posts/${slug}`
 
   return {
-    title,
+    title: post.title,
     description,
     keywords: ['ブログ', '岩渕誠', 'いわぶちまこと', post.title],
     authors: [{ name: 'いわぶちまこと' }],
     openGraph: {
-      title,
+      title: ogTitle,
       description,
       url,
       siteName: 'いわぶちまこと',
@@ -48,20 +52,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       type: 'article',
       publishedTime: post.publishedAt || post.createdAt,
       authors: ['いわぶちまこと'],
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
+      ...(imageUrl ? { images: [{ url: imageUrl, alt: post.title }] } : {}),
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: ogTitle,
       description,
-      images: [imageUrl],
+      ...(imageUrl ? { images: [imageUrl] } : {}),
     },
     alternates: {
       canonical: url,

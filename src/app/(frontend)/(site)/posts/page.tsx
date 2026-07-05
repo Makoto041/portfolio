@@ -11,7 +11,8 @@ import PostsList from './PostsList'
 import PostsListLoading from './PostsListLoading'
 
 export const metadata: Metadata = {
-  title: 'ブログ | 岩渕誠（いわぶちまこと）',
+  // template（root layout）が「 | 岩渕誠（いわぶちまこと）」を付与するためページ名のみ
+  title: 'ブログ',
   description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
   keywords: ['ブログ', '岩渕誠', 'いわぶちまこと', '技術', '学習', '考え'],
   authors: [{ name: 'いわぶちまこと' }],
@@ -22,20 +23,12 @@ export const metadata: Metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    images: [
-      {
-        url: '/myicon.png',
-        width: 1200,
-        height: 630,
-        alt: 'いわぶちまこと ブログ',
-      },
-    ],
+    // og:image は opengraph-image.tsx（生成1200×630）が付与
   },
   twitter: {
     card: 'summary_large_image',
     title: 'ブログ | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠のブログ記事一覧。日々の考えや学習記録、技術的な話題について書き留めています。',
-    images: ['/myicon.png'],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/posts',

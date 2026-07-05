@@ -54,22 +54,15 @@ export const metadata: Metadata = {
     siteName: 'いわぶち',
     locale: 'ja_JP',
     type: 'website',
-    images: [
-      {
-        url: '/myicon.png', // サイトの代表写真として使用
-        width: 1200,
-        height: 1200,
-        alt: 'いわぶちポートフォリオ',
-      },
-    ],
+    // og:image は opengraph-image.tsx（1200×630 生成）が全ルートに自動付与する
   },
   twitter: {
     card: 'summary_large_image',
     title: '岩渕誠（いわぶちまこと） | ライフログ',
     description:
       '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
-    creator: '@iwabuchi', // 実際のTwitterアカウントに変更してください
-    images: ['/myicon.png'], // サイトの代表写真を使用
+    creator: '@613_kmk', // JSON-LD sameAs と統一
+    // twitter:image は未指定時 og:image（生成1200×630）にフォールバックする
   },
 }
 

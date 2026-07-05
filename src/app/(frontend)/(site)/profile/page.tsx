@@ -19,17 +19,13 @@ export async function generateMetadata(): Promise<Metadata> {
       depth: 2,
     })
 
-    const profileImage = siteSettings.profile?.profileImage
-    const profileImageUrl = profileImage && typeof profileImage === 'object' && 'url' in profileImage 
-      ? toCFUrl(profileImage.url!) 
-      : toCFUrl('/profile.jpg')
-
     const title = `プロフィール | ${siteSettings.profile?.nameJapanese || 'いわぶちまこと'}`
     const description = siteSettings.profile?.description || '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。'
     const siteName = siteSettings.profile?.nameJapanese || 'いわぶちまこと'
 
     return {
-      title,
+      // <title> はページ名のみ（template がブランド接尾辞を付与）。og/twitter はフル表記
+      title: 'プロフィール',
       description,
       keywords: ['プロフィール', '岩渕誠', 'いわぶちまこと', 'ウェブエンジニア', 'フロントエンド', '開発者'],
       authors: [{ name: siteName }],
@@ -40,20 +36,12 @@ export async function generateMetadata(): Promise<Metadata> {
         siteName,
         locale: 'ja_JP',
         type: 'profile',
-        images: [
-          {
-            url: profileImageUrl,
-            width: 1200,
-            height: 630,
-            alt: `${siteName} プロフィール写真`,
-          },
-        ],
+        // og:image は opengraph-image.tsx（生成1200×630）が付与
       },
       twitter: {
         card: 'summary_large_image',
         title,
         description,
-        images: [profileImageUrl],
       },
       alternates: {
         canonical: 'https://iwabuchi-makoto.com/profile',
@@ -63,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
     console.error('Failed to generate profile metadata:', error)
     // フォールバック
     return {
-      title: 'プロフィール | 岩渕誠（いわぶちまこと）',
+      title: 'プロフィール',
       description: '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。',
     }
   }

@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'タイムライン | 岩渕誠（いわぶちまこと）',
+  // template が「| 岩渕誠（いわぶちまこと）」を付与するためページ名のみ
+  title: 'タイムライン',
   description: '岩渕誠の日々の活動記録。リアルタイムで更新される思考の断片や日常の出来事を時系列で公開しています。',
   keywords: ['タイムライン', '日記', '岩渕誠', 'いわぶちまこと', '日常', '活動記録'],
   authors: [{ name: 'いわぶちまこと' }],
@@ -21,20 +22,12 @@ export const metadata: Metadata = {
     siteName: 'いわぶちまこと',
     locale: 'ja_JP',
     type: 'website',
-    images: [
-      {
-        url: '/myicon.png',
-        width: 1200,
-        height: 630,
-        alt: 'いわぶちまこと タイムライン',
-      },
-    ],
+    // og:image は opengraph-image.tsx（生成1200×630）が付与
   },
   twitter: {
     card: 'summary_large_image',
     title: 'タイムライン | 岩渕誠（いわぶちまこと）',
     description: '岩渕誠の日々の活動記録。リアルタイムで更新される思考の断片や日常の出来事を時系列で公開しています。',
-    images: ['/myicon.png'],
   },
   alternates: {
     canonical: 'https://iwabuchi-makoto.com/timeline',

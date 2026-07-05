@@ -2,7 +2,11 @@ import MistPageHead from '@/components/mist/MistPageHead'
 import { fetchInEvent } from '@/lib/fetchInEvent'
 import EventCard from '@/components/cards/EventCard'
 
-export const metadata = { title: 'イベント一覧 | 岩渕誠（いわぶちまこと）' }
+export const metadata = {
+  // template がブランド接尾辞を付与するため <title> はページ名のみ。og はフル表記
+  title: 'イベント一覧',
+  openGraph: { title: 'イベント一覧 | 岩渕誠（いわぶちまこと）' },
+}
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
