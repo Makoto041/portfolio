@@ -12,8 +12,11 @@ export async function fetchUrlMetadata(url: string): Promise<UrlMetadata | null>
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible; Timeline Bot/1.0)',
       },
+      // 遅い相手先で呼び出し全体（beforeChange 経由の投稿処理含む）がハングしないよう上限を設ける。
+      // タイムアウト時は下の catch が null を返し、メタデータなしで投稿自体は成立する。
+      signal: AbortSignal.timeout(5000),
     })
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
