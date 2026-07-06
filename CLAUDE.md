@@ -8,7 +8,7 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 
 変更対応は、以下を**自走で最後まで**完結させる。軽微な変更（typo・単純修正）は 1・3 を省略してよい。
 
-1. **設計/UX を変える変更はまずモック**: Artifact で HTML モックを作り、方向性の合意を得てから実装に入る（既存の「Mist Terminal」トークン/意匠を踏襲）。**サーバー環境で作業していて Artifact が使えない/実機で見せたい場合は、下記「サーバー環境でのプレビュー」の tailnet 配信でモックの URL を渡し、SP 実機（iPhone 等）で確認してもらう。**
+1. **設計/UX を変える変更はまずモック**: Artifact で HTML モックを作り、方向性の合意を得てから実装に入る（既存の「Mist Terminal」トークン/意匠を踏襲）。**サーバー環境で作業していて Artifact が使えない/実機で見せたい場合は、下記「サーバー環境でのプレビュー」の tailnet 配信で URL を渡し、実機（iPhone / Mac など SP・PC 両方）で確認してもらう。**
 2. **差分で実装**: 既存パターン（コンポーネント構成・Payloadコレクション・`src/app/(frontend)/mist.css`）に沿って、ゼロから作り直さず改修する。
 3. **Fable 5 レビュー**: 非自明な実装は Fable 5 をサブエージェント（Agentツール `model: fable`）に指名して設計/コードレビュー → 指摘修正 → 再確認のループを回す（専用 `advisor()` が使えない環境のため、Fableサブエージェントで代替）。
 4. **自走で PR → マージ**: 完了したらブランチを切って PR を作成（**main への直コミット禁止**）。CI（Vercelビルド）と PRレビュー（CodeRabbit）の完了を待ち、**指摘があれば修正して再確認、無ければ `gh pr merge --squash` でマージ**する。
@@ -17,19 +17,25 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 
 ## サーバー環境でのプレビュー（tailnet 経由で実機確認）
 
-サーバー（`debian-ai`）で作業していて、モックや変更を **iPhone / Mac の実機ブラウザ**で見せたいときの確立済み手順。特に SP レイアウトは実機幅での確認が有効。
+サーバー（`debian-ai`）で作業していて、モックや変更を **iPhone / Mac などの実機ブラウザ（SP・PC 両方）**で見せたいときの確立済み手順。SP は実機幅での確認、PC はブラウザ幅を変えてブレークポイントを確認、と用途に応じて下記 A / B を使い分ける。共通の前提: tailnet IP のみにバインドして tailnet 内限定で配信する（`0.0.0.0` は不可）。停止は `fuser -k <port>/tcp`（`pkill -f http.server` は**コマンド文字列が自分自身にマッチして落ちる**ため使わない）。URL は `http://<tailscale-ip>:PORT/` か `http://debian-ai.<tailnet>.ts.net:PORT/`（MagicDNS 名・分かりやすい）を渡す。
 
+### A. 静的モック（HTML 単体を素早く見せる。方向性合意フェーズ向き）
 1. **secret を含まない配信ディレクトリを用意**: リポジトリ直下は `.env`（本番 secret）を含むため**絶対に配信しない**。scratchpad 等へ HTML を `index.html` としてコピーした専用ディレクトリを作る。
-2. **tailscale IP のみにバインドして配信**（tailnet 内限定。`0.0.0.0` は不可）:
+2. tailscale IP のみにバインドして配信:
    ```bash
    TS_IP=$(tailscale ip -4)            # 例: 100.126.238.0
    cd <secret無しの配信ディレクトリ>
    python3 -m http.server 8000 --bind "$TS_IP"
    ```
-3. **URL を渡す**（tailnet 内の端末で開ける）:
-   - `http://<tailscale-ip>:8000/`（例 `http://100.126.238.0:8000/`）
-   - `http://debian-ai.<tailnet>.ts.net:8000/`（MagicDNS 名・分かりやすい）
-4. 確認が済んだらサーバーを停止（`fuser -k 8000/tcp`。`pkill -f http.server` は**コマンド文字列が自分自身にマッチして落ちる**ため使わない）。
+   → `http://<TS_IP>:8000/` を渡す。PC で見る場合はモックの枠を固定幅にせず、実機幅（SP=375px 等）とデスクトップ幅の両方を並べると誤解が少ない。
+
+### B. 実アプリ / レスポンシブ確認（PC でブレークポイントまで見たいとき）
+静的モックでなく**実際のページ**を確認したい場合は、Next dev サーバーを tailscale IP にバインドして公開する。Next は任意ファイルを列挙配信しない（`.env` はファイルとして露出しない）ため、この用途では実アプリを直接出してよい。
+```bash
+TS_IP=$(tailscale ip -4)
+pnpm dev -H "$TS_IP"               # 既定 3000 番
+```
+→ `http://debian-ai.<tailnet>.ts.net:3000/` を渡す。PC ブラウザで幅を狭めれば `@media (max-width:760px)` 等の切替を実データで確認できる。確認後は dev サーバーを停止（`fuser -k 3000/tcp`）。
 
 補足: `tailscale serve`（HTTPS・きれいな URL）は tailnet 側で未有効。使うなら管理コンソールで一度有効化が必要（`tailscale serve` 実行時に案内 URL が出る）。有効化しない限りは上記の tailnet IP 直アクセス方式を使う。
 
