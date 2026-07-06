@@ -4,7 +4,7 @@ This template comes configured with the bare minimum to get started on anything 
 
 ## Quick start
 
-This template can be deployed directly from our Cloud hosting and it will setup MongoDB and cloud S3 object storage for media.
+This template can be deployed directly from our Cloud hosting and it will setup a Postgres database and cloud S3 object storage for media.
 
 ## Quick Start - local setup
 
@@ -17,7 +17,7 @@ After you click the `Deploy` button above, you'll want to have standalone copy o
 ### Development
 
 1. First [clone the repo](#clone) if you have not done so already
-2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `MONGODB_URI` from your Cloud project to your `.env` if you want to use S3 storage and the MongoDB database that was created for you.
+2. `cd my-project && cp .env.example .env` to copy the example environment variables. You'll need to add the `POSTGRES_URL` from your Cloud project to your `.env` if you want to use S3 storage and the Postgres database that was created for you.
 
 3. `pnpm install && pnpm dev` to install dependencies and start the dev server
 4. open `http://localhost:3000` to open the app in your browser
