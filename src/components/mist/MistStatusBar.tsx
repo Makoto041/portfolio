@@ -188,14 +188,17 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
       </span>
 
       <span className="divider" aria-hidden />
-      <span className="kv">
-        entries: <b>{entries}</b>
-      </span>
-      <span className="kv">
-        photos: <b>{photos}</b>
-      </span>
-      <span className="kv">
-        streak: <b>{streak}d</b>
+      {/* stats: PC は display:contents で従来の横並び、SP は .stats で独立行にまとめる */}
+      <span className="stats">
+        <span className="kv">
+          entries: <b>{entries}</b>
+        </span>
+        <span className="kv">
+          photos: <b>{photos}</b>
+        </span>
+        <span className="kv">
+          streak: <b>{streak}d</b>
+        </span>
       </span>
 
       <span className="vals">
@@ -224,9 +227,15 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
         {/* 日付＋時刻は1つの折返し単位（.dt）にまとめ、SPで時刻だけが単独でぶら下がるのを防ぐ */}
         <span className="dt">
           <span className="date" suppressHydrationWarning>
-            {now
-              ? `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())} ${DAYS[now.getDay()]}`
-              : ''}
+            {now ? (
+              <>
+                <span className="yr">{now.getFullYear()}.</span>
+                {pad(now.getMonth() + 1)}.{pad(now.getDate())}
+                <span className="wd"> {DAYS[now.getDay()]}</span>
+              </>
+            ) : (
+              ''
+            )}
           </span>
           <span className="time" suppressHydrationWarning>
             {now ? `${pad(now.getHours())}:${pad(now.getMinutes())}` : '--:--'}
