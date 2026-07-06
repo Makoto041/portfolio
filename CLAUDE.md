@@ -15,6 +15,14 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用（`pnpm payload migrate`）はデプロイ側に委ねる（`.env` は本番 Neon を指すためローカル/CIから本番へは適用しない）。
 6. **検証**: `pnpm generate:types` / `pnpm build` / `pnpm lint` をローカルで通してから PR にする。
 
+## コード規約（Mac/サーバ含む全環境で遵守）
+
+上記「開発フロー」に加え、環境を問わず守る規約。
+
+- **ライブ配信物に生成ツールの痕跡を残さない**: 公開サイトが配信する HTML/CSS/JS（第三者が DevTools/View Source で見える成果物）に、AI/ツール由来の文字列・メタ・可視コメント・attribution を残さない。本番ビルドは minify でコメント除去されるため通常は自然に満たされる。**GitHub のソース/コミット履歴は対象外**（判断基準は「通常のサイトから見えるか」だけ）。
+- **設計トークン体系（Mist Terminal）に沿う**: `src/app/(frontend)/mist.css` の `.mist` スコープに集約。タイポは6段 `--fs-caption/meta/ui/body/h3`（display は各要素の `clamp` を維持）、カラーは本文系10トークン `--m-ink / ink-2 / sub / faint / accent-ink / accent / line / hairline / surface / bg`（本文系は生 `oklch` を持たずトークン経由・装飾色は literal 例外）、余白は 4px 系。テキストトークンは `#eef1f4` 上で AA(4.5:1) 以上を維持。新規実装もゼロから色/寸法を足さずトークン経由で。
+- **Fable 5 レビューを必須ゲートに**: 非自明な実装は Agent ツール（`model: fable`）でサブエージェント指名し設計/コードレビュー → Blocking/Should-fix を修正・再確認してから PR。
+
 ## 技術スタック
 
 - **フレームワーク**: Next.js 15.3.2 with React 19.1.0
