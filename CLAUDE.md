@@ -8,12 +8,30 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 
 変更対応は、以下を**自走で最後まで**完結させる。軽微な変更（typo・単純修正）は 1・3 を省略してよい。
 
-1. **設計/UX を変える変更はまずモック**: Artifact で HTML モックを作り、方向性の合意を得てから実装に入る（既存の「Mist Terminal」トークン/意匠を踏襲）。
+1. **設計/UX を変える変更はまずモック**: Artifact で HTML モックを作り、方向性の合意を得てから実装に入る（既存の「Mist Terminal」トークン/意匠を踏襲）。**サーバー環境で作業していて Artifact が使えない/実機で見せたい場合は、下記「サーバー環境でのプレビュー」の tailnet 配信でモックの URL を渡し、SP 実機（iPhone 等）で確認してもらう。**
 2. **差分で実装**: 既存パターン（コンポーネント構成・Payloadコレクション・`src/app/(frontend)/mist.css`）に沿って、ゼロから作り直さず改修する。
 3. **Fable 5 レビュー**: 非自明な実装は Fable 5 をサブエージェント（Agentツール `model: fable`）に指名して設計/コードレビュー → 指摘修正 → 再確認のループを回す（専用 `advisor()` が使えない環境のため、Fableサブエージェントで代替）。
 4. **自走で PR → マージ**: 完了したらブランチを切って PR を作成（**main への直コミット禁止**）。CI（Vercelビルド）と PRレビュー（CodeRabbit）の完了を待ち、**指摘があれば修正して再確認、無ければ `gh pr merge --squash` でマージ**する。
 5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用（`pnpm payload migrate`）はデプロイ側に委ねる（`.env` は本番 Neon を指すためローカル/CIから本番へは適用しない）。
 6. **検証**: `pnpm generate:types` / `pnpm build` / `pnpm lint` をローカルで通してから PR にする。
+
+## サーバー環境でのプレビュー（tailnet 経由で実機確認）
+
+サーバー（`debian-ai`）で作業していて、モックや変更を **iPhone / Mac の実機ブラウザ**で見せたいときの確立済み手順。特に SP レイアウトは実機幅での確認が有効。
+
+1. **secret を含まない配信ディレクトリを用意**: リポジトリ直下は `.env`（本番 secret）を含むため**絶対に配信しない**。scratchpad 等へ HTML を `index.html` としてコピーした専用ディレクトリを作る。
+2. **tailscale IP のみにバインドして配信**（tailnet 内限定。`0.0.0.0` は不可）:
+   ```bash
+   TS_IP=$(tailscale ip -4)            # 例: 100.126.238.0
+   cd <secret無しの配信ディレクトリ>
+   python3 -m http.server 8000 --bind "$TS_IP"
+   ```
+3. **URL を渡す**（tailnet 内の端末で開ける）:
+   - `http://<tailscale-ip>:8000/`（例 `http://100.126.238.0:8000/`）
+   - `http://debian-ai.<tailnet>.ts.net:8000/`（MagicDNS 名・分かりやすい）
+4. 確認が済んだらサーバーを停止（`fuser -k 8000/tcp`。`pkill -f http.server` は**コマンド文字列が自分自身にマッチして落ちる**ため使わない）。
+
+補足: `tailscale serve`（HTTPS・きれいな URL）は tailnet 側で未有効。使うなら管理コンソールで一度有効化が必要（`tailscale serve` 実行時に案内 URL が出る）。有効化しない限りは上記の tailnet IP 直アクセス方式を使う。
 
 ## コード規約（Mac/サーバ含む全環境で遵守）
 
