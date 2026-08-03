@@ -3,6 +3,11 @@ import { CollectionConfig } from 'payload'
 import nodemailer from 'nodemailer'
 import { anyone, adminOnly } from '@/lib/access'
 
+// SMTP 各段階のタイムアウトはサーバーレス関数のデッドラインより十分短くする
+// （Nodemailer 既定は分単位で、応答しないSMTPサーバーに掴まると
+//   リクエスト全体がタイムアウトし、利用者の再送 → 重複投稿につながる）。
+// 期限超過時は Nodemailer 自身が下層ソケットを閉じてエラーを返すため、
+// 外側で Promise.race 等により打ち切ると接続だけが放置される。行わないこと。
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST!,
   port: Number(process.env.SMTP_PORT!),
@@ -11,7 +16,19 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER!,
     pass: process.env.SMTP_PASS!,
   },
+  connectionTimeout: 5_000,
+  greetingTimeout: 5_000,
+  socketTimeout: 8_000,
 })
+
+// 利用者入力を通知メールのHTMLへ埋め込む前にエスケープする
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 
 const Letter: CollectionConfig = {
   slug: 'letter',
@@ -26,31 +43,42 @@ const Letter: CollectionConfig = {
     afterChange: [
       async ({ doc, operation }) => {
         if (operation === 'create') {
-          const { name, email, message } = doc
+          const { name, message } = doc
+          // 通知先は環境変数から取得（アドレスをソースにハードコードしない）
+          const to = process.env.CONTACT_NOTIFY_TO || process.env.SMTP_USER
 
-          await transporter.sendMail({
-            from: `"お問い合わせ通知" <${process.env.SMTP_USER!}>`,
-            to: 'makoto01401@gmail.com', // ← ここを固定アドレスに変更
-            subject: '新しいお問い合わせが届きました',
-            text: `
+          if (!to) {
+            console.error('Letter 通知: CONTACT_NOTIFY_TO / SMTP_USER が未設定のため送信をスキップします')
+            return doc
+          }
+
+          try {
+            await transporter.sendMail({
+              from: `"お問い合わせ通知" <${process.env.SMTP_USER!}>`,
+              to,
+              subject: '新しいお問い合わせが届きました',
+              text: `
 お名前: ${name}
-メール: ${email || '（未登録）'}
 メッセージ:
 ${message}`,
-            html: `
-              <p><strong>お名前:</strong> ${name}</p>
-              <p><strong>メール:</strong> ${email || '（未登録）'}</p>
-              <p><strong>メッセージ:</strong><br/>${message.replace(/\n/g, '<br/>')}</p>
-            `,
-          })
+              html: `
+                <p><strong>お名前:</strong> ${escapeHtml(String(name))}</p>
+                <p><strong>メッセージ:</strong><br/>${escapeHtml(String(message)).replace(/\n/g, '<br/>')}</p>
+              `,
+            })
+          } catch (err) {
+            // 通知メールの失敗で投稿の保存自体を失敗させない
+            console.error('Letter 通知メールの送信に失敗しました:', err)
+          }
         }
         return doc
       },
     ],
   },
   fields: [
-    { name: 'name', label: 'お名前', type: 'text', required: true },
-    { name: 'message', label: 'メッセージ', type: 'textarea', required: true },
+    // 文字数上限は /api/letter だけでなくコレクション側でも強制する（多層防御）
+    { name: 'name', label: 'お名前', type: 'text', required: true, maxLength: 100 },
+    { name: 'message', label: 'メッセージ', type: 'textarea', required: true, maxLength: 5000 },
     {
       name: 'createdAt',
       label: '送信日時',

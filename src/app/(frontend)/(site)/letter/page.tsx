@@ -45,11 +45,11 @@ export default function LetterPage() {
           <form onSubmit={handleSubmit} className="mform">
             <label>
               お名前
-              <input name="name" type="text" placeholder="name" required />
+              <input name="name" type="text" placeholder="name" maxLength={100} required />
             </label>
             <label>
               メッセージ
-              <textarea name="message" placeholder="message" rows={5} required />
+              <textarea name="message" placeholder="message" rows={5} maxLength={5000} required />
             </label>
             <button type="submit" className="submit" disabled={loading}>
               {loading ? '$ sending...' : '$ send --letter'}
