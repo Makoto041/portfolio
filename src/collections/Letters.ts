@@ -13,6 +13,15 @@ const transporter = nodemailer.createTransport({
   },
 })
 
+// 利用者入力を通知メールのHTMLへ埋め込む前にエスケープする
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+
 const Letter: CollectionConfig = {
   slug: 'letter',
   labels: { singular: 'Letter', plural: 'Letters' },
@@ -26,23 +35,33 @@ const Letter: CollectionConfig = {
     afterChange: [
       async ({ doc, operation }) => {
         if (operation === 'create') {
-          const { name, email, message } = doc
+          const { name, message } = doc
+          // 通知先は環境変数から取得（アドレスをソースにハードコードしない）
+          const to = process.env.CONTACT_NOTIFY_TO || process.env.SMTP_USER
 
-          await transporter.sendMail({
-            from: `"お問い合わせ通知" <${process.env.SMTP_USER!}>`,
-            to: 'makoto01401@gmail.com', // ← ここを固定アドレスに変更
-            subject: '新しいお問い合わせが届きました',
-            text: `
+          if (!to) {
+            console.error('Letter 通知: CONTACT_NOTIFY_TO / SMTP_USER が未設定のため送信をスキップします')
+            return doc
+          }
+
+          try {
+            await transporter.sendMail({
+              from: `"お問い合わせ通知" <${process.env.SMTP_USER!}>`,
+              to,
+              subject: '新しいお問い合わせが届きました',
+              text: `
 お名前: ${name}
-メール: ${email || '（未登録）'}
 メッセージ:
 ${message}`,
-            html: `
-              <p><strong>お名前:</strong> ${name}</p>
-              <p><strong>メール:</strong> ${email || '（未登録）'}</p>
-              <p><strong>メッセージ:</strong><br/>${message.replace(/\n/g, '<br/>')}</p>
-            `,
-          })
+              html: `
+                <p><strong>お名前:</strong> ${escapeHtml(String(name))}</p>
+                <p><strong>メッセージ:</strong><br/>${escapeHtml(String(message)).replace(/\n/g, '<br/>')}</p>
+              `,
+            })
+          } catch (err) {
+            // 通知メールの失敗で投稿の保存自体を失敗させない
+            console.error('Letter 通知メールの送信に失敗しました:', err)
+          }
         }
         return doc
       },
