@@ -16,8 +16,12 @@ const rateMap = new Map<string, { count: number; resetAt: number }>()
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now()
+  // 期限切れエントリを掃除してユニークIP数ぶんのメモリ単調増加を防ぐ
+  for (const [key, value] of rateMap) {
+    if (now > value.resetAt) rateMap.delete(key)
+  }
   const entry = rateMap.get(ip)
-  if (!entry || now > entry.resetAt) {
+  if (!entry) {
     rateMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
     return false
   }
@@ -28,6 +32,7 @@ function isRateLimited(ip: string): boolean {
 export async function POST(req: NextRequest) {
   // x-real-ip はプラットフォーム（Vercel）が設定する信頼できる値を優先し、
   // クライアントが偽装しうる x-forwarded-for は最後のフォールバックにする
+  // （Vercel 以外へ移設する場合は信頼できる proxy ヘッダーを見直すこと）
   const ip =
     req.headers.get('x-real-ip')?.trim() ||
     req.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() ||

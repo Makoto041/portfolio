@@ -68,8 +68,9 @@ ${message}`,
     ],
   },
   fields: [
-    { name: 'name', label: 'お名前', type: 'text', required: true },
-    { name: 'message', label: 'メッセージ', type: 'textarea', required: true },
+    // 文字数上限は /api/letter だけでなくコレクション側でも強制する（多層防御）
+    { name: 'name', label: 'お名前', type: 'text', required: true, maxLength: 100 },
+    { name: 'message', label: 'メッセージ', type: 'textarea', required: true, maxLength: 5000 },
     {
       name: 'createdAt',
       label: '送信日時',
