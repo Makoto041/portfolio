@@ -5,7 +5,9 @@ import { anyone, adminOnly } from '@/lib/access'
 
 // SMTP 各段階のタイムアウトはサーバーレス関数のデッドラインより十分短くする
 // （Nodemailer 既定は分単位で、応答しないSMTPサーバーに掴まると
-//   リクエスト全体がタイムアウトし、利用者の再送 → 重複投稿につながる）
+//   リクエスト全体がタイムアウトし、利用者の再送 → 重複投稿につながる）。
+// 期限超過時は Nodemailer 自身が下層ソケットを閉じてエラーを返すため、
+// 外側で Promise.race 等により打ち切ると接続だけが放置される。行わないこと。
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST!,
   port: Number(process.env.SMTP_PORT!),
@@ -18,9 +20,6 @@ const transporter = nodemailer.createTransport({
   greetingTimeout: 5_000,
   socketTimeout: 8_000,
 })
-
-// 送信全体の上限。超過しても投稿の保存は成功扱いにする
-const MAIL_TIMEOUT_MS = 8_000
 
 // 利用者入力を通知メールのHTMLへ埋め込む前にエスケープする
 const escapeHtml = (value: string): string =>
@@ -53,12 +52,8 @@ const Letter: CollectionConfig = {
             return doc
           }
 
-          let timer: ReturnType<typeof setTimeout> | undefined
           try {
-            const timeout = new Promise<never>((_, reject) => {
-              timer = setTimeout(() => reject(new Error('mail send timeout')), MAIL_TIMEOUT_MS)
-            })
-            const send = transporter.sendMail({
+            await transporter.sendMail({
               from: `"お問い合わせ通知" <${process.env.SMTP_USER!}>`,
               to,
               subject: '新しいお問い合わせが届きました',
@@ -71,15 +66,9 @@ ${message}`,
                 <p><strong>メッセージ:</strong><br/>${escapeHtml(String(message)).replace(/\n/g, '<br/>')}</p>
               `,
             })
-            // 送信が MAIL_TIMEOUT_MS 内に完了しなければ打ち切り、保存は成功のまま返す
-            await Promise.race([send, timeout])
-            // race で打ち切った場合も裏で走り続ける send の未処理拒否を防ぐ
-            send.catch(() => {})
           } catch (err) {
             // 通知メールの失敗で投稿の保存自体を失敗させない
             console.error('Letter 通知メールの送信に失敗しました:', err)
-          } finally {
-            if (timer) clearTimeout(timer)
           }
         }
         return doc
