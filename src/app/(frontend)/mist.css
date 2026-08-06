@@ -739,11 +739,15 @@
 /* ── 画像プレビューモーダル（ネイティブ <dialog>） ─────────────
    Escape・フォーカストラップ・フォーカス復帰はブラウザ標準に委ねる */
 .mist .imgmodal {
+  /* Tailwind v4 preflight の `* { margin: 0 }` が UA の dialog { margin: auto }
+     （<dialog> センタリングの根拠）を打ち消すため、明示的に復元する */
+  margin: auto;
   padding: 0;
   border: 0;
   background: transparent;
   max-width: 92vw;
   max-height: 90vh;
+  max-height: 90dvh; /* SP のURLバー表示中も可視領域基準に（非対応環境は上の vh にフォールバック） */
   overflow: visible;
 }
 .mist .imgmodal::backdrop {
@@ -760,7 +764,10 @@
   width: auto;
   height: auto;
   max-width: 92vw;
-  max-height: 80vh;
+  /* 60px = SP で画像下に積まれる閉じるボタン 44px + margin-top 16px。
+     縦の短い画面でもボタンごと .imgmodal(90dvh) 内に収まるよう差し引く */
+  max-height: min(80vh, calc(90vh - 60px));
+  max-height: min(80dvh, calc(90dvh - 60px));
   object-fit: contain;
   border: 1px solid var(--m-hairline);
   background: var(--m-surface);
