@@ -68,27 +68,19 @@ const nextConfig = {
   async redirects() {
     return [{ source: '/in_event', destination: '/events', permanent: true }]
   },
-  // ① CloudFront 画像を許可 + 外部ドメイン
+  // ① 最適化を通す画像は自サイト配信（相対URL）と CloudFront のみに限定。
+  //    外部サイトの OGP 画像（UrlPreview）は unoptimized で直接参照するため、
+  //    ワイルドカード許可（= 画像オプティマイザの任意ホストプロキシ化）はしない
   images: {
-    remotePatterns: [
-      // CloudFront ドメイン
-      ...(CF_DOMAIN
-        ? [
-            {
-              protocol: 'https',
-              hostname: CF_DOMAIN,
-              pathname: '/**',
-            },
-          ]
-        : []),
-      // URLメタデータ用の外部ドメイン
-      {
-        protocol: 'https',
-        hostname: '**',
-        pathname: '/**',
-      },
-    ],
-    domains: CF_DOMAIN ? [CF_DOMAIN] : [],
+    remotePatterns: CF_DOMAIN
+      ? [
+          {
+            protocol: 'https',
+            hostname: CF_DOMAIN,
+            pathname: '/**',
+          },
+        ]
+      : [],
     // ② WebP / AVIF を自動切替（AVIF優先でより高圧縮）
     formats: ['image/avif', 'image/webp'],
     // ③ デバイス用のサイズ設定

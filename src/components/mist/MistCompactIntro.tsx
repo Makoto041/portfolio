@@ -4,22 +4,7 @@
 // 表示は CSS（.compact-intro）で ≤760px のみ。
 import Image from 'next/image'
 import { toCFUrl } from '@/lib/cfUrl'
-
-type ProfileData = {
-  name?: string | null
-  nameJapanese?: string | null
-  title?: string | null
-  imageUrl?: string | null
-  socialLinks?: { platform?: string | null; url?: string | null; displayName?: string | null }[]
-}
-
-const PLATFORM_LABELS: Record<string, string> = {
-  twitter: 'x',
-  instagram: 'ig',
-  github: 'gh',
-  linkedin: 'in',
-  youtube: 'yt',
-}
+import { socialLabel, type ProfileData } from '@/lib/social'
 
 export default function MistCompactIntro({ profile }: { profile: ProfileData }) {
   const name = profile.nameJapanese ?? profile.name
@@ -43,11 +28,17 @@ export default function MistCompactIntro({ profile }: { profile: ProfileData }) 
         {profile.title && <span className="ci-rl">{profile.title}</span>}
       </div>
       <div className="ci-sns">
-        {/* コンパクト行なので最大4件に制限（全件はフルの profile カードに表示） */}
-        {profile.socialLinks?.slice(0, 4).map(({ platform, url, displayName }) =>
-          url ? (
-            <a key={url} href={url} target="_blank" rel="noopener noreferrer" aria-label={displayName ?? platform ?? 'link'}>
-              {displayName?.toLowerCase() || (platform ? PLATFORM_LABELS[platform] : null) || '↗'}
+        {/* コンパクト行なので最大4件に制限（全件は /profile ページに表示） */}
+        {profile.socialLinks?.slice(0, 4).map((link) =>
+          link.url ? (
+            <a
+              key={link.url}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={link.displayName ?? link.platform ?? 'link'}
+            >
+              {socialLabel(link, 'short', '↗')}
             </a>
           ) : null,
         )}

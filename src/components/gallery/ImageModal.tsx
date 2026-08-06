@@ -1,9 +1,11 @@
 'use client'
 
-import React from 'react'
+// 画像プレビューモーダル。ネイティブ <dialog> + showModal() を採用し、
+// Escape で閉じる・フォーカストラップ・閉時の呼び出し元へのフォーカス復帰を
+// ブラウザ標準の挙動に委ねる（独自ポータル/z-index 管理は廃止）。
+import { useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { createPortal } from 'react-dom'
-import { toCFUrl } from '@/lib/cfUrl'
+import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
 
 interface ImageModalProps {
   src: string
@@ -13,52 +15,59 @@ interface ImageModalProps {
 }
 
 export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModalProps) {
-  if (!isOpen || typeof window === 'undefined') return null
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
-  const modalContent = (
-    <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center"
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-        transform: 'none',
-        zoom: 1
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (isOpen && !dialog.open) dialog.showModal()
+    else if (!isOpen && dialog.open) dialog.close()
+  }, [isOpen])
+
+  // 開いている間は背景スクロールをロック
+  useEffect(() => {
+    if (!isOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [isOpen])
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="imgmodal"
+      aria-label="画像プレビュー"
+      // Escape・close() のどちらでも React 側の状態を同期する
+      onClose={onClose}
+      // ダイアログ要素自身（=背景 ::backdrop 相当領域）のクリックで閉じる
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
       }}
     >
-      <div
-        className="relative flex flex-col items-center max-w-[92vw] max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-        style={{ transform: 'none', zoom: 1 }}
-      >
-        {/* 拡大画像 */}
-        <Image
-          src={toCFUrl(src)}
-          alt={alt}
-          width={800}
-          height={600}
-          sizes="92vw"
-          className="rounded-lg shadow-xl max-w-full max-h-[80vh] object-contain bg-white/5 backdrop-blur-lg p-1"
-          style={{ transform: 'none', zoom: 1 }}
-        />
-
-        {/* PC表示ではモーダル右上に、スマホでは画像から十分離して表示 */}
-        <button
-          className="md:absolute md:top-3 md:right-3 w-10 h-10 flex items-center justify-center border-0 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white text-gray-600 text-xl font-light cursor-pointer select-none focus:outline-none transition z-50 mt-8 md:mt-0 shadow-md"
-          onClick={onClose}
-          style={{ transform: 'none', zoom: 1 }}
-        >
-          ×
-        </button>
-      </div>
-    </div>
+      {isOpen && src && (
+        <div className="imgmodal-body">
+          <Image
+            src={toCFUrl(src)}
+            alt={alt}
+            width={1200}
+            height={900}
+            sizes="92vw"
+            className="imgmodal-img"
+            // リッチテキスト経由で外部ホストの画像も開くため、CF/相対以外は最適化を通さない
+            unoptimized={!isOptimizableSrc(toCFUrl(src))}
+          />
+          <button
+            type="button"
+            className="imgmodal-close"
+            aria-label="プレビューを閉じる"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+      )}
+    </dialog>
   )
-
-  // Try to use modal-root first, fallback to document.body
-  const modalRoot = document.getElementById('modal-root')
-  return createPortal(modalContent, modalRoot || document.body)
 }

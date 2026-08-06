@@ -18,6 +18,10 @@ type Props = {
   role: string
 }
 
+// 同一セッション中の再訪ではタイプ演出を省略する（全文表示→クリア→再タイプの
+// フラッシュを繰り返さない。Codex レビュー反映）
+const TYPED_FLAG = 'mist-hero-typed'
+
 export default function MistHero({ tagline, role }: Props) {
   // 初期stateは「全文（完了状態）」。SSR/初回描画で h1 全文を出力し LCP/SEO を確保する。
   // 動きが許可されている時のみ、マウント後にクリア→タイプ演出で上書きする。
@@ -35,6 +39,14 @@ export default function MistHero({ tagline, role }: Props) {
 
     // 静止指定ならSSR全文のまま（アニメなし）
     if (reduce) return
+
+    // セッション内 2 回目以降は SSR 全文のまま（演出は初回のみ。
+    // 済フラグはタグライン完走時に立てる＝中断時・StrictMode の破棄マウントでは立たない）
+    try {
+      if (sessionStorage.getItem(TYPED_FLAG)) return
+    } catch {
+      // sessionStorage 不可の環境では毎回タイプ（従来挙動）
+    }
 
     // SSR全文（LCP候補）を描画後にクリアし、タイプ演出で上書き
     setNm('')
@@ -88,8 +100,17 @@ export default function MistHero({ tagline, role }: Props) {
     const step = () => {
       k += 1
       setTag(tagline.slice(0, k))
-      if (k < tagline.length) id = setTimeout(step, 70)
-      else setPhase('done')
+      if (k < tagline.length) {
+        id = setTimeout(step, 70)
+      } else {
+        setPhase('done')
+        // 演出が完走した唯一の地点でセッション済フラグを立てる
+        try {
+          sessionStorage.setItem(TYPED_FLAG, '1')
+        } catch {
+          // 保存不可なら毎回タイプ（従来挙動）
+        }
+      }
     }
     id = setTimeout(step, 0)
     return () => clearTimeout(id)

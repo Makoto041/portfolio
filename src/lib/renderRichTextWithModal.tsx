@@ -4,6 +4,7 @@
 import React, { ReactNode, ElementType, useState } from 'react'
 import Image from 'next/image'
 import ImageModal from '@/components/gallery/ImageModal'
+import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
 
 export interface LexicalNode {
   type?: string
@@ -24,8 +25,8 @@ const defaultClassNames: Record<string, string> = {
   ol: 'mb-4 list-decimal list-inside',
   li: 'ml-6 mb-1',
   blockquote: 'border-l-4 pl-4 italic my-4 text-gray-600',
-  pre: 'bg-gray-100 dark:bg-gray-800 p-4 rounded my-4 overflow-auto',
-  code: 'bg-gray-200 dark:bg-gray-700 px-1 rounded text-sm font-mono',
+  pre: 'bg-gray-100 p-4 rounded my-4 overflow-auto',
+  code: 'bg-gray-200 px-1 rounded text-sm font-mono',
   a: 'text-[var(--accent)] underline',
   img: 'my-4 max-w-full rounded',
 }
@@ -99,21 +100,24 @@ export function RenderRichTextWithModal({ nodes = [], keyPrefix = 'rt' }: { node
 
       // 画像
       if ((node.tag === 'img' && node.src) || (node.type === 'image' && node.src)) {
-        const imageSrc = node.src.startsWith('http') ? node.src : `https://iwabuchi-makoto.com${node.src}`
+        // 相対URLは CloudFront へ正規化。外部ホストの絶対URLは remotePatterns 外のため
+        // unoptimized で直接参照する（RichTextRenderer / UrlPreview と同ポリシー）
+        const imageSrc = toCFUrl(node.src)
         return (
           <div key={key} className="my-4">
-            <Image 
+            <Image
               src={imageSrc}
-              alt={node.alt || ''} 
+              alt={node.alt || ''}
               width={160}
               height={120}
               sizes="(max-width: 768px) 100vw, 160px"
-              className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto" 
-              onClick={() => setModalImage({ 
-                src: imageSrc, 
-                alt: node.alt || '', 
-                width: 800, 
-                height: 600 
+              className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
+              unoptimized={!isOptimizableSrc(imageSrc)}
+              onClick={() => setModalImage({
+                src: imageSrc,
+                alt: node.alt || '',
+                width: 800,
+                height: 600
               })}
             />
           </div>

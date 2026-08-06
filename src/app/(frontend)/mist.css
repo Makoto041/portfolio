@@ -34,6 +34,19 @@
 @keyframes m-spin {
   to { transform: rotate(360deg); }
 }
+/* ブライユ・スピナーのフレーム（JS の高頻度 setState を廃止し CSS で回す） */
+@keyframes m-braille {
+  0% { content: '⠋'; }
+  10% { content: '⠙'; }
+  20% { content: '⠹'; }
+  30% { content: '⠸'; }
+  40% { content: '⠼'; }
+  50% { content: '⠴'; }
+  60% { content: '⠦'; }
+  70% { content: '⠧'; }
+  80% { content: '⠇'; }
+  90% { content: '⠏'; }
+}
 
 .mist {
   /* ── カラートークン（本文系: テキスト/構造罫線/パネル面）。
@@ -306,8 +319,13 @@
   animation: m-fadeup 0.7s ease-out 0.26s both;
 }
 .mist .env .cmd { display: flex; align-items: center; gap: 8px; color: var(--m-sub); }
-/* ブライユ・スピナー（幅固定で回転してもガタつかない） */
+/* ブライユ・スピナー（幅固定で回転してもガタつかない）。フレームは CSS content
+   アニメーション。content が非対応の環境では先頭フレームが静止表示される（装飾のため許容） */
 .mist .spin { width: 13px; font-weight: 600; color: var(--m-accent-ink); flex-shrink: 0; }
+.mist .spin::before {
+  content: '⠋';
+  animation: m-braille 0.9s steps(1, end) infinite;
+}
 /* 固定幅マーカーは収縮させない（NOTICE 溢れ時に潰れるのを防ぎ、可変長は .jp だけが縮む） */
 .mist .ndate,
 .mist .tcur { flex-shrink: 0; }
@@ -648,6 +666,9 @@
 @media (max-width: 640px) {
   .mist .photos { max-width: 100%; }
 }
+/* タイムラインの状態表示（空・取得中・エラー） */
+.mist .logstate { font-size: var(--fs-meta); color: var(--m-faint); }
+.mist .logerror { margin: 12px 0 0 32px; }
 .mist .loadmore {
   align-self: flex-start;
   margin: 20px 0 0 32px;
@@ -715,6 +736,79 @@
 /* Spotify プレイリスト埋め込み */
 .mist .spotify-embed { width: 100%; border: 0; border-radius: 12px; display: block; }
 
+/* ── 画像プレビューモーダル（ネイティブ <dialog>） ─────────────
+   Escape・フォーカストラップ・フォーカス復帰はブラウザ標準に委ねる */
+.mist .imgmodal {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  max-width: 92vw;
+  max-height: 90vh;
+  overflow: visible;
+}
+.mist .imgmodal::backdrop {
+  background: color-mix(in oklch, var(--m-ink) 45%, transparent);
+  backdrop-filter: blur(6px);
+}
+.mist .imgmodal-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.mist .imgmodal-img {
+  width: auto;
+  height: auto;
+  max-width: 92vw;
+  max-height: 80vh;
+  object-fit: contain;
+  border: 1px solid var(--m-hairline);
+  background: var(--m-surface);
+}
+/* 閉じるボタン: SP は画像下に独立表示、PC はモーダル右上 */
+.mist .imgmodal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-top: 16px;
+  border: 1px solid var(--m-hairline);
+  border-radius: 50%;
+  background: var(--m-surface);
+  color: var(--m-ink);
+  font-size: var(--fs-h3);
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+}
+@media (min-width: 761px) {
+  .mist .imgmodal-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    margin-top: 0;
+  }
+}
+.mist .imgmodal-close:focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 2px;
+}
+
+/* プロフィール単票カード（/profile。旧インラインstyle をクラス化・4px系余白へ整列） */
+.mist .profilecard { align-items: center; text-align: center; padding: 32px 28px; gap: 0; }
+.mist .profilecard .avatar { width: 140px; height: 140px; border-radius: 50%; margin-bottom: 24px; }
+.mist .profilecard h2 {
+  font-family: var(--font-outfit), sans-serif;
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.mist .profilecard .sub { margin: 8px 0 16px; font-size: var(--fs-meta); color: var(--m-faint); }
+.mist .profilecard .bio { margin-bottom: 24px; text-align: center; max-width: 380px; }
+.mist .profilecard .socials { justify-content: center; }
+
 /* ── Gallery コンポーネント（枠なし: 最近の静止画グリッド + 統合ストリーム） ── */
 /* minmax(140px): 中央が最小320pxのとき 2 列が成立し、先頭 .big(span 2) が溢れない */
 .mist .gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
@@ -736,6 +830,12 @@
   .mist .gal { grid-template-columns: repeat(2, 1fr); }
   .mist .gal .g.big { grid-column: span 1; grid-row: span 1; }
   .mist .gal .g:nth-child(n + 7) { display: none; }
+  /* プロフィール列（Home 右レール）はコンパクト自己紹介と情報が重複するため SP では出さない。
+     フルのプロフィール・Spotify は /profile ページが担う */
+  .mist .profilecol { display: none; }
+  /* SP はミストブロブのドリフトを止め blur も軽くして合成負荷を下げる（霞の見た目は維持） */
+  .mist .mist1,
+  .mist .mist2 { animation: none; filter: blur(40px); }
 }
 .mist .gal .g em {
   position: absolute; left: 8px; bottom: 8px; z-index: 1;
@@ -797,9 +897,12 @@
   .mist .cursor,
   .mist .jpcaret,
   .mist .tcur,
-  .mist .headcaret,
   .mist .env .icon .rays {
     animation: none !important;
+  }
+  .mist .spin::before {
+    animation: none !important;
+    content: '●';
   }
   .mist .prompt,
   .mist .nameblock,
@@ -844,18 +947,7 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1;
-  min-height: 1em; /* タイプ前でも高さ確保（CLS 対策） */
   color: var(--m-ink);
-}
-/* タイトル打鍵中の細カーソル（ヒーローと同系） */
-.mist .pagehead .headcaret {
-  display: inline-block;
-  width: 3px;
-  height: 0.82em;
-  margin-left: 4px;
-  vertical-align: -0.08em;
-  background: var(--m-accent);
-  animation: m-pulseglow 1.1s steps(2) infinite;
 }
 .mist .pagehead .desc { margin: 8px 0 0; font-size: var(--fs-meta); line-height: 1.7; color: var(--m-faint); }
 .mist .pagehead .actions { display: flex; align-items: center; gap: 8px; }
@@ -943,6 +1035,7 @@
 
 /* 中央寄せの単票（profile / letter） */
 .mist .single { width: 100%; max-width: 520px; margin: 0 auto; }
+.mist .single > .card + .card { margin-top: 16px; }
 
 /* フォーム（letter） */
 .mist .mform { display: flex; flex-direction: column; gap: 16px; }
@@ -1008,4 +1101,16 @@
 .mist .backlink:active { background: var(--m-ink); color: #fff; }
 @media (hover: hover) {
   .mist .backlink:hover { background: var(--m-ink); color: #fff; }
+}
+
+/* ── SP 軽量化の上書き（同一詳細度の基底ルールに勝つため必ずファイル末尾に置く） ── */
+@media (max-width: 760px) {
+  /* ギャラリーマーキーは純装飾のため SP では出さない（画像リクエスト・アニメ負荷の削減） */
+  .mist .substream,
+  .mist .streamwrap { display: none; }
+  /* backdrop-filter の blur を弱める（スクロール時の再合成コスト削減） */
+  .mist .titlebar,
+  .mist .env,
+  .mist .card,
+  .mist .ccard { backdrop-filter: blur(8px); }
 }

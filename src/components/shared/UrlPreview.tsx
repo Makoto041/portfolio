@@ -1,5 +1,7 @@
 'use client'
 
+// タイムライン投稿の URL プレビューカード（OGP メタデータ表示）。
+// Mist Terminal トークンで描画（サイトはライト固定・dark バリアント不使用）。
 import Image from 'next/image'
 
 interface UrlMetadata {
@@ -13,6 +15,14 @@ interface UrlMetadata {
 interface UrlPreviewProps {
   metadata: UrlMetadata
   embedUrl?: string
+}
+
+function safeHostname(url: string): string {
+  try {
+    return new URL(url).hostname
+  } catch {
+    return url
+  }
 }
 
 export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
@@ -44,12 +54,14 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`card-link inline-block border border-[color:var(--card-border)] rounded-lg p-3 hover:bg-[color:var(--card-bg-hover)] bg-[color:var(--card-bg)] transition-all duration-200 mt-3 ${getWidthClass()}`}
+      className={`card-link inline-block border border-[color:var(--m-hairline)] bg-[color:var(--m-surface)] hover:bg-white/80 transition-all duration-200 mt-3 p-3 ${getWidthClass()}`}
     >
       <div className="flex gap-3 min-w-0">
         {hasImage && (
           <div className="flex-shrink-0">
-            <div className="w-16 h-16 relative rounded overflow-hidden bg-gray-100 dark:bg-gray-800">
+            <div className="w-16 h-16 relative overflow-hidden border border-[color:var(--m-hairline)]">
+              {/* 外部サイトの OGP 画像。画像オプティマイザを任意ホストへの
+                  プロキシとして開放しないため unoptimized で直接参照する */}
               <Image
                 src={metadata.image!}
                 alt={metadata.title || 'Link preview'}
@@ -57,6 +69,7 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
                 sizes="64px"
                 className="object-cover"
                 loading="lazy"
+                unoptimized
                 onError={(e) => {
                   // 画像読み込みエラー時は非表示
                   e.currentTarget.style.display = 'none'
@@ -67,25 +80,21 @@ export default function UrlPreview({ metadata, embedUrl }: UrlPreviewProps) {
         )}
         <div className="min-w-0 flex-1">
           {hasTitle && (
-            <h3 className="font-medium text-sm text-gray-900 dark:text-white leading-tight mb-1 break-words">
+            <h3 className="jp font-medium text-sm text-[color:var(--m-ink)] leading-tight mb-1 break-words">
               {metadata.title}
             </h3>
           )}
           {hasDescription && (
-            <p className="text-xs text-gray-600 dark:text-gray-300 leading-tight mb-2 break-words line-clamp-2">
+            <p className="jp text-xs text-[color:var(--m-sub)] leading-tight mb-2 break-words line-clamp-2">
               {metadata.description}
             </p>
           )}
-          <div className="flex items-start text-xs text-gray-500 dark:text-gray-400 flex-wrap gap-1">
+          <div className="flex items-start text-xs text-[color:var(--m-faint)] flex-wrap gap-1">
             {hasSiteName && (
-              <span className="font-medium text-gray-600 dark:text-gray-300">
-                {metadata.siteName}
-              </span>
+              <span className="jp font-medium text-[color:var(--m-sub)]">{metadata.siteName}</span>
             )}
             {hasSiteName && <span>•</span>}
-            <span className="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 break-all">
-              {new URL(url).hostname}
-            </span>
+            <span className="text-[color:var(--m-accent-ink)] break-all">{safeHostname(url)}</span>
           </div>
         </div>
       </div>

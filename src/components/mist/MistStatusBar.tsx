@@ -1,9 +1,10 @@
 // src/components/mist/MistStatusBar.tsx
 // ステータス/ライブ環境の統合バー（docs/CHANGELOG.md §3・§4）:
-//   左: ブライユスピナー + NOTICE（日付+メッセージを新しい順にローテーション、メッセージのみタイプ）
+//   左: ブライユスピナー（CSSアニメ） + NOTICE（日付+メッセージを新しい順にローテーション、メッセージのみタイプ）
 //   中: entries / photos / streak を常時並列表示（アニメなし・実データ）
-//   右: 天気SVG + 気温 + ラベル·現在地 + 日付 + 時刻（HH:MM 秒なし・30s 更新）
-// 天気は自サイトの /api/weather プロキシ（open-meteo→met.no）を流用。位置は ipinfo→東京フォールバック。
+//   右: 天気SVG + 気温 + ラベル + 日付 + 時刻（HH:MM 秒なし・30s 更新）
+// 天気は自サイトの /api/weather プロキシ（open-meteo→met.no・東京固定）。
+// 外部への位置情報系リクエスト（ipinfo / reverse geocode）は行わない。
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
@@ -13,7 +14,6 @@ export type NoticeItem = { badge: string; text: string }
 type Weather = { temp: number; label: string; kind: WxKind; source?: string }
 
 const DAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const
-const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'] as const
 
 function wxLabel(c: number): string {
   if (c === 0) return '快晴'
@@ -53,53 +53,76 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
   const items = notices.length > 0 ? notices : [{ badge: '', text: '日々更新中' }]
 
   // ── NOTICE ローテーション ──
-  const [spin, setSpin] = useState<string>(SPINNER[0])
+  // スピナーは CSS アニメーション（.spin::before の content フレーム）に移譲し、
+  // React の高頻度 setState を廃止。ここではメッセージのタイプのみ扱う。
   const [idx, setIdx] = useState(0)
   const [msg, setMsg] = useState('')
-  const reduceRef = useRef(false)
+  const [reduce, setReduce] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    reduceRef.current =
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-
-    if (reduceRef.current) {
-      setSpin('●')
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    if (reduceMotion) {
+      setReduce(true)
+      setIdx(0)
       setMsg(items[0].text) // 先頭を固定表示
       return
     }
 
-    // スピナー（90ms で回転）
-    let si = 0
-    const spinId = setInterval(() => {
-      si = (si + 1) % SPINNER.length
-      setSpin(SPINNER[si])
-    }, 90)
-
-    // メッセージ: タイプ → ホールド → 次へ（75ms ティック1本）
+    // メッセージ: タイプ → ホールド → 次へ（75ms の setTimeout チェーン1本）。
+    // タブ非表示・バーが画面外の間はチェーン自体を停止し、可視化イベントで再開する。
     let typed = 0
     let hold = 0
     let i = 0
-    const rotId = setInterval(() => {
+    let hidden = document.hidden
+    let offscreen = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    const step = () => {
+      timer = undefined
+      if (hidden || offscreen) return // 停止（再開は可視化イベント側から）
       const cur = items[i].text
       if (typed < cur.length) {
         typed += 1
         setMsg(cur.slice(0, typed))
-        return
-      }
-      if (hold < 26) {
+      } else if (hold < 26) {
         hold += 1
-        return
+      } else {
+        i = (i + 1) % items.length
+        typed = 0
+        hold = 0
+        setMsg('')
+        setIdx(i)
       }
-      i = (i + 1) % items.length
-      typed = 0
-      hold = 0
-      setMsg('')
-      setIdx(i)
-    }, 75)
+      schedule()
+    }
+    const schedule = () => {
+      if (timer === undefined) timer = setTimeout(step, 75)
+    }
+    schedule()
+
+    const resumeIfVisible = () => {
+      if (!hidden && !offscreen) schedule()
+    }
+    const onVisibility = () => {
+      hidden = document.hidden
+      resumeIfVisible()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    let io: IntersectionObserver | undefined
+    if (typeof IntersectionObserver !== 'undefined' && rootRef.current) {
+      io = new IntersectionObserver(([entry]) => {
+        offscreen = !entry.isIntersecting
+        resumeIfVisible()
+      })
+      io.observe(rootRef.current)
+    }
 
     return () => {
-      clearInterval(spinId)
-      clearInterval(rotId)
+      if (timer !== undefined) clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisibility)
+      io?.disconnect()
     }
     // items は notices から導出。notices が変わったら組み直す
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,58 +137,28 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
     return () => clearInterval(id)
   }, [])
 
-  // ── 天気 + 現在地 ──
-  const [place, setPlace] = useState('取得中…')
+  // ── 天気（東京固定・自サイトのプロキシ API のみ） ──
+  // 訪問者の IP から位置を推定する外部リクエストは、プライバシー・外部依存・
+  // モバイルの通信量の観点で廃止（Codex レビュー反映）。
   const [weather, setWeather] = useState<Weather | null>(null)
   useEffect(() => {
     let cancelled = false
-
-    const fetchWeather = async (lat?: number, lon?: number) => {
-      const query = lat !== undefined && lon !== undefined ? `?lat=${lat}&lon=${lon}` : ''
-      const res = await fetch(`/api/weather${query}`)
-      if (!res.ok) throw new Error(`Weather API failed: ${res.status}`)
-      const data = await res.json()
-      if (cancelled) return
-      setWeather({
-        temp: data.temp,
-        label: wxLabel(data.code),
-        kind: wxKind(data.code),
-        source: data.source,
-      })
-    }
-
-    const fetchPlace = async (lat: number, lon: number) => {
+    ;(async () => {
       try {
-        const res = await fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ja`,
-        )
-        if (!res.ok) throw new Error('reverse geocode failed')
-        const d = await res.json()
-        const p = d?.city || d?.locality || d?.principalSubdivision
-        if (p && !cancelled) setPlace(p)
-      } catch {
-        if (!cancelled) setPlace('東京')
-      }
-    }
-
-    const run = async () => {
-      try {
-        const res = await fetch('https://ipinfo.io/json')
-        if (!res.ok) throw new Error('IP location failed')
+        const res = await fetch('/api/weather')
+        if (!res.ok) throw new Error(`Weather API failed: ${res.status}`)
         const data = await res.json()
-        if (!data.loc) throw new Error('No location data')
-        const [lat, lon] = data.loc.split(',').map(parseFloat)
-        await Promise.all([fetchWeather(lat, lon), fetchPlace(lat, lon)])
+        if (cancelled) return
+        setWeather({
+          temp: data.temp,
+          label: wxLabel(data.code),
+          kind: wxKind(data.code),
+          source: data.source,
+        })
       } catch {
-        if (!cancelled) setPlace('東京')
-        try {
-          await fetchWeather()
-        } catch {
-          // 完全失敗時は時計のみ
-        }
+        // 失敗時は時計のみ（「--°」表示を維持）
       }
-    }
-    run()
+    })()
     return () => {
       cancelled = true
     }
@@ -174,16 +167,14 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
   const badge = items[idx]?.badge ?? ''
 
   return (
-    <div className="env">
+    <div className="env" ref={rootRef}>
       <span className="cmd">
-        <span className="spin" aria-hidden>
-          {spin}
-        </span>
+        <span className="spin" aria-hidden />
         <span className="rotwrap">
           NOTICE
           {badge && <span className="ndate">{badge}</span>}
           <span className="jp">{msg}</span>
-          {!reduceRef.current && <span className="tcur" aria-hidden />}
+          {!reduce && <span className="tcur" aria-hidden />}
         </span>
       </span>
 
@@ -206,9 +197,7 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
           <WxIcon kind={weather?.kind ?? 'sun'} />
         </span>
         <span className="temp">{weather ? `${weather.temp}°C` : '--°'}</span>
-        <span className="wx jp">
-          {weather?.label ?? '—'} · {place}
-        </span>
+        <span className="wx jp">{weather?.label ?? '—'} · 東京</span>
         {/* met.no 利用時はライセンス(NLOD/CC BY 4.0)に基づく帰属表示 */}
         {weather?.source === 'met.no' && (
           <a
