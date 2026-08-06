@@ -1,17 +1,21 @@
 // src/components/mist/MistLogTimeline.tsx
-// git log 風タイムライン（フィルタチップ・コミット列・load more・いいね）
+// git log 風タイムライン（フィルタチップ・コミット列・load more・いいね）。
+// 全件をSSRで渡す方式をやめ、追加分は Payload REST（GET /api/timeline）から
+// ページ単位で取得する（初期転送量の削減。Codex レビュー反映）。
+// フィルタは postType の where 句としてサーバー側に問い合わせ、結果をキーごとにキャッシュする。
 'use client'
 
-import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import ImageModal from '@/components/gallery/ImageModal'
 import RichTextRenderer from '@/components/shared/RichTextRenderer'
 import UrlPreview from '@/components/shared/UrlPreview'
 import { toCFUrl } from '@/lib/cfUrl'
+import { fmtDateTimeMeta } from '@/lib/date'
 import type { TimelineDoc, TimelinePostType } from '@/lib/payloadTypes'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 20
 
 /** 投稿タイプの表示ラベル（git log のカテゴリ表記） */
 const TYPE_LABELS: Record<TimelinePostType, string> = {
@@ -38,25 +42,6 @@ function pseudoHash(id: string | number): string {
   let h = 5381
   for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0
   return h.toString(16).padStart(7, '0').slice(0, 7)
-}
-
-/** `2025-12-06 sat 18:26` 形式（Asia/Tokyo 固定でSSR/CSRの表示を一致させる） */
-function fmtMeta(dateStr: string): string {
-  const d = new Date(dateStr)
-  if (Number.isNaN(d.getTime())) return ''
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).formatToParts(d)
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ''
-  const day = get('weekday').toLowerCase()
-  return `${get('year')}-${get('month')}-${get('day')} ${day} ${get('hour')}:${get('minute')}`
 }
 
 /* ── いいね（既存 /api/timeline/[id]/like を利用。localStorage キーも現行と共通） ── */
@@ -192,6 +177,32 @@ function PhotoGrid({
 
 /* ── 本体 ─────────────────────────────────── */
 
+/** フィルタキーごとの取得済みフィード */
+type FeedState = {
+  docs: TimelineDoc[]
+  page: number
+  hasMore: boolean
+  total: number
+}
+
+/** Payload REST から1ページ取得（read: anyone の公開コレクション） */
+async function fetchTimelinePage(filterKey: string, page: number) {
+  const types = FILTERS.find((f) => f.key === filterKey)?.types
+  const params = new URLSearchParams()
+  params.set('limit', String(PAGE_SIZE))
+  params.set('page', String(page))
+  params.set('sort', '-publishedAt')
+  params.set('depth', '2')
+  types?.forEach((t, i) => params.append(`where[postType][in][${i}]`, t))
+  const res = await fetch(`/api/timeline?${params.toString()}`)
+  if (!res.ok) throw new Error(`timeline fetch failed: ${res.status}`)
+  return (await res.json()) as {
+    docs: TimelineDoc[]
+    totalDocs: number
+    hasNextPage: boolean
+  }
+}
+
 type Props = {
   posts: TimelineDoc[]
   /** タイムライン全投稿数（load --more の (all n) 表示に使う） */
@@ -204,21 +215,46 @@ type Props = {
 
 export default function MistLogTimeline({ posts, total, showHead = true, compact = false }: Props) {
   const [filter, setFilter] = useState('all')
-  const [visible, setVisible] = useState(PAGE_SIZE)
   const [modalImg, setModalImg] = useState<string | null>(null)
+  const [feeds, setFeeds] = useState<Record<string, FeedState>>({
+    all: { docs: posts, page: 1, hasMore: posts.length < total, total },
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
 
   const headId = posts[0]?.id
+  const current = feeds[filter]
+  // compact(Home)は SSR 分のみ表示（追加取得なし）
+  const shown = compact ? posts : (current?.docs ?? [])
 
-  const filtered = useMemo(() => {
-    const types = FILTERS.find((f) => f.key === filter)?.types
-    if (!types) return posts
-    return posts.filter((p) => p.postType && types.includes(p.postType))
-  }, [posts, filter])
+  async function loadFeed(filterKey: string, page: number) {
+    setLoading(true)
+    setError(false)
+    try {
+      const data = await fetchTimelinePage(filterKey, page)
+      setFeeds((prev) => {
+        const existing = page === 1 ? [] : (prev[filterKey]?.docs ?? [])
+        // 追加読込の間に新規投稿があった場合のページずれ重複を除外
+        const seen = new Set(existing.map((d) => String(d.id)))
+        const docs = [...existing, ...data.docs.filter((d) => !seen.has(String(d.id)))]
+        return {
+          ...prev,
+          [filterKey]: { docs, page, hasMore: data.hasNextPage, total: data.totalDocs },
+        }
+      })
+    } catch (e) {
+      console.error('タイムライン取得エラー:', e)
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  // compact(Home)は取得件数=表示件数（limit 側で一元管理、PAGE_SIZE に縛られない）
-  const shown = compact ? filtered : filtered.slice(0, visible)
-  const hasMoreLoaded = !compact && filtered.length > visible
-  const hasMoreOnServer = total > posts.length
+  function handleFilter(key: string) {
+    setFilter(key)
+    setError(false)
+    if (!feeds[key]) void loadFeed(key, 1)
+  }
 
   return (
     <div>
@@ -240,10 +276,7 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
                 type="button"
                 className={filter === key ? 'on' : undefined}
                 aria-pressed={filter === key}
-                onClick={() => {
-                  setFilter(key)
-                  setVisible(PAGE_SIZE)
-                }}
+                onClick={() => handleFilter(key)}
               >
                 {label}
               </button>
@@ -264,7 +297,7 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
                 <span className="hash">{pseudoHash(post.id)}</span>
                 {' · '}
                 <time dateTime={post.publishedAt ?? post.createdAt}>
-                  {fmtMeta(post.publishedAt ?? post.createdAt)}
+                  {fmtDateTimeMeta(post.publishedAt ?? post.createdAt)}
                 </time>
                 {typeLabel && <span className="jp">{` · ${typeLabel}`}</span>}
                 {photos.length > 0 && ` +${photos.length} photo${photos.length > 1 ? 's' : ''}`}
@@ -300,24 +333,32 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
 
         {shown.length === 0 && (
           <p className="commit jp" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-faint)' }}>
-            該当する投稿がありません
+            {loading ? '取得中…' : '該当する投稿がありません'}
           </p>
         )}
       </div>
+
+      {error && (
+        <p className="jp" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-faint)', margin: '12px 0 0 32px' }}>
+          取得に失敗しました。もう一度お試しください。
+        </p>
+      )}
 
       {compact ? (
         // Home ダイジェスト: 追加読込せず、常に専用タイムラインタブへ誘導
         <Link href="/timeline" className="loadmore">
           $ cd ./timeline <span className="n">(all {total}) →</span>
         </Link>
-      ) : hasMoreLoaded ? (
-        <button type="button" className="loadmore" onClick={() => setVisible((v) => v + PAGE_SIZE)}>
-          $ load --more <span className="n">(all {total})</span>
+      ) : current?.hasMore || error ? (
+        <button
+          type="button"
+          className="loadmore"
+          disabled={loading}
+          onClick={() => void loadFeed(filter, (current?.page ?? 0) + 1)}
+        >
+          {loading ? '$ loading…' : '$ load --more'}{' '}
+          <span className="n">(all {current?.total ?? total})</span>
         </button>
-      ) : hasMoreOnServer ? (
-        <Link href="/timeline" className="loadmore">
-          $ cd ./timeline <span className="n">(all {total}) →</span>
-        </Link>
       ) : null}
     </div>
   )

@@ -4,7 +4,6 @@ import type { Metadata } from 'next'
 import React from 'react'
 import { toCFUrl } from '@/lib/cfUrl'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
-import { Providers } from '@/components/Providers'
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +31,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://iwabuchi-makoto.com'), // 実際のドメインに変更してください
+  metadataBase: new URL('https://iwabuchi-makoto.com'),
   alternates: {
     canonical: '/',
   },
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
     title: '岩渕誠（いわぶちまこと） | ライフログ',
     description:
       '岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録などの日々の記録を残しています。',
-    url: 'https://iwabuchi-makoto.com', // 実際のドメインに変更してください
+    url: 'https://iwabuchi-makoto.com',
     siteName: 'いわぶち',
     locale: 'ja_JP',
     type: 'website',
@@ -74,30 +73,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="ja"
-      suppressHydrationWarning
-      className="dark:text-zinc-50"
-    >
+    <html lang="ja">
       <head>
-        <meta name="color-scheme" content="light dark" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(()=>{try{
-              const stored = localStorage.getItem('theme');
-              const root = document.documentElement;
-              // ユーザーが選択している場合のみクラスを付与
-              if (stored === 'dark') {
-                root.classList.add('dark');
-                root.classList.remove('light');
-              } else if (stored === 'light') {
-                root.classList.add('light');
-                root.classList.remove('dark');
-              }
-              // storedがnullの場合はクラスを付けず、システム設定に従う
-            }catch(e){}})()`,
-          }}
-        />
+        {/* サイトはライトターミナル固定（Mist Terminal）。フォーム・スクロールバーも明るく */}
+        <meta name="color-scheme" content="light" />
         {/* iOS Safari は touchstart リスナーが無いと :active を描画しないため、
             グローバルに空の passive リスナーを登録してタッチ押下フィードバックを有効化 */}
         <script
@@ -158,11 +137,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 "@type": "Person",
                 "name": "岩渕誠",
                 "alternateName": "いわぶちまこと"
-              },
-              "potentialAction": {
-                "@type": "SearchAction",
-                "target": "https://iwabuchi-makoto.com/posts?q={search_term_string}",
-                "query-input": "required name=search_term_string"
               }
             })
           }}
@@ -170,14 +144,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className="antialiased overflow-x-hidden text-[color:var(--fg-base)]">
-        <Providers>
-          {/* ページシェル（ナビ・コンテナ・フッター）は (site) レイアウトが持つ。
-              トップページは Mist Terminal デザインの独自シェルで描画する */}
-          {children}
-
-          {/* Portal root for modals */}
-          <div id="modal-root"></div>
-        </Providers>
+        {/* ページシェル（ナビ・コンテナ・フッター）は (site) レイアウトが持つ。
+            トップページは Mist Terminal デザインの独自シェルで描画する */}
+        {children}
       </body>
     </html>
   )

@@ -2,32 +2,8 @@
 // 右端に固定（sticky）するプロフィール列: $ cat profile.txt + $ spotify --playlist
 import Image from 'next/image'
 import { toCFUrl } from '@/lib/cfUrl'
-
-type ProfileData = {
-  name?: string | null
-  nameJapanese?: string | null
-  title?: string | null
-  description?: string | null
-  imageUrl?: string | null
-  socialLinks?: { platform?: string | null; url?: string | null; displayName?: string | null }[]
-}
-
-// ターミナル意匠に合わせた小文字ラベル
-const PLATFORM_LABELS: Record<string, string> = {
-  twitter: 'x',
-  instagram: 'instagram',
-  github: 'github',
-  linkedin: 'linkedin',
-  youtube: 'youtube',
-}
-
-/** Spotify 共有URL → 埋め込みURL。playlist/album/track/artist に対応。不正なら null */
-function spotifyEmbedUrl(url?: string | null): string | null {
-  if (!url) return null
-  const m = url.match(/(playlist|album|track|artist)[/:]([a-zA-Z0-9]+)/)
-  if (!m) return null
-  return `https://open.spotify.com/embed/${m[1]}/${m[2]}?utm_source=generator`
-}
+import { socialLabel, type ProfileData } from '@/lib/social'
+import { spotifyEmbedUrl } from '@/lib/spotify'
 
 type Props = {
   profile: ProfileData
@@ -62,11 +38,10 @@ export default function MistRail({ profile, spotifyUrl }: Props) {
         </div>
         {profile.description && <p className="bio jp">{profile.description}</p>}
         <div className="socials">
-          {profile.socialLinks?.map(({ platform, url, displayName }) =>
-            url ? (
-              <a key={url} href={url} target="_blank" rel="noopener noreferrer">
-                {(displayName?.toLowerCase() || (platform ? PLATFORM_LABELS[platform] : null) || 'link') +
-                  ' ↗'}
+          {profile.socialLinks?.map((link) =>
+            link.url ? (
+              <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">
+                {socialLabel(link, 'term')} ↗
               </a>
             ) : null,
           )}

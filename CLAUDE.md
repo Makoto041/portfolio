@@ -13,7 +13,7 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 3. **Fable 5 レビュー**: 非自明な実装は Fable 5 をサブエージェント（Agentツール `model: fable`）に指名して設計/コードレビュー → 指摘修正 → 再確認のループを回す（専用 `advisor()` が使えない環境のため、Fableサブエージェントで代替）。
 4. **自走で PR → マージ**: 完了したらブランチを切って PR を作成（**main への直コミット禁止**）。CI（Vercelビルド）と PRレビュー（CodeRabbit）の完了を待ち、**指摘があれば修正して再確認、無ければ `gh pr merge --squash` でマージ**する。
 5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用（`pnpm payload migrate`）はデプロイ側に委ねる（`.env` は本番 Neon を指すためローカル/CIから本番へは適用しない）。
-6. **検証**: `pnpm generate:types` / `pnpm build` / `pnpm lint` をローカルで通してから PR にする。
+6. **検証**: `pnpm generate:types` / `pnpm build` / `pnpm lint` / `pnpm typecheck` / `pnpm test` をローカルで通してから PR にする。
 
 ## サーバー環境でのプレビュー（tailnet 経由で実機確認）
 
@@ -68,8 +68,10 @@ pnpm devsafe               # クリーンスタート（.nextを削除）
 pnpm build                 # プロダクション用ビルド
 pnpm start                 # プロダクションサーバー開始
 
-# リント & 型生成
+# リント・型・テスト
 pnpm lint                  # ESLint実行
+pnpm typecheck             # tsc --noEmit
+pnpm test                  # Vitest（lib/ の単体テスト）
 pnpm generate:types        # PayloadCMS型生成
 
 # PayloadCMS
@@ -162,10 +164,10 @@ S3_REGION=                # Cloudflareリージョン
 ## コンポーネントガイドライン
 
 ### スタイリング
-- TailwindCSSクラスを使用
-- レスポンシブデザインパターンに従う
-- グラスモーフィズム効果（`glass`クラス）を使用
-- セクションパディング（`section-pad`）で一貫したスペーシング
+- サイト本体は Mist Terminal（`src/app/(frontend)/mist.css` の `.mist` スコープ・ライト固定）
+- 旧 Quiet Glass テーマ / ダークモード切替は削除済み（`src/app/global.css` は
+  .mist 外の error 画面用の最小トークンのみ）
+- レスポンシブデザインパターンに従う（760px / 1080px ブレークポイント）
 
 ### 状態管理
 - ローカル状態にはReactフックを使用

@@ -3,7 +3,6 @@ import MistPageHead from '@/components/mist/MistPageHead'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import MistLogTimeline from '@/components/mist/MistLogTimeline'
 import AdminLinks from '@/components/admin/AdminLinks'
-import { fetchLatest } from '@/lib/payload'
 import { getPayloadClient } from '@/lib/payloadClient'
 import type { TimelineDoc } from '@/lib/payloadTypes'
 
@@ -37,14 +36,21 @@ export const metadata: Metadata = {
 }
 
 export default async function TimelinePage() {
-  const payload = await getPayloadClient()
-  // 表示分（最大100件）と全件数を並列取得。total は実数を渡す（load --more の (all n) 表示・
-  // 100件超の古い記録への導線が正しく出るように）
-  const [{ timeline }, totalRes] = await Promise.all([
-    fetchLatest({ timelineLimit: 100 }),
-    payload.count({ collection: 'timeline' }),
-  ])
-  const posts = timeline as unknown as TimelineDoc[]
+  // 初期表示は最新20件のみ。以降は MistLogTimeline が Payload REST
+  // （GET /api/timeline）からページ単位で追加取得する（100件一括取得を廃止）
+  let posts: TimelineDoc[] = []
+  let total = 0
+  try {
+    const payload = await getPayloadClient()
+    const [postsRes, totalRes] = await Promise.all([
+      payload.find({ collection: 'timeline', limit: 20, sort: '-publishedAt', depth: 2 }),
+      payload.count({ collection: 'timeline' }),
+    ])
+    posts = postsRes.docs as unknown as TimelineDoc[]
+    total = totalRes.totalDocs
+  } catch (error) {
+    console.error('Timeline fetch failed (rendering empty):', error)
+  }
 
   return (
     <main className="content">
@@ -57,7 +63,7 @@ export default async function TimelinePage() {
 
       {/* トップと同じ git log 風タイムライン（読み幅を確保） */}
       <div style={{ maxWidth: 840 }}>
-        <MistLogTimeline posts={posts} total={totalRes.totalDocs} showHead={false} />
+        <MistLogTimeline posts={posts} total={total} showHead={false} />
       </div>
     </main>
   )

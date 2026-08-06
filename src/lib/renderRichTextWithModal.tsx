@@ -24,8 +24,8 @@ const defaultClassNames: Record<string, string> = {
   ol: 'mb-4 list-decimal list-inside',
   li: 'ml-6 mb-1',
   blockquote: 'border-l-4 pl-4 italic my-4 text-gray-600',
-  pre: 'bg-gray-100 dark:bg-gray-800 p-4 rounded my-4 overflow-auto',
-  code: 'bg-gray-200 dark:bg-gray-700 px-1 rounded text-sm font-mono',
+  pre: 'bg-gray-100 p-4 rounded my-4 overflow-auto',
+  code: 'bg-gray-200 px-1 rounded text-sm font-mono',
   a: 'text-[var(--accent)] underline',
   img: 'my-4 max-w-full rounded',
 }

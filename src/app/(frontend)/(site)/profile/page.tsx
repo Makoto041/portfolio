@@ -4,12 +4,27 @@
 export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
 import Image from 'next/image'
-import Link from 'next/link'
 import type { Metadata } from 'next'
 import MistPageHead from '@/components/mist/MistPageHead'
 import { toCFUrl } from '@/lib/cfUrl'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { getPayloadClient } from '@/lib/payloadClient'
+import { socialLabel, type ProfileData, type SocialLink } from '@/lib/social'
+import { spotifyEmbedUrl } from '@/lib/spotify'
+
+const FALLBACK_PROFILE: Required<Pick<ProfileData, 'name' | 'nameJapanese' | 'title' | 'description'>> & ProfileData = {
+  name: 'Makoto Iwabuchi',
+  nameJapanese: 'いわぶちまこと',
+  title: 'ウェブエンジニア',
+  description:
+    'ウェブエンジニア／フロントエンド好き。Payload CMS × Next.jsでポートフォリオサイトを構築しています。',
+  imageUrl: null,
+  socialLinks: [
+    { platform: 'instagram', url: 'https://instagram.com/makoto0140', displayName: 'Instagram' },
+    { platform: 'github', url: 'https://github.com/Makoto041', displayName: 'GitHub' },
+    { platform: 'twitter', url: 'https://x.com/613_kmk', displayName: 'X' },
+  ],
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -20,7 +35,9 @@ export async function generateMetadata(): Promise<Metadata> {
     })
 
     const title = `プロフィール | ${siteSettings.profile?.nameJapanese || 'いわぶちまこと'}`
-    const description = siteSettings.profile?.description || '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。'
+    const description =
+      siteSettings.profile?.description ||
+      '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。'
     const siteName = siteSettings.profile?.nameJapanese || 'いわぶちまこと'
 
     return {
@@ -54,117 +71,89 @@ export async function generateMetadata(): Promise<Metadata> {
     // フォールバック
     return {
       title: 'プロフィール',
-      description: '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。',
+      description:
+        '岩渕誠（いわぶちまこと）のプロフィールページ。ウェブエンジニア・フロントエンド開発者として活動しています。',
     }
   }
 }
 
-export default async function ProfilePage() {
-  let profileData = {
-    name: 'Makoto Iwabuchi',
-    nameJapanese: 'いわぶちまこと',
-    title: 'ウェブエンジニア',
-    description: 'ウェブエンジニア／フロントエンド好き。Payload CMS × Next.jsでポートフォリオサイトを構築しています。',
-    profileImage: null as any,
-    socialLinks: [
-      { platform: 'twitter', url: '#', displayName: 'X' },
-      { platform: 'instagram', url: 'https://instagram.com/makoto0140', displayName: 'Instagram' },
-      { platform: 'github', url: 'https://github.com/Makoto041', displayName: 'GitHub' },
-    ] as any,
-  }
-
+async function getProfilePageData(): Promise<{ profile: ProfileData; spotifyUrl: string | null }> {
   try {
     const payload = await getPayloadClient()
-    const siteSettings = await payload.findGlobal({
-      slug: 'site-settings',
-      depth: 2,
-    })
-
-    if (siteSettings.profile) {
-      profileData = {
-        name: siteSettings.profile.name || profileData.name,
-        nameJapanese: siteSettings.profile.nameJapanese || profileData.nameJapanese,
-        title: siteSettings.profile.title || profileData.title,
-        description: siteSettings.profile.description || profileData.description,
-        profileImage: siteSettings.profile.profileImage,
-        socialLinks: siteSettings.profile.socialLinks || profileData.socialLinks,
-      }
+    const siteSettings = await payload.findGlobal({ slug: 'site-settings', depth: 2 })
+    const p = siteSettings.profile
+    const profileImage = p?.profileImage
+    return {
+      profile: {
+        name: p?.name || FALLBACK_PROFILE.name,
+        nameJapanese: p?.nameJapanese || FALLBACK_PROFILE.nameJapanese,
+        title: p?.title || FALLBACK_PROFILE.title,
+        description: p?.description || FALLBACK_PROFILE.description,
+        imageUrl: typeof profileImage === 'object' && profileImage?.url ? profileImage.url : null,
+        socialLinks: (p?.socialLinks as SocialLink[] | undefined) ?? FALLBACK_PROFILE.socialLinks,
+      },
+      spotifyUrl: siteSettings.spotify?.playlistUrl ?? null,
     }
   } catch (error) {
     console.error('Failed to fetch profile data:', error)
-    // フォールバックデータを使用
+    return { profile: FALLBACK_PROFILE, spotifyUrl: null }
   }
+}
 
-  const profileImageUrl = profileData.profileImage && typeof profileData.profileImage === 'object' && 'url' in profileData.profileImage
-    ? toCFUrl(profileData.profileImage.url!)
-    : toCFUrl('/profile.jpg')
+export default async function ProfilePage() {
+  const { profile, spotifyUrl } = await getProfilePageData()
+  const profileImageUrl = profile.imageUrl ? toCFUrl(profile.imageUrl) : toCFUrl('/profile.jpg')
+  const spotifyEmbed = spotifyEmbedUrl(spotifyUrl)
 
-  const getPlatformDisplayName = (platform: string, displayName?: string) => {
-    if (displayName) return displayName
-    switch (platform) {
-      case 'twitter': return 'X'
-      case 'instagram': return 'Instagram'
-      case 'github': return 'GitHub'
-      case 'linkedin': return 'LinkedIn'
-      case 'youtube': return 'YouTube'
-      default: return platform
-    }
-  }
-  
   return (
-    <>
-      <link rel="preload" as="image" href={profileImageUrl} />
-      <main className="content">
-        <MistPageHead cmd="cat ./profile.txt" title="Profile" />
-        <section className="single">
-          <div
-            className="card"
-            style={{ alignItems: 'center', textAlign: 'center', padding: '32px 28px', gap: 0 }}
-          >
-            <div
-              className="avatar"
-              style={{ width: 140, height: 140, borderRadius: '50%', marginBottom: 22 }}
-            >
-              <Image
-                src={profileImageUrl}
-                alt={`${profileData.nameJapanese}（${profileData.name}）のプロフィール写真`}
-                width={140}
-                height={140}
-                sizes="140px"
-                priority
-                className="object-cover w-full h-full"
-              />
-            </div>
-            <h2
-              style={{
-                fontFamily: 'var(--font-outfit), sans-serif',
-                fontSize: 'var(--fs-h3)',
-                fontWeight: 700,
-                letterSpacing: '-0.01em',
-                margin: 0,
-              }}
-            >
-              {profileData.name}
-            </h2>
-            <p className="jp" style={{ margin: '6px 0 18px', fontSize: 'var(--fs-meta)', color: 'var(--m-faint)' }}>
-              {profileData.nameJapanese}・{profileData.title}
-            </p>
-            <p
-              className="bio jp"
-              style={{ marginBottom: 22, textAlign: 'center', maxWidth: 380 }}
-            >
-              {profileData.description}
-            </p>
-            <div className="socials" style={{ justifyContent: 'center' }}>
-              {profileData.socialLinks.map((link: any, index: number) => (
-                <Link key={index} href={link.url} target="_blank" rel="noopener noreferrer">
-                  {getPlatformDisplayName(link.platform, link.displayName)} ↗
-                </Link>
-              ))}
-            </div>
+    <main className="content">
+      <MistPageHead cmd="cat ./profile.txt" title="Profile" />
+      <section className="single">
+        <div className="card profilecard">
+          <div className="avatar">
+            <Image
+              src={profileImageUrl}
+              alt={`${profile.nameJapanese}（${profile.name}）のプロフィール写真`}
+              width={140}
+              height={140}
+              sizes="140px"
+              priority
+              className="object-cover w-full h-full"
+            />
           </div>
-        </section>
-      </main>
-    </>
+          <h2>{profile.name}</h2>
+          <p className="sub jp">
+            {profile.nameJapanese}・{profile.title}
+          </p>
+          <p className="bio jp">{profile.description}</p>
+          <div className="socials">
+            {profile.socialLinks?.map((link) =>
+              link.url ? (
+                <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">
+                  {socialLabel(link, 'full')} ↗
+                </a>
+              ) : null,
+            )}
+          </div>
+        </div>
+
+        {/* Spotify（SiteSettings.spotify.playlistUrl 設定時のみ。
+            SP のトップページからは撤去したため、ここが常設の置き場所） */}
+        {spotifyEmbed && (
+          <div className="card">
+            <span className="cmd">$ spotify --playlist</span>
+            <iframe
+              className="spotify-embed"
+              src={spotifyEmbed}
+              height={352}
+              // Spotify 公式埋め込みに準拠し sandbox は付けない（MistRail 側の注記参照）
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              title="Spotify プレイリスト"
+            />
+          </div>
+        )}
+      </section>
+    </main>
   )
 }

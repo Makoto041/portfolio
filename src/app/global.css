@@ -1,64 +1,38 @@
-/* ── フォント ──
-   本文フォント: 通常ページは .mist（IBM Plex Mono / Noto Sans JP / Outfit）で描画。
-   .mist 外（error/404/modal）のみ下記 --font-body（システムJP）を使用 */
-
 /* ──────────────────────────────────────────────
-   Quiet Glass ― 白・薄ブルー・薄グレー基調の
-   シンプルで涼しげな Liquid Glass デザイン
+   グローバルベース（.mist 外の error / 404 など用）
    Tailwind v4 ― CSS-first (@theme / @layer)
+
+   サイト本体は Mist Terminal（src/app/(frontend)/mist.css の
+   .mist スコープ・ライト固定）で描画する。ここには
+   .mist 外のフォールバック画面が使う最小限のトークンと
+   ユーティリティのみを置く（旧 Quiet Glass のダークモード
+   切替・カード/チップ群は撤去済み）。
 ─────────────────────────────────────────────── */
 @import "tailwindcss";
 
 /* === TOKENS ================================== */
 @theme {
-  /* ベース色（涼しげな白 / 深い青灰） */
-  --bg-light: #f6f9fc;
-  --bg-dark: #0e141c;
-  --fg-light: #1c2733;
-  --fg-dark: #e8eef5;
-
-  /* 本文フォント: 通常ページは .mist 側で上書きされる。ここは .mist 外（error/404/modal）用のシステムJPスタック */
+  /* 本文フォント: 通常ページは .mist 側で上書きされる。ここは .mist 外（error/404）用のシステムJPスタック */
   --font-body: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'BIZ UDPGothic', 'Meiryo', sans-serif;
 
   /* アクセント（群青 / ウルトラマリン — サイトのシグネチャーカラー） */
   --accent: #3d5cc9;
-  --accent-soft: #dfe8fb;
-
-  /* ガラス面 */
-  --glass-surface-light: hsl(210 40% 100% / 0.55);
-  --glass-border-light: hsl(210 30% 60% / 0.16);
-  --glass-surface-dark: hsl(214 28% 16% / 0.55);
-  --glass-border-dark: hsl(210 40% 90% / 0.1);
 
   /* radius / blur */
   --radius-m: 1.1rem;
   --blur-m: clamp(10px, 2vw, 18px);
 }
 
-/* light / dark 切替 */
-/* デフォルト: ライトモード */
 :root {
-  --glass-surface: var(--glass-surface-light);
-  --glass-border: var(--glass-border-light);
+  --glass-surface: hsl(210 40% 100% / 0.55);
+  --glass-border: hsl(210 30% 60% / 0.16);
   --glass-highlight: hsl(0 0% 100% / 0.6);
-  --bg-base: var(--bg-light);
-  --fg-base: var(--fg-light);
+  --bg-base: #f6f9fc;
+  --fg-base: #1c2733;
   --fg-muted: #64748b;
-  /* カード */
-  --card-bg: hsl(210 40% 100% / 0.55);
-  --card-bg-hover: hsl(210 40% 100% / 0.72);
-  --card-border: hsl(210 30% 60% / 0.16);
-  --card-border-hover: hsl(210 40% 55% / 0.28);
   --card-shadow: 0 4px 24px hsl(212 45% 40% / 0.07);
-  --card-shadow-hover: 0 8px 32px hsl(212 45% 40% / 0.12);
-  /* バッジ・タグ（群青系） */
-  --chip-bg: hsl(226 65% 55% / 0.12);
-  --chip-fg: #33509e;
-  /* アクセント（群青） */
   --accent: #3d5cc9;
   --accent-hover: #2b449f;
-  --accent-contrast: #ffffff;
-  --accent-gradient: linear-gradient(135deg, #3d5cc9 0%, #5b8def 55%, #6fb1f5 100%);
   /* ページ背景（明るい白 + ごく薄い群青のグラデーション） */
   --page-gradient: linear-gradient(
     180deg,
@@ -68,100 +42,9 @@
   );
 }
 
-/* システム設定がダークモード（ユーザー選択がない場合のみ） */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not(.dark) {
-    --glass-surface: var(--glass-surface-dark);
-    --glass-border: var(--glass-border-dark);
-    --glass-highlight: hsl(0 0% 100% / 0.07);
-    --bg-base: var(--bg-dark);
-    --fg-base: var(--fg-dark);
-    --fg-muted: #8a99ab;
-    --card-bg: hsl(214 26% 17% / 0.55);
-    --card-bg-hover: hsl(214 26% 20% / 0.7);
-    --card-border: hsl(210 40% 90% / 0.09);
-    --card-border-hover: hsl(210 40% 90% / 0.18);
-    --card-shadow: 0 4px 24px hsl(220 60% 2% / 0.35);
-    --card-shadow-hover: 0 8px 32px hsl(220 60% 2% / 0.5);
-    --chip-bg: hsl(224 70% 70% / 0.14);
-    --chip-fg: #9db7f2;
-    --accent: #8aa8f0;
-    --accent-hover: #aec4f7;
-    --accent-contrast: #0e1626;
-    --accent-gradient: linear-gradient(135deg, #7d9cef 0%, #93bbf5 55%, #a9d2fa 100%);
-    --page-gradient: linear-gradient(
-      180deg,
-      #0f1626 0%,
-      #0e141f 55%,
-      #0c1119 100%
-    );
-  }
-}
-
-/* ユーザーが明示的にライトを選択 */
-.light {
-  --glass-surface: var(--glass-surface-light);
-  --glass-border: var(--glass-border-light);
-  --glass-highlight: hsl(0 0% 100% / 0.6);
-  --bg-base: var(--bg-light);
-  --fg-base: var(--fg-light);
-  --fg-muted: #64748b;
-  --card-bg: hsl(210 40% 100% / 0.55);
-  --card-bg-hover: hsl(210 40% 100% / 0.72);
-  --card-border: hsl(210 30% 60% / 0.16);
-  --card-border-hover: hsl(210 40% 55% / 0.28);
-  --card-shadow: 0 4px 24px hsl(212 45% 40% / 0.07);
-  --card-shadow-hover: 0 8px 32px hsl(212 45% 40% / 0.12);
-  --chip-bg: hsl(226 65% 55% / 0.12);
-  --chip-fg: #33509e;
-  --accent: #3d5cc9;
-  --accent-hover: #2b449f;
-  --accent-contrast: #ffffff;
-  --accent-gradient: linear-gradient(135deg, #3d5cc9 0%, #5b8def 55%, #6fb1f5 100%);
-  --page-gradient: linear-gradient(
-    180deg,
-    #f9fbff 0%,
-    #f2f6fd 45%,
-    #ecf2fb 100%
-  );
-}
-
-/* ユーザーが明示的にダークを選択 */
-.dark {
-  --glass-surface: var(--glass-surface-dark);
-  --glass-border: var(--glass-border-dark);
-  --glass-highlight: hsl(0 0% 100% / 0.07);
-  --bg-base: var(--bg-dark);
-  --fg-base: var(--fg-dark);
-  --fg-muted: #8a99ab;
-  --card-bg: hsl(214 26% 17% / 0.55);
-  --card-bg-hover: hsl(214 26% 20% / 0.7);
-  --card-border: hsl(210 40% 90% / 0.09);
-  --card-border-hover: hsl(210 40% 90% / 0.18);
-  --card-shadow: 0 4px 24px hsl(220 60% 2% / 0.35);
-  --card-shadow-hover: 0 8px 32px hsl(220 60% 2% / 0.5);
-  --chip-bg: hsl(224 70% 70% / 0.14);
-  --chip-fg: #9db7f2;
-  --accent: #8aa8f0;
-  --accent-hover: #aec4f7;
-  --accent-contrast: #0e1626;
-  --accent-gradient: linear-gradient(135deg, #7d9cef 0%, #93bbf5 55%, #a9d2fa 100%);
-  --page-gradient: linear-gradient(
-    180deg,
-    #0f1626 0%,
-    #0e141f 55%,
-    #0c1119 100%
-  );
-}
-
 /* === UTILITIES ================================= */
 @layer utilities {
-  /* 全ページのセクション上下余白用ユーティリティ */
-  .section-pad {
-    @apply py-8 sm:py-12 lg:py-16;
-  }
-
-  /* 基本のガラス面（ナビ・パネル用）
+  /* 基本のガラス面（error 画面のパネル用）
      上端のinsetハイライトと彩度ブーストで「液体ガラス」の質感を出す */
   .glass {
     @apply rounded-[var(--radius-m)]
@@ -175,137 +58,9 @@
       var(--card-shadow);
   }
 
-  /* タイムラインカード用：控えめなホバーだけ動く */
-  .glass-card {
-    @apply rounded-[var(--radius-m)]
-           backdrop-blur-[var(--blur-m)]
-           backdrop-saturate-150
-           border;
-
-    background: var(--card-bg);
-    border-color: var(--card-border);
-    box-shadow:
-      inset 0 1px 0 var(--glass-highlight),
-      var(--card-shadow);
-    transition:
-      background 0.25s ease,
-      border-color 0.25s ease,
-      box-shadow 0.25s ease,
-      transform 0.25s ease;
-  }
-  .glass-card:hover {
-    background: var(--card-bg-hover);
-    border-color: var(--card-border-hover);
-    box-shadow:
-      inset 0 1px 0 var(--glass-highlight),
-      var(--card-shadow-hover);
-    transform: translateY(-1px);
-  }
-
-  /* 投稿タイプ・タグ用チップ */
-  .chip {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium tracking-wide;
-
-    background: var(--chip-bg);
-    color: var(--chip-fg);
-  }
-
-  /* ガラス風ピル（リンク・CTA用） */
-  .pill {
-    @apply inline-flex items-center justify-center rounded-full px-6 py-2 text-sm;
-
-    backdrop-filter: blur(var(--blur-m)) saturate(1.5);
-    background: var(--glass-surface);
-    border: 1px solid var(--glass-border);
-    box-shadow:
-      inset 0 1px 0 var(--glass-highlight),
-      var(--card-shadow);
-    transition:
-      background 0.25s ease,
-      box-shadow 0.25s ease,
-      transform 0.25s ease;
-  }
-  .pill:hover {
-    background: var(--card-bg-hover);
-    box-shadow:
-      inset 0 1px 0 var(--glass-highlight),
-      var(--card-shadow-hover);
-    transform: translateY(-1px);
-  }
-
   /* 補助テキスト */
   .text-muted {
     color: var(--fg-muted);
-  }
-
-  /* シグネチャーグラデーションのテキスト（名前・ブランド用） */
-  .text-gradient {
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  /* 見出し用のアクセントダッシュ（群青グラデーションの短い線） */
-  .accent-dash {
-    background: var(--accent-gradient);
-  }
-}
-
-/* 投稿タイプ別の色相チップ（--chip-h に色相を渡して使う。
-   青系ファミリーで統一しつつ、タイプごとに個性を出す） */
-.chip-hued {
-  background: hsl(var(--chip-h, 226) 70% 55% / 0.14);
-  color: hsl(var(--chip-h, 226) 55% 38%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not(.dark) .chip-hued {
-    background: hsl(var(--chip-h, 226) 60% 65% / 0.16);
-    color: hsl(var(--chip-h, 226) 75% 78%);
-  }
-}
-
-.dark .chip-hued {
-  background: hsl(var(--chip-h, 226) 60% 65% / 0.16);
-  color: hsl(var(--chip-h, 226) 75% 78%);
-}
-
-/* === MOTION =================================== */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.fade-in-up {
-  animation: fadeInUp 0.45s ease both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fade-in-up {
-    animation: none;
-  }
-
-  .glass-card,
-  .pill {
-    transition: none;
   }
 }
 
@@ -337,22 +92,6 @@ body::before {
     radial-gradient(40rem 28rem at 85% -8%, hsl(224 85% 82% / 0.5), transparent 70%),
     radial-gradient(32rem 24rem at -10% 25%, hsl(204 90% 85% / 0.42), transparent 70%),
     radial-gradient(28rem 20rem at 60% 110%, hsl(232 70% 86% / 0.3), transparent 70%);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light):not(.dark) body::before {
-    background:
-      radial-gradient(40rem 28rem at 85% -8%, hsl(226 70% 38% / 0.22), transparent 70%),
-      radial-gradient(32rem 24rem at -10% 25%, hsl(210 75% 32% / 0.18), transparent 70%),
-      radial-gradient(28rem 20rem at 60% 110%, hsl(234 60% 35% / 0.14), transparent 70%);
-  }
-}
-
-.dark body::before {
-  background:
-    radial-gradient(40rem 28rem at 85% -8%, hsl(226 70% 38% / 0.22), transparent 70%),
-    radial-gradient(32rem 24rem at -10% 25%, hsl(210 75% 32% / 0.18), transparent 70%),
-    radial-gradient(28rem 20rem at 60% 110%, hsl(234 60% 35% / 0.14), transparent 70%);
 }
 
 /* コンテンツ内のリンクはアクセシブルに保つ（群青アクセントで統一） */
