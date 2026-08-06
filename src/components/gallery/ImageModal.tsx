@@ -5,7 +5,7 @@
 // ブラウザ標準の挙動に委ねる（独自ポータル/z-index 管理は廃止）。
 import { useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { toCFUrl } from '@/lib/cfUrl'
+import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
 
 interface ImageModalProps {
   src: string
@@ -55,6 +55,8 @@ export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModa
             height={900}
             sizes="92vw"
             className="imgmodal-img"
+            // リッチテキスト経由で外部ホストの画像も開くため、CF/相対以外は最適化を通さない
+            unoptimized={!isOptimizableSrc(toCFUrl(src))}
           />
           <button
             type="button"

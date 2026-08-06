@@ -4,6 +4,7 @@
 import React, { ReactNode, ElementType, useState } from 'react'
 import Image from 'next/image'
 import ImageModal from '@/components/gallery/ImageModal'
+import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
 
 export interface LexicalNode {
   type?: string
@@ -99,21 +100,24 @@ export function RenderRichTextWithModal({ nodes = [], keyPrefix = 'rt' }: { node
 
       // 画像
       if ((node.tag === 'img' && node.src) || (node.type === 'image' && node.src)) {
-        const imageSrc = node.src.startsWith('http') ? node.src : `https://iwabuchi-makoto.com${node.src}`
+        // 相対URLは CloudFront へ正規化。外部ホストの絶対URLは remotePatterns 外のため
+        // unoptimized で直接参照する（RichTextRenderer / UrlPreview と同ポリシー）
+        const imageSrc = toCFUrl(node.src)
         return (
           <div key={key} className="my-4">
-            <Image 
+            <Image
               src={imageSrc}
-              alt={node.alt || ''} 
+              alt={node.alt || ''}
               width={160}
               height={120}
               sizes="(max-width: 768px) 100vw, 160px"
-              className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto" 
-              onClick={() => setModalImage({ 
-                src: imageSrc, 
-                alt: node.alt || '', 
-                width: 800, 
-                height: 600 
+              className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
+              unoptimized={!isOptimizableSrc(imageSrc)}
+              onClick={() => setModalImage({
+                src: imageSrc,
+                alt: node.alt || '',
+                width: 800,
+                height: 600
               })}
             />
           </div>

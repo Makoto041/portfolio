@@ -827,20 +827,12 @@
   .mist .gal { grid-template-columns: repeat(2, 1fr); }
   .mist .gal .g.big { grid-column: span 1; grid-row: span 1; }
   .mist .gal .g:nth-child(n + 7) { display: none; }
-  /* ギャラリーマーキーは純装飾のため SP では出さない（画像リクエスト・アニメ負荷の削減） */
-  .mist .substream,
-  .mist .streamwrap { display: none; }
   /* プロフィール列（Home 右レール）はコンパクト自己紹介と情報が重複するため SP では出さない。
      フルのプロフィール・Spotify は /profile ページが担う */
   .mist .profilecol { display: none; }
   /* SP はミストブロブのドリフトを止め blur も軽くして合成負荷を下げる（霞の見た目は維持） */
   .mist .mist1,
   .mist .mist2 { animation: none; filter: blur(40px); }
-  /* backdrop-filter の blur も SP は弱める（スクロール時の再合成コスト削減） */
-  .mist .titlebar,
-  .mist .env,
-  .mist .card,
-  .mist .ccard { backdrop-filter: blur(8px); }
 }
 .mist .gal .g em {
   position: absolute; left: 8px; bottom: 8px; z-index: 1;
@@ -1106,4 +1098,16 @@
 .mist .backlink:active { background: var(--m-ink); color: #fff; }
 @media (hover: hover) {
   .mist .backlink:hover { background: var(--m-ink); color: #fff; }
+}
+
+/* ── SP 軽量化の上書き（同一詳細度の基底ルールに勝つため必ずファイル末尾に置く） ── */
+@media (max-width: 760px) {
+  /* ギャラリーマーキーは純装飾のため SP では出さない（画像リクエスト・アニメ負荷の削減） */
+  .mist .substream,
+  .mist .streamwrap { display: none; }
+  /* backdrop-filter の blur を弱める（スクロール時の再合成コスト削減） */
+  .mist .titlebar,
+  .mist .env,
+  .mist .card,
+  .mist .ccard { backdrop-filter: blur(8px); }
 }

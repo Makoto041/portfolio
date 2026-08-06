@@ -27,3 +27,12 @@ export const toCFUrl = (path?: string | null): string => {
   // 3. CloudFront ドメインを前置
   return `https://${CF}${key}` // ← `/media` を付けない
 }
+
+/** next/image の最適化を通せる src か（相対URL or CloudFront ドメイン）。
+    remotePatterns を CF_DOMAIN のみに絞ったため、外部ホストの絶対URLは
+    `unoptimized` で直接参照する必要がある */
+export const isOptimizableSrc = (src: string): boolean => {
+  if (!src.startsWith('http')) return true
+  const CF = process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN
+  return !!CF && src.includes(CF)
+}

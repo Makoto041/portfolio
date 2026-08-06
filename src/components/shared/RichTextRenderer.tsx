@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
-import { toCFUrl } from '@/lib/cfUrl'
+import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
 import ImageModal from '@/components/gallery/ImageModal'
 
 interface RichTextNode {
@@ -181,6 +181,7 @@ function renderNodes(nodes: RichTextNode[], setModalImage?: (image: { src: strin
                   height={120}
                   sizes="(max-width: 768px) 100vw, 160px"
                   className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
+                  unoptimized={!isOptimizableSrc(imageSrc)}
                   onClick={() => setModalImage?.({ 
                     src: imageSrc, 
                     alt: node.alt || '', 

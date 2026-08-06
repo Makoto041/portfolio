@@ -30,6 +30,9 @@ export default function MistHero({ tagline, role }: Props) {
   const [tag, setTag] = useState(tagline) // タグライン本文の表示分
   const [phase, setPhase] = useState<Phase>('done')
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
+  // この画面でタイプ演出を開始したか（済フラグは演出完了時に立てる。
+  // effect 冒頭で立てると StrictMode の二重実行で初回から演出がスキップされるため）
+  const startedRef = useRef(false)
 
   // ── ワードマークのタイプ（SSR全文をハイドレーション後に上書き） ──
   useEffect(() => {
@@ -43,10 +46,10 @@ export default function MistHero({ tagline, role }: Props) {
     // セッション内 2 回目以降は SSR 全文のまま（演出は初回のみ）
     try {
       if (sessionStorage.getItem(TYPED_FLAG)) return
-      sessionStorage.setItem(TYPED_FLAG, '1')
     } catch {
       // sessionStorage 不可の環境では毎回タイプ（従来挙動）
     }
+    startedRef.current = true
 
     // SSR全文（LCP候補）を描画後にクリアし、タイプ演出で上書き
     setNm('')
@@ -91,6 +94,16 @@ export default function MistHero({ tagline, role }: Props) {
       timers.current = []
     }
   }, [tagline])
+
+  // 演出が最後まで到達したらセッション済フラグを立てる（中断時は次回も演出） ──
+  useEffect(() => {
+    if (phase !== 'done' || !startedRef.current) return
+    try {
+      sessionStorage.setItem(TYPED_FLAG, '1')
+    } catch {
+      // 保存不可なら毎回タイプ（従来挙動）
+    }
+  }, [phase])
 
   // ── タグライン本文のタイプ（phase が tag になったら 70ms/字） ──
   useEffect(() => {

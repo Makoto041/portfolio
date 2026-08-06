@@ -70,37 +70,43 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
     }
 
     // メッセージ: タイプ → ホールド → 次へ（75ms の setTimeout チェーン1本）。
-    // タブ非表示・バーが画面外の間はタイプを止め、無駄な再レンダーを避ける。
+    // タブ非表示・バーが画面外の間はチェーン自体を停止し、可視化イベントで再開する。
     let typed = 0
     let hold = 0
     let i = 0
     let hidden = document.hidden
     let offscreen = false
-    let timer: ReturnType<typeof setTimeout>
+    let timer: ReturnType<typeof setTimeout> | undefined
 
     const step = () => {
-      timer = setTimeout(step, 75)
-      if (hidden || offscreen) return
+      timer = undefined
+      if (hidden || offscreen) return // 停止（再開は可視化イベント側から）
       const cur = items[i].text
       if (typed < cur.length) {
         typed += 1
         setMsg(cur.slice(0, typed))
-        return
-      }
-      if (hold < 26) {
+      } else if (hold < 26) {
         hold += 1
-        return
+      } else {
+        i = (i + 1) % items.length
+        typed = 0
+        hold = 0
+        setMsg('')
+        setIdx(i)
       }
-      i = (i + 1) % items.length
-      typed = 0
-      hold = 0
-      setMsg('')
-      setIdx(i)
+      schedule()
     }
-    timer = setTimeout(step, 75)
+    const schedule = () => {
+      if (timer === undefined) timer = setTimeout(step, 75)
+    }
+    schedule()
 
+    const resumeIfVisible = () => {
+      if (!hidden && !offscreen) schedule()
+    }
     const onVisibility = () => {
       hidden = document.hidden
+      resumeIfVisible()
     }
     document.addEventListener('visibilitychange', onVisibility)
 
@@ -108,12 +114,13 @@ export default function MistStatusBar({ notices, entries, photos, streak }: Prop
     if (typeof IntersectionObserver !== 'undefined' && rootRef.current) {
       io = new IntersectionObserver(([entry]) => {
         offscreen = !entry.isIntersecting
+        resumeIfVisible()
       })
       io.observe(rootRef.current)
     }
 
     return () => {
-      clearTimeout(timer)
+      if (timer !== undefined) clearTimeout(timer)
       document.removeEventListener('visibilitychange', onVisibility)
       io?.disconnect()
     }

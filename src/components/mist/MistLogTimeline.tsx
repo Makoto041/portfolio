@@ -5,7 +5,7 @@
 // フィルタは postType の where 句としてサーバー側に問い合わせ、結果をキーごとにキャッシュする。
 'use client'
 
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import ImageModal from '@/components/gallery/ImageModal'
@@ -15,7 +15,8 @@ import { toCFUrl } from '@/lib/cfUrl'
 import { fmtDateTimeMeta } from '@/lib/date'
 import type { TimelineDoc, TimelinePostType } from '@/lib/payloadTypes'
 
-const PAGE_SIZE = 20
+/** 1ページの取得件数。/timeline の SSR 初期取得（page 1 とみなす）と揃えること */
+export const TIMELINE_PAGE_SIZE = 20
 
 /** 投稿タイプの表示ラベル（git log のカテゴリ表記） */
 const TYPE_LABELS: Record<TimelinePostType, string> = {
@@ -189,7 +190,7 @@ type FeedState = {
 async function fetchTimelinePage(filterKey: string, page: number) {
   const types = FILTERS.find((f) => f.key === filterKey)?.types
   const params = new URLSearchParams()
-  params.set('limit', String(PAGE_SIZE))
+  params.set('limit', String(TIMELINE_PAGE_SIZE))
   params.set('page', String(page))
   params.set('sort', '-publishedAt')
   params.set('depth', '2')
@@ -217,19 +218,31 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
   const [filter, setFilter] = useState('all')
   const [modalImg, setModalImg] = useState<string | null>(null)
   const [feeds, setFeeds] = useState<Record<string, FeedState>>({
-    all: { docs: posts, page: 1, hasMore: posts.length < total, total },
+    all: {
+      docs: posts,
+      page: posts.length > 0 ? 1 : 0,
+      // SSR が空（取得失敗を含む）でもクライアントから page 1 を取り直せるようにする
+      hasMore: posts.length < total || posts.length === 0,
+      total,
+    },
   })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  // 取得中フィルタキー（state は表示用・ref は連打時の同キー重複 fetch ガード）
+  const [pendingKeys, setPendingKeys] = useState<ReadonlySet<string>>(new Set())
+  const inflight = useRef<Set<string>>(new Set())
+  const [errorKey, setErrorKey] = useState<string | null>(null)
 
   const headId = posts[0]?.id
   const current = feeds[filter]
   // compact(Home)は SSR 分のみ表示（追加取得なし）
   const shown = compact ? posts : (current?.docs ?? [])
+  const loadingCurrent = pendingKeys.has(filter)
+  const errorCurrent = errorKey === filter
 
   async function loadFeed(filterKey: string, page: number) {
-    setLoading(true)
-    setError(false)
+    if (inflight.current.has(filterKey)) return
+    inflight.current.add(filterKey)
+    setPendingKeys(new Set(inflight.current))
+    setErrorKey((k) => (k === filterKey ? null : k))
     try {
       const data = await fetchTimelinePage(filterKey, page)
       setFeeds((prev) => {
@@ -244,15 +257,15 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
       })
     } catch (e) {
       console.error('タイムライン取得エラー:', e)
-      setError(true)
+      setErrorKey(filterKey)
     } finally {
-      setLoading(false)
+      inflight.current.delete(filterKey)
+      setPendingKeys(new Set(inflight.current))
     }
   }
 
   function handleFilter(key: string) {
     setFilter(key)
-    setError(false)
     if (!feeds[key]) void loadFeed(key, 1)
   }
 
@@ -333,12 +346,12 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
 
         {shown.length === 0 && (
           <p className="commit jp" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-faint)' }}>
-            {loading ? '取得中…' : '該当する投稿がありません'}
+            {loadingCurrent ? '取得中…' : '該当する投稿がありません'}
           </p>
         )}
       </div>
 
-      {error && (
+      {errorCurrent && (
         <p className="jp" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-faint)', margin: '12px 0 0 32px' }}>
           取得に失敗しました。もう一度お試しください。
         </p>
@@ -349,14 +362,14 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
         <Link href="/timeline" className="loadmore">
           $ cd ./timeline <span className="n">(all {total}) →</span>
         </Link>
-      ) : current?.hasMore || error ? (
+      ) : current?.hasMore || errorCurrent ? (
         <button
           type="button"
           className="loadmore"
-          disabled={loading}
+          disabled={loadingCurrent}
           onClick={() => void loadFeed(filter, (current?.page ?? 0) + 1)}
         >
-          {loading ? '$ loading…' : '$ load --more'}{' '}
+          {loadingCurrent ? '$ loading…' : '$ load --more'}{' '}
           <span className="n">(all {current?.total ?? total})</span>
         </button>
       ) : null}

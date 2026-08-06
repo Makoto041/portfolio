@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import MistPageHead from '@/components/mist/MistPageHead'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
-import MistLogTimeline from '@/components/mist/MistLogTimeline'
+import MistLogTimeline, { TIMELINE_PAGE_SIZE } from '@/components/mist/MistLogTimeline'
 import AdminLinks from '@/components/admin/AdminLinks'
 import { getPayloadClient } from '@/lib/payloadClient'
 import type { TimelineDoc } from '@/lib/payloadTypes'
@@ -36,14 +36,20 @@ export const metadata: Metadata = {
 }
 
 export default async function TimelinePage() {
-  // 初期表示は最新20件のみ。以降は MistLogTimeline が Payload REST
-  // （GET /api/timeline）からページ単位で追加取得する（100件一括取得を廃止）
+  // 初期表示は最新1ページ分のみ。以降は MistLogTimeline が Payload REST
+  // （GET /api/timeline）からページ単位で追加取得する（100件一括取得を廃止）。
+  // limit は page 2 以降とずれないよう TIMELINE_PAGE_SIZE を共有する
   let posts: TimelineDoc[] = []
   let total = 0
   try {
     const payload = await getPayloadClient()
     const [postsRes, totalRes] = await Promise.all([
-      payload.find({ collection: 'timeline', limit: 20, sort: '-publishedAt', depth: 2 }),
+      payload.find({
+        collection: 'timeline',
+        limit: TIMELINE_PAGE_SIZE,
+        sort: '-publishedAt',
+        depth: 2,
+      }),
       payload.count({ collection: 'timeline' }),
     ])
     posts = postsRes.docs as unknown as TimelineDoc[]
