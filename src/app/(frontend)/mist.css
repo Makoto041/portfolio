@@ -764,8 +764,10 @@
   width: auto;
   height: auto;
   max-width: 92vw;
-  max-height: 80vh;
-  max-height: 80dvh; /* SP で画像+閉じるボタンが可視領域に収まるように */
+  /* 60px = SP で画像下に積まれる閉じるボタン 44px + margin-top 16px。
+     縦の短い画面でもボタンごと .imgmodal(90dvh) 内に収まるよう差し引く */
+  max-height: min(80vh, calc(90vh - 60px));
+  max-height: min(80dvh, calc(90dvh - 60px));
   object-fit: contain;
   border: 1px solid var(--m-hairline);
   background: var(--m-surface);
