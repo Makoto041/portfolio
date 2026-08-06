@@ -8,14 +8,8 @@ export const toCFUrl = (path?: string | null): string => {
   const CF = process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN
   if (!CF) return path // ← ドメイン未設定ならそのまま返す
 
-  // 1. すでに絶対 URL の場合
-  if (path.startsWith('http')) {
-    // すでに CloudFront ならそのまま
-    if (path.includes(CF)) return path
-
-    // 外部URLの場合はそのまま返す（メタデータ画像など）
-    return path
-  }
+  // 1. すでに絶対 URL の場合はそのまま返す（CloudFront も外部URL(メタデータ画像など)も変換不要）
+  if (path.startsWith('http')) return path
 
   // 2. 相対パスの場合（先頭を `/` に正規化）
   const normalized = path.startsWith('/') ? path : `/${path}`
@@ -30,9 +24,15 @@ export const toCFUrl = (path?: string | null): string => {
 
 /** next/image の最適化を通せる src か（相対URL or CloudFront ドメイン）。
     remotePatterns を CF_DOMAIN のみに絞ったため、外部ホストの絶対URLは
-    `unoptimized` で直接参照する必要がある */
+    `unoptimized` で直接参照する必要がある。判定は includes ではなく
+    hostname 完全一致（クエリ等に CF ドメイン文字列を含む外部URLを誤許可しない） */
 export const isOptimizableSrc = (src: string): boolean => {
   if (!src.startsWith('http')) return true
   const CF = process.env.NEXT_PUBLIC_CLOUDFRONT_DOMAIN
-  return !!CF && src.includes(CF)
+  if (!CF) return false
+  try {
+    return new URL(src).hostname === CF
+  } catch {
+    return false
+  }
 }

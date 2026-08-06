@@ -666,6 +666,9 @@
 @media (max-width: 640px) {
   .mist .photos { max-width: 100%; }
 }
+/* タイムラインの状態表示（空・取得中・エラー） */
+.mist .logstate { font-size: var(--fs-meta); color: var(--m-faint); }
+.mist .logerror { margin: 12px 0 0 32px; }
 .mist .loadmore {
   align-self: flex-start;
   margin: 20px 0 0 32px;
@@ -744,7 +747,7 @@
   overflow: visible;
 }
 .mist .imgmodal::backdrop {
-  background: rgba(16, 20, 34, 0.45);
+  background: color-mix(in oklch, var(--m-ink) 45%, transparent);
   backdrop-filter: blur(6px);
 }
 .mist .imgmodal-body {
@@ -759,7 +762,7 @@
   max-width: 92vw;
   max-height: 80vh;
   object-fit: contain;
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--m-hairline);
   background: var(--m-surface);
 }
 /* 閉じるボタン: SP は画像下に独立表示、PC はモーダル右上 */
@@ -772,9 +775,9 @@
   margin-top: 16px;
   border: 1px solid var(--m-hairline);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--m-surface);
   color: var(--m-ink);
-  font-size: 20px;
+  font-size: var(--fs-h3);
   font-weight: 300;
   line-height: 1;
   cursor: pointer;
@@ -792,9 +795,9 @@
   outline-offset: 2px;
 }
 
-/* プロフィール単票カード（/profile。旧インラインstyle をクラス化） */
+/* プロフィール単票カード（/profile。旧インラインstyle をクラス化・4px系余白へ整列） */
 .mist .profilecard { align-items: center; text-align: center; padding: 32px 28px; gap: 0; }
-.mist .profilecard .avatar { width: 140px; height: 140px; border-radius: 50%; margin-bottom: 22px; }
+.mist .profilecard .avatar { width: 140px; height: 140px; border-radius: 50%; margin-bottom: 24px; }
 .mist .profilecard h2 {
   font-family: var(--font-outfit), sans-serif;
   font-size: var(--fs-h3);
@@ -802,8 +805,8 @@
   letter-spacing: -0.01em;
   margin: 0;
 }
-.mist .profilecard .sub { margin: 6px 0 18px; font-size: var(--fs-meta); color: var(--m-faint); }
-.mist .profilecard .bio { margin-bottom: 22px; text-align: center; max-width: 380px; }
+.mist .profilecard .sub { margin: 8px 0 16px; font-size: var(--fs-meta); color: var(--m-faint); }
+.mist .profilecard .bio { margin-bottom: 24px; text-align: center; max-width: 380px; }
 .mist .profilecard .socials { justify-content: center; }
 
 /* ── Gallery コンポーネント（枠なし: 最近の静止画グリッド + 統合ストリーム） ── */

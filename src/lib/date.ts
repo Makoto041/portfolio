@@ -8,8 +8,7 @@
 const TZ = 'Asia/Tokyo'
 
 /** Asia/Tokyo での日付キー（YYYY-MM-DD） */
-export const toDayKey = (date: Date): string =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(date)
+export const toDayKey = (date: Date): string => formatter({}).format(date)
 
 /**
  * 日次投稿日から連続投稿日数（streak）を計算する。
@@ -35,10 +34,23 @@ export function buildStreak(dates: string[], now: number = Date.now()): number {
   return streak
 }
 
+// Intl.DateTimeFormat の生成は比較的重いため、オプション別にキャッシュして再利用する
+// （タイムラインは1行ごとに fmtDateTimeMeta を呼ぶ）
+const fmtCache = new Map<string, Intl.DateTimeFormat>()
+function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = JSON.stringify(options)
+  let f = fmtCache.get(key)
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, ...options })
+    fmtCache.set(key, f)
+  }
+  return f
+}
+
 function parts(dateStr: string, options: Intl.DateTimeFormatOptions) {
   const d = new Date(dateStr)
   if (Number.isNaN(d.getTime())) return null
-  const list = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, ...options }).formatToParts(d)
+  const list = formatter(options).formatToParts(d)
   return (type: string) => list.find((p) => p.type === type)?.value ?? ''
 }
 

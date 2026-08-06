@@ -32,7 +32,7 @@ Payload CMS 駆動の Next.js サイトです。
 
 ## アーキテクチャ
 
-```
+```text
 src/
 ├── app/
 │   ├── (frontend)/            # 公開ページ（トップは独自シェル）

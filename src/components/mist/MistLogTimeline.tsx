@@ -13,10 +13,8 @@ import RichTextRenderer from '@/components/shared/RichTextRenderer'
 import UrlPreview from '@/components/shared/UrlPreview'
 import { toCFUrl } from '@/lib/cfUrl'
 import { fmtDateTimeMeta } from '@/lib/date'
+import { TIMELINE_PAGE_SIZE } from '@/lib/timeline'
 import type { TimelineDoc, TimelinePostType } from '@/lib/payloadTypes'
-
-/** 1ページの取得件数。/timeline の SSR 初期取得（page 1 とみなす）と揃えること */
-export const TIMELINE_PAGE_SIZE = 20
 
 /** 投稿タイプの表示ラベル（git log のカテゴリ表記） */
 const TYPE_LABELS: Record<TimelinePostType, string> = {
@@ -195,7 +193,10 @@ async function fetchTimelinePage(filterKey: string, page: number) {
   params.set('sort', '-publishedAt')
   params.set('depth', '2')
   types?.forEach((t, i) => params.append(`where[postType][in][${i}]`, t))
-  const res = await fetch(`/api/timeline?${params.toString()}`)
+  // 無応答時に loading/disabled が解除されなくなるのを防ぐタイムアウト
+  const res = await fetch(`/api/timeline?${params.toString()}`, {
+    signal: AbortSignal.timeout(15_000),
+  })
   if (!res.ok) throw new Error(`timeline fetch failed: ${res.status}`)
   return (await res.json()) as {
     docs: TimelineDoc[]
@@ -231,7 +232,8 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
   const inflight = useRef<Set<string>>(new Set())
   const [errorKey, setErrorKey] = useState<string | null>(null)
 
-  const headId = posts[0]?.id
+  // HEAD は 'all' フィードの先頭（=最新投稿）。SSR が空でもクライアント再取得後に付く
+  const headId = feeds.all?.docs[0]?.id
   const current = feeds[filter]
   // compact(Home)は SSR 分のみ表示（追加取得なし）
   const shown = compact ? posts : (current?.docs ?? [])
@@ -344,15 +346,15 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
           )
         })}
 
-        {shown.length === 0 && (
-          <p className="commit jp" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-faint)' }}>
+        {shown.length === 0 && !errorCurrent && (
+          <p className="commit jp logstate">
             {loadingCurrent ? '取得中…' : '該当する投稿がありません'}
           </p>
         )}
       </div>
 
       {errorCurrent && (
-        <p className="jp" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-faint)', margin: '12px 0 0 32px' }}>
+        <p className="jp logstate logerror" role="alert">
           取得に失敗しました。もう一度お試しください。
         </p>
       )}
@@ -369,7 +371,7 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
           disabled={loadingCurrent}
           onClick={() => void loadFeed(filter, (current?.page ?? 0) + 1)}
         >
-          {loadingCurrent ? '$ loading…' : '$ load --more'}{' '}
+          {loadingCurrent ? '$ loading…' : errorCurrent ? '$ retry' : '$ load --more'}{' '}
           <span className="n">(all {current?.total ?? total})</span>
         </button>
       ) : null}
