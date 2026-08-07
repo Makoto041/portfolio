@@ -39,6 +39,11 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+/* 画像プレースホルダーのシマー（低コントラスト。待ちが視認される面のみに使う） */
+@keyframes m-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
 /* ブライユ・スピナーのフレーム（JS の高頻度 setState を廃止し CSS で回す） */
 @keyframes m-braille {
   0% { content: '⠋'; }
@@ -642,6 +647,14 @@
   margin: 0;
   cursor: zoom-in;
   transition: filter 0.25s;
+  /* 読み込み中プレースホルダー（masonry と同じシマー） */
+  background: linear-gradient(105deg, oklch(0.93 0.01 262), oklch(0.89 0.02 262), oklch(0.93 0.01 262));
+  background-size: 300% 100%;
+  animation: m-shimmer 1.8s ease-in-out infinite;
+}
+.mist .photos .ph:has(img.is-loaded) {
+  animation: none;
+  background: oklch(0.92 0.015 262);
 }
 @media (hover: hover) {
   .mist .photos .ph:hover { filter: brightness(0.94); }
@@ -787,6 +800,48 @@
   transition: opacity 0.25s ease;
 }
 .mist .imgmodal-img.is-loaded { opacity: 1; }
+/* 読み込み完了フェードイン（SmartImage が is-loaded を付与。opacityのみ） */
+.mist .imgfade {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.mist .imgfade.is-loaded { opacity: 1; }
+
+/* ポスター段（グリッドで描画済みのキャッシュ画像を即時表示し、原本を上に重ねる） */
+.mist .imgmodal-stage {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+}
+.mist .imgmodal-poster {
+  opacity: 1; /* .imgmodal-img の「原本ロード待ち透明」を打ち消す（ポスターは即時表示） */
+  /* 低解像度ポスターを原本の表示サイズまで拡大する。max-height と競合した場合は
+     置換要素の制約解決により縦横比を保ったまま縮む（原本と同じ contain 寸法になる） */
+  width: 92vw;
+  filter: blur(10px) saturate(1.05);
+  transform: scale(1.03); /* ブラー端の白フチをはみ出しでクリップ */
+}
+.mist .imgmodal-full {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  border: 0;
+  background: none;
+}
+/* ポスターがある場合、状態ピルは段の中央に重ねる（高さを足さない） */
+.mist .imgmodal-stage .imgmodal-loading,
+.mist .imgmodal-stage .imgmodal-error {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
 /* 状態ピル（読み込み中/エラー共通の器。.spin = 既存ブライユ・スピナー） */
 .mist .imgmodal-loading,
 .mist .imgmodal-error {
@@ -853,7 +908,8 @@
 /* ── Gallery コンポーネント（枠なし: 最近の静止画グリッド + 統合ストリーム） ── */
 /* minmax(140px): 中央が最小320pxのとき 2 列が成立し、先頭 .big(span 2) が溢れない */
 .mist .gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
-.mist .gal .g { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: 0; transition: filter 0.25s; }
+/* 静的トーンのプレースホルダー（サーバー描画面・マーキーは常時アニメーションを避ける） */
+.mist .gal .g { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: 0; transition: filter 0.25s; background: oklch(0.92 0.015 262); }
 .mist .gal .g.big { grid-column: span 2; grid-row: span 2; }
 @media (hover: hover) {
   .mist .gal .g:hover { filter: brightness(0.94); }
@@ -886,7 +942,7 @@
 .mist .substream { display: flex; align-items: baseline; gap: 8px; margin: 16px 0 8px; font-size: var(--fs-meta); color: var(--m-sub); }
 .mist .streamwrap { position: relative; overflow: hidden; }
 .mist .streamrow { display: flex; gap: 8px; width: max-content; animation: m-marquee 34s linear infinite; }
-.mist .sph { position: relative; display: block; width: 180px; height: 120px; flex: none; overflow: hidden; border: 0; transition: filter 0.25s; }
+.mist .sph { position: relative; display: block; width: 180px; height: 120px; flex: none; overflow: hidden; border: 0; transition: filter 0.25s; background: oklch(0.92 0.015 262); }
 @media (hover: hover) {
   .mist .sph:hover { filter: brightness(0.94); }
 }
@@ -951,6 +1007,12 @@
   .mist .env {
     animation-duration: 0.01s !important;
     animation-delay: 0s !important;
+  }
+  /* 画像プレースホルダーのシマーは静的トーンに */
+  .mist .masonry .tile,
+  .mist .photos .ph {
+    animation: none !important;
+    background: oklch(0.92 0.015 262);
   }
 }
 
@@ -1065,7 +1127,11 @@
   break-inside: avoid;
   overflow: hidden;
   border: 1px solid var(--m-hairline);
-  background: none;
+  /* 読み込み中プレースホルダー（.pcard .thumb と同系のトーン）。
+     画像ロード完了(:has)でアニメーションを止め、合成コストを残さない */
+  background: linear-gradient(105deg, oklch(0.93 0.01 262), oklch(0.89 0.02 262), oklch(0.93 0.01 262));
+  background-size: 300% 100%;
+  animation: m-shimmer 1.8s ease-in-out infinite;
   cursor: zoom-in;
   transition: filter 0.25s;
 }
@@ -1073,6 +1139,10 @@
   .mist .masonry .tile:hover { filter: brightness(0.94); }
 }
 .mist .masonry .tile img { display: block; }
+.mist .masonry .tile:has(img.is-loaded) {
+  animation: none;
+  background: oklch(0.92 0.015 262);
+}
 
 /* 中央寄せの単票（profile / letter） */
 .mist .single { width: 100%; max-width: 520px; margin: 0 auto; }

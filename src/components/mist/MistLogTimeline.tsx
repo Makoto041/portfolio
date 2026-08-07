@@ -6,9 +6,9 @@
 'use client'
 
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import ImageModal from '@/components/gallery/ImageModal'
+import SmartImage from '@/components/shared/SmartImage'
 import RichTextRenderer from '@/components/shared/RichTextRenderer'
 import UrlPreview from '@/components/shared/UrlPreview'
 import { toCFUrl } from '@/lib/cfUrl'
@@ -126,7 +126,7 @@ function PhotoGrid({
 }: {
   photos: TLImage[]
   title?: string | null
-  onOpen: (url: string) => void
+  onOpen: (url: string, poster: string | null) => void
 }) {
   const items = photos.slice(0, 4)
   const n = items.length
@@ -156,9 +156,12 @@ function PhotoGrid({
             className="ph"
             style={style}
             aria-label="画像を拡大表示"
-            onClick={() => onOpen(im.url)}
+            onClick={(e) =>
+              // 描画済みURL（=キャッシュ命中確実）をモーダルのポスターに渡す
+              onOpen(im.url, e.currentTarget.querySelector('img')?.currentSrc || null)
+            }
           >
-            <Image
+            <SmartImage
               src={toCFUrl(url)}
               alt={title ?? 'timeline photo'}
               fill
@@ -217,7 +220,7 @@ type Props = {
 
 export default function MistLogTimeline({ posts, total, showHead = true, compact = false }: Props) {
   const [filter, setFilter] = useState('all')
-  const [modalImg, setModalImg] = useState<string | null>(null)
+  const [modalImg, setModalImg] = useState<{ src: string; poster: string | null } | null>(null)
   const [feeds, setFeeds] = useState<Record<string, FeedState>>({
     all: {
       docs: posts,
@@ -274,8 +277,9 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
   return (
     <div>
       <ImageModal
-        src={modalImg ?? ''}
+        src={modalImg?.src ?? ''}
         alt="timeline-modal-img"
+        posterSrc={modalImg?.poster}
         isOpen={!!modalImg}
         onClose={() => setModalImg(null)}
       />
@@ -338,7 +342,11 @@ export default function MistLogTimeline({ posts, total, showHead = true, compact
               )}
 
               {photos.length > 0 && (
-                <PhotoGrid photos={photos} title={post.title} onOpen={setModalImg} />
+                <PhotoGrid
+                  photos={photos}
+                  title={post.title}
+                  onOpen={(src, poster) => setModalImg({ src, poster })}
+                />
               )}
 
               <MistLike id={post.id} initialLikes={post.likes ?? 0} />

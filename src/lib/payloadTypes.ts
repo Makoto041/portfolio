@@ -52,6 +52,9 @@ export interface MediaDoc extends BaseDoc {
   image?: { url?: string; sizes?: Record<string, { url: string }> }
   /** 生成された各サイズのURL */
   sizes?: Record<string, { url: string }>
+  /** 原本の実寸（sharp 設定時に Payload が自動格納） */
+  width?: number
+  height?: number
   /** alt テキスト */
   alt?: string
   /** タイムライン専用フラグ */

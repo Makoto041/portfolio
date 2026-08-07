@@ -32,7 +32,7 @@ const defaultClassNames: Record<string, string> = {
 }
 
 export function RenderRichTextWithModal({ nodes = [], keyPrefix = 'rt' }: { nodes: LexicalNode[], keyPrefix?: string }): ReactNode {
-  const [modalImage, setModalImage] = useState<{ src: string; alt: string; width?: number; height?: number } | null>(null)
+  const [modalImage, setModalImage] = useState<{ src: string; alt: string; poster?: string | null; width?: number; height?: number } | null>(null)
 
   const renderNodes = (nodeList: LexicalNode[] = [], prefix = 'rt'): ReactNode[] => {
     return nodeList.map((node, idx) => {
@@ -113,9 +113,11 @@ export function RenderRichTextWithModal({ nodes = [], keyPrefix = 'rt' }: { node
               sizes="(max-width: 768px) 100vw, 160px"
               className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
               unoptimized={!isOptimizableSrc(imageSrc)}
-              onClick={() => setModalImage({
+              onClick={(e) => setModalImage({
                 src: imageSrc,
                 alt: node.alt || '',
+                // インライン表示済みのURL（=キャッシュ命中確実）をモーダルのポスターに使う
+                poster: e.currentTarget.currentSrc || null,
                 width: 800,
                 height: 600
               })}
@@ -165,6 +167,7 @@ export function RenderRichTextWithModal({ nodes = [], keyPrefix = 'rt' }: { node
       <ImageModal
         src={modalImage?.src || ''}
         alt={modalImage?.alt || ''}
+        posterSrc={modalImage?.poster}
         isOpen={!!modalImage}
         onClose={() => setModalImage(null)}
       />

@@ -10,11 +10,14 @@ import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
 interface ImageModalProps {
   src: string
   alt?: string
+  /** 呼び出し元グリッドが描画済みの画像URL（img.currentSrc）。
+      キャッシュ命中で即時表示できるため、原本ロード中のポスターとして使う */
+  posterSrc?: string | null
   isOpen: boolean
   onClose: () => void
 }
 
-export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModalProps) {
+export default function ImageModal({ src, alt = '', posterSrc, isOpen, onClose }: ImageModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -49,41 +52,74 @@ export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModa
       {/* 読み込み状態は ModalBody 内に閉じる。開くたびにマウントし直される
           （閉時にアンマウント + key=src）ため、初回レンダーから必ず loading で
           始まり、前回の loaded/error が次の画像へ漏れない */}
-      {isOpen && src && <ModalBody key={src} src={src} alt={alt} onClose={onClose} />}
+      {isOpen && src && (
+        <ModalBody key={src} src={src} alt={alt} posterSrc={posterSrc} onClose={onClose} />
+      )}
     </dialog>
   )
 }
 
-function ModalBody({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+function ModalBody({
+  src,
+  alt,
+  posterSrc,
+  onClose,
+}: {
+  src: string
+  alt: string
+  posterSrc?: string | null
+  onClose: () => void
+}) {
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
+  // 原本と同一URLのポスターは意味がない（同じキャッシュから原本側に即描画される）
+  const poster = posterSrc && posterSrc !== toCFUrl(src) ? posterSrc : null
+
+  const statusPill =
+    status === 'loading' ? (
+      <span className="imgmodal-loading" role="status">
+        <span className="spin" aria-hidden="true" />
+        読み込み中…
+      </span>
+    ) : status === 'error' ? (
+      <span className="imgmodal-error" role="alert">
+        画像を読み込めませんでした
+      </span>
+    ) : null
+
+  const original = (
+    <Image
+      src={toCFUrl(src)}
+      alt={alt}
+      width={1200}
+      height={900}
+      sizes="92vw"
+      className={`imgmodal-img${poster ? ' imgmodal-full' : ''}${status === 'loaded' ? ' is-loaded' : ''}`}
+      onLoad={() => setStatus('loaded')}
+      onError={() => {
+        console.error('ImageModal: 画像の読み込みに失敗しました', src)
+        setStatus('error')
+      }}
+      // リッチテキスト経由で外部ホストの画像も開くため、CF/相対以外は最適化を通さない
+      unoptimized={!isOptimizableSrc(toCFUrl(src))}
+    />
+  )
 
   return (
-    <div className={`imgmodal-body${status !== 'loaded' ? ' is-loading' : ''}`}>
-      <Image
-        src={toCFUrl(src)}
-        alt={alt}
-        width={1200}
-        height={900}
-        sizes="92vw"
-        className={`imgmodal-img${status === 'loaded' ? ' is-loaded' : ''}`}
-        onLoad={() => setStatus('loaded')}
-        onError={() => {
-          console.error('ImageModal: 画像の読み込みに失敗しました', src)
-          setStatus('error')
-        }}
-        // リッチテキスト経由で外部ホストの画像も開くため、CF/相対以外は最適化を通さない
-        unoptimized={!isOptimizableSrc(toCFUrl(src))}
-      />
-      {status === 'loading' && (
-        <span className="imgmodal-loading" role="status">
-          <span className="spin" aria-hidden="true" />
-          読み込み中…
+    <div className={`imgmodal-body${!poster && status !== 'loaded' ? ' is-loading' : ''}`}>
+      {poster ? (
+        // ポスター（描画済みキャッシュ画像）が段のサイズを決め、原本を上に重ねる。
+        // ピルは段の中央にオーバーレイし、原本ロード完了で原本がフェードイン
+        <span className="imgmodal-stage">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={poster} alt="" aria-hidden="true" className="imgmodal-img imgmodal-poster" />
+          {original}
+          {statusPill}
         </span>
-      )}
-      {status === 'error' && (
-        <span className="imgmodal-error" role="alert">
-          画像を読み込めませんでした
-        </span>
+      ) : (
+        <>
+          {original}
+          {statusPill}
+        </>
       )}
       <button
         type="button"
