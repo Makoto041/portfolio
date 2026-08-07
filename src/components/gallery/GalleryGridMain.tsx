@@ -4,13 +4,13 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import { toCFUrl } from '@/lib/cfUrl'
 import ImageModal from '@/components/gallery/ImageModal'
+import SmartImage from '@/components/shared/SmartImage'
 import type { MediaDoc } from '@/lib/payloadTypes'
 
 export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
-  const [selected, setSelected] = useState<MediaDoc | null>(null)
+  const [selected, setSelected] = useState<{ doc: MediaDoc; poster: string | null } | null>(null)
 
   return (
     <>
@@ -24,13 +24,20 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
               type="button"
               className="tile"
               aria-label="画像を拡大表示"
-              onClick={() => setSelected(m)}
+              onClick={(e) =>
+                setSelected({
+                  doc: m,
+                  // ブラウザが実際に描画したURL（=キャッシュ命中確実）をモーダルのポスターに使う
+                  poster: e.currentTarget.querySelector('img')?.currentSrc || null,
+                })
+              }
             >
-              <Image
+              <SmartImage
                 src={src}
                 alt={m.alt ?? ''}
-                width={500}
-                height={500}
+                // 実寸の縦横比を渡し、ロード前からタイルの高さを確定させる（masonry の再流動を防ぐ）
+                width={m.width ?? 500}
+                height={m.height ?? 500}
                 sizes="(min-width:1080px) 25vw, (min-width:720px) 33vw, 50vw"
                 priority={idx === 0}
                 className="object-cover w-full h-auto"
@@ -42,8 +49,14 @@ export default function GalleryGrid({ gallery }: { gallery: MediaDoc[] }) {
 
       {/* 画像モーダル */}
       <ImageModal
-        src={selected?.url ?? selected?.image?.url ?? selected?.sizes?.thumbnail?.url ?? '/fallback.jpg'}
-        alt={selected?.alt ?? ''}
+        src={
+          selected?.doc.url ??
+          selected?.doc.image?.url ??
+          selected?.doc.sizes?.thumbnail?.url ??
+          '/fallback.jpg'
+        }
+        alt={selected?.doc.alt ?? ''}
+        posterSrc={selected?.poster}
         isOpen={!!selected}
         onClose={() => setSelected(null)}
       />
