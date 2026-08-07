@@ -67,7 +67,10 @@ function ModalBody({ src, alt, onClose }: { src: string; alt: string; onClose: (
         sizes="92vw"
         className={`imgmodal-img${status === 'loaded' ? ' is-loaded' : ''}`}
         onLoad={() => setStatus('loaded')}
-        onError={() => setStatus('error')}
+        onError={() => {
+          console.error('ImageModal: 画像の読み込みに失敗しました', src)
+          setStatus('error')
+        }}
         // リッチテキスト経由で外部ホストの画像も開くため、CF/相対以外は最適化を通さない
         unoptimized={!isOptimizableSrc(toCFUrl(src))}
       />
@@ -78,7 +81,7 @@ function ModalBody({ src, alt, onClose }: { src: string; alt: string; onClose: (
         </span>
       )}
       {status === 'error' && (
-        <span className="imgmodal-loading" role="alert">
+        <span className="imgmodal-error" role="alert">
           画像を読み込めませんでした
         </span>
       )}

@@ -787,9 +787,9 @@
   transition: opacity 0.25s ease;
 }
 .mist .imgmodal-img.is-loaded { opacity: 1; }
-/* 読み込み中ピル（.spin = 既存ブライユ・スピナー）。表示を 150ms 遅らせ、
-   キャッシュ済み画像の即時描画時にはフラッシュしないようにする */
-.mist .imgmodal-loading {
+/* 状態ピル（読み込み中/エラー共通の器。.spin = 既存ブライユ・スピナー） */
+.mist .imgmodal-loading,
+.mist .imgmodal-error {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -800,6 +800,10 @@
   color: var(--m-sub);
   font-size: var(--fs-meta);
   white-space: nowrap;
+}
+/* 読み込み中のみ表示を 150ms 遅らせ、キャッシュ済み画像の即時描画時には
+   フラッシュしないようにする（エラーは遅延させず即時表示） */
+.mist .imgmodal-loading {
   animation: m-fadein 0.2s ease-out 0.15s both;
 }
 /* 閉じるボタン: SP は画像下に独立表示、PC はモーダル右上 */
