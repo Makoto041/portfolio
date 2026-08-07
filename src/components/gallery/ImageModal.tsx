@@ -16,12 +16,6 @@ interface ImageModalProps {
 
 export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
-
-  // 開くたび・画像が変わるたびに読み込み状態へ戻す
-  useEffect(() => {
-    if (isOpen) setStatus('loading')
-  }, [isOpen, src])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -52,41 +46,50 @@ export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModa
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      {isOpen && src && (
-        <div className={`imgmodal-body${status !== 'loaded' ? ' is-loading' : ''}`}>
-          <Image
-            src={toCFUrl(src)}
-            alt={alt}
-            width={1200}
-            height={900}
-            sizes="92vw"
-            className={`imgmodal-img${status === 'loaded' ? ' is-loaded' : ''}`}
-            onLoad={() => setStatus('loaded')}
-            onError={() => setStatus('error')}
-            // リッチテキスト経由で外部ホストの画像も開くため、CF/相対以外は最適化を通さない
-            unoptimized={!isOptimizableSrc(toCFUrl(src))}
-          />
-          {status === 'loading' && (
-            <span className="imgmodal-loading" role="status">
-              <span className="spin" aria-hidden="true" />
-              読み込み中…
-            </span>
-          )}
-          {status === 'error' && (
-            <span className="imgmodal-loading" role="alert">
-              画像を読み込めませんでした
-            </span>
-          )}
-          <button
-            type="button"
-            className="imgmodal-close"
-            aria-label="プレビューを閉じる"
-            onClick={onClose}
-          >
-            ×
-          </button>
-        </div>
-      )}
+      {/* 読み込み状態は ModalBody 内に閉じる。開くたびにマウントし直される
+          （閉時にアンマウント + key=src）ため、初回レンダーから必ず loading で
+          始まり、前回の loaded/error が次の画像へ漏れない */}
+      {isOpen && src && <ModalBody key={src} src={src} alt={alt} onClose={onClose} />}
     </dialog>
+  )
+}
+
+function ModalBody({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
+
+  return (
+    <div className={`imgmodal-body${status !== 'loaded' ? ' is-loading' : ''}`}>
+      <Image
+        src={toCFUrl(src)}
+        alt={alt}
+        width={1200}
+        height={900}
+        sizes="92vw"
+        className={`imgmodal-img${status === 'loaded' ? ' is-loaded' : ''}`}
+        onLoad={() => setStatus('loaded')}
+        onError={() => setStatus('error')}
+        // リッチテキスト経由で外部ホストの画像も開くため、CF/相対以外は最適化を通さない
+        unoptimized={!isOptimizableSrc(toCFUrl(src))}
+      />
+      {status === 'loading' && (
+        <span className="imgmodal-loading" role="status">
+          <span className="spin" aria-hidden="true" />
+          読み込み中…
+        </span>
+      )}
+      {status === 'error' && (
+        <span className="imgmodal-loading" role="alert">
+          画像を読み込めませんでした
+        </span>
+      )}
+      <button
+        type="button"
+        className="imgmodal-close"
+        aria-label="プレビューを閉じる"
+        onClick={onClose}
+      >
+        ×
+      </button>
+    </div>
   )
 }
