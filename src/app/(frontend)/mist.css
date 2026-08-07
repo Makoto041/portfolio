@@ -34,6 +34,11 @@
 @keyframes m-spin {
   to { transform: rotate(360deg); }
 }
+/* 移動を伴わない出現用（reduced-motion でも許容されるopacityのみのフェード） */
+@keyframes m-fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 /* ブライユ・スピナーのフレーム（JS の高頻度 setState を廃止し CSS で回す） */
 @keyframes m-braille {
   0% { content: '⠋'; }
@@ -760,6 +765,13 @@
   flex-direction: column;
   align-items: center;
 }
+/* 読み込み中は body 側で場所を確保する（未ロードの img は自然寸法を持たず
+   ほぼ 0px に潰れるため、img 基準ではピルを配置できない） */
+.mist .imgmodal-body.is-loading {
+  min-width: min(80vw, 520px);
+  min-height: min(48dvh, 420px);
+  justify-content: center;
+}
 .mist .imgmodal-img {
   width: auto;
   height: auto;
@@ -771,6 +783,28 @@
   object-fit: contain;
   border: 1px solid var(--m-hairline);
   background: var(--m-surface);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.mist .imgmodal-img.is-loaded { opacity: 1; }
+/* 状態ピル（読み込み中/エラー共通の器。.spin = 既存ブライユ・スピナー） */
+.mist .imgmodal-loading,
+.mist .imgmodal-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid var(--m-hairline);
+  border-radius: 999px;
+  background: var(--m-surface);
+  color: var(--m-sub);
+  font-size: var(--fs-meta);
+  white-space: nowrap;
+}
+/* 読み込み中のみ表示を 150ms 遅らせ、キャッシュ済み画像の即時描画時には
+   フラッシュしないようにする（エラーは遅延させず即時表示） */
+.mist .imgmodal-loading {
+  animation: m-fadein 0.2s ease-out 0.15s both;
 }
 /* 閉じるボタン: SP は画像下に独立表示、PC はモーダル右上 */
 .mist .imgmodal-close {
