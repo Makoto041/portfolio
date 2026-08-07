@@ -72,6 +72,10 @@
   --m-hairline: oklch(0.84 0.02 262); /* hairline（旧 0.80〜0.85 帯を統合） */
   --m-surface: rgba(255, 255, 255, 0.65); /* 半透明パネル面（旧 .5〜.68 を統合） */
   --m-bg: #eef1f4;
+  /* 画像プレースホルダー（装飾）: 基調トーンとシマーの明部/暗部 */
+  --m-ph: oklch(0.92 0.015 262);
+  --m-ph-hi: oklch(0.93 0.01 262);
+  --m-ph-lo: oklch(0.89 0.02 262);
   --m-pad: clamp(20px, 4.5vw, 48px); /* コンテンツ左右パディング（基準 48px） */
 
   /* タイポスケール（役割6段。display系は各要素の clamp を維持） */
@@ -648,13 +652,13 @@
   cursor: zoom-in;
   transition: filter 0.25s;
   /* 読み込み中プレースホルダー（masonry と同じシマー） */
-  background: linear-gradient(105deg, oklch(0.93 0.01 262), oklch(0.89 0.02 262), oklch(0.93 0.01 262));
+  background: linear-gradient(105deg, var(--m-ph-hi), var(--m-ph-lo), var(--m-ph-hi));
   background-size: 300% 100%;
   animation: m-shimmer 1.8s ease-in-out infinite;
 }
 .mist .photos .ph:has(img.is-loaded) {
   animation: none;
-  background: oklch(0.92 0.015 262);
+  background: var(--m-ph);
 }
 @media (hover: hover) {
   .mist .photos .ph:hover { filter: brightness(0.94); }
@@ -909,7 +913,7 @@
 /* minmax(140px): 中央が最小320pxのとき 2 列が成立し、先頭 .big(span 2) が溢れない */
 .mist .gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
 /* 静的トーンのプレースホルダー（サーバー描画面・マーキーは常時アニメーションを避ける） */
-.mist .gal .g { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: 0; transition: filter 0.25s; background: oklch(0.92 0.015 262); }
+.mist .gal .g { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border: 0; transition: filter 0.25s; background: var(--m-ph); }
 .mist .gal .g.big { grid-column: span 2; grid-row: span 2; }
 @media (hover: hover) {
   .mist .gal .g:hover { filter: brightness(0.94); }
@@ -942,7 +946,7 @@
 .mist .substream { display: flex; align-items: baseline; gap: 8px; margin: 16px 0 8px; font-size: var(--fs-meta); color: var(--m-sub); }
 .mist .streamwrap { position: relative; overflow: hidden; }
 .mist .streamrow { display: flex; gap: 8px; width: max-content; animation: m-marquee 34s linear infinite; }
-.mist .sph { position: relative; display: block; width: 180px; height: 120px; flex: none; overflow: hidden; border: 0; transition: filter 0.25s; background: oklch(0.92 0.015 262); }
+.mist .sph { position: relative; display: block; width: 180px; height: 120px; flex: none; overflow: hidden; border: 0; transition: filter 0.25s; background: var(--m-ph); }
 @media (hover: hover) {
   .mist .sph:hover { filter: brightness(0.94); }
 }
@@ -1012,7 +1016,7 @@
   .mist .masonry .tile,
   .mist .photos .ph {
     animation: none !important;
-    background: oklch(0.92 0.015 262);
+    background: var(--m-ph);
   }
 }
 
@@ -1129,7 +1133,7 @@
   border: 1px solid var(--m-hairline);
   /* 読み込み中プレースホルダー（.pcard .thumb と同系のトーン）。
      画像ロード完了(:has)でアニメーションを止め、合成コストを残さない */
-  background: linear-gradient(105deg, oklch(0.93 0.01 262), oklch(0.89 0.02 262), oklch(0.93 0.01 262));
+  background: linear-gradient(105deg, var(--m-ph-hi), var(--m-ph-lo), var(--m-ph-hi));
   background-size: 300% 100%;
   animation: m-shimmer 1.8s ease-in-out infinite;
   cursor: zoom-in;
@@ -1141,7 +1145,7 @@
 .mist .masonry .tile img { display: block; }
 .mist .masonry .tile:has(img.is-loaded) {
   animation: none;
-  background: oklch(0.92 0.015 262);
+  background: var(--m-ph);
 }
 
 /* 中央寄せの単票（profile / letter） */

@@ -71,8 +71,10 @@ function ModalBody({
   onClose: () => void
 }) {
   const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
-  // 原本と同一URLのポスターは意味がない（同じキャッシュから原本側に即描画される）
-  const poster = posterSrc && posterSrc !== toCFUrl(src) ? posterSrc : null
+  const [posterFailed, setPosterFailed] = useState(false)
+  // 原本と同一URLのポスターは意味がない（同じキャッシュから原本側に即描画される）。
+  // ポスター自体の取得失敗時は通常表示（is-loading の確保領域+ピル）へ戻す
+  const poster = !posterFailed && posterSrc && posterSrc !== toCFUrl(src) ? posterSrc : null
 
   const statusPill =
     status === 'loading' ? (
@@ -110,8 +112,18 @@ function ModalBody({
         // ポスター（描画済みキャッシュ画像）が段のサイズを決め、原本を上に重ねる。
         // ピルは段の中央にオーバーレイし、原本ロード完了で原本がフェードイン
         <span className="imgmodal-stage">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={poster} alt="" aria-hidden="true" className="imgmodal-img imgmodal-poster" />
+          <Image
+            src={poster}
+            alt=""
+            aria-hidden="true"
+            width={1200}
+            height={900}
+            sizes="92vw"
+            className="imgmodal-img imgmodal-poster"
+            // currentSrc(最適化済みURL)を再最適化せず素通しし、キャッシュ命中を保つ
+            unoptimized
+            onError={() => setPosterFailed(true)}
+          />
           {original}
           {statusPill}
         </span>
