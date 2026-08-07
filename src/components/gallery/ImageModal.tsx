@@ -3,7 +3,7 @@
 // 画像プレビューモーダル。ネイティブ <dialog> + showModal() を採用し、
 // Escape で閉じる・フォーカストラップ・閉時の呼び出し元へのフォーカス復帰を
 // ブラウザ標準の挙動に委ねる（独自ポータル/z-index 管理は廃止）。
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
 
@@ -16,6 +16,12 @@ interface ImageModalProps {
 
 export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const [status, setStatus] = useState<'loading' | 'loaded' | 'error'>('loading')
+
+  // 開くたび・画像が変わるたびに読み込み状態へ戻す
+  useEffect(() => {
+    if (isOpen) setStatus('loading')
+  }, [isOpen, src])
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -47,17 +53,30 @@ export default function ImageModal({ src, alt = '', isOpen, onClose }: ImageModa
       }}
     >
       {isOpen && src && (
-        <div className="imgmodal-body">
+        <div className={`imgmodal-body${status !== 'loaded' ? ' is-loading' : ''}`}>
           <Image
             src={toCFUrl(src)}
             alt={alt}
             width={1200}
             height={900}
             sizes="92vw"
-            className="imgmodal-img"
+            className={`imgmodal-img${status === 'loaded' ? ' is-loaded' : ''}`}
+            onLoad={() => setStatus('loaded')}
+            onError={() => setStatus('error')}
             // リッチテキスト経由で外部ホストの画像も開くため、CF/相対以外は最適化を通さない
             unoptimized={!isOptimizableSrc(toCFUrl(src))}
           />
+          {status === 'loading' && (
+            <span className="imgmodal-loading" role="status">
+              <span className="spin" aria-hidden="true" />
+              読み込み中…
+            </span>
+          )}
+          {status === 'error' && (
+            <span className="imgmodal-loading" role="alert">
+              画像を読み込めませんでした
+            </span>
+          )}
           <button
             type="button"
             className="imgmodal-close"
