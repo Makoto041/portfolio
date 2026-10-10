@@ -401,7 +401,8 @@
   .soda .s-lead.is-text { gap: 16px; }
   .soda .s-lead.is-text,
   .soda .s-lead.is-empty { padding: calc(var(--s-overlap) + 16px) 20px 20px; }
-  /* SP は横長（5:4）にして、表紙の直下に TODAY とタイムラインの1件目が最初の画面に入るようにする */
+  /* SP は横長（5:4）。写真だけ・短い見出しの表紙なら、最初の画面に TODAY とタイムラインの1件目まで入る
+     （写真の下に本文が続くときは表紙の投稿そのものが最初の画面を占める） */
   .soda .s-lead-cover { aspect-ratio: 5 / 4; }
   .soda .s-lead-after { padding: 16px 20px 20px; }
 }
