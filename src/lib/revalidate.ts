@@ -30,7 +30,15 @@ export function makeRevalidate(
   return { afterChange: [afterChange], afterDelete: [afterDelete] }
 }
 
-/** グローバル用（afterChange のみ）。指定パスを再検証する */
-export async function revalidatePaths(paths: string[]) {
-  await revalidate(paths)
+/**
+ * 全ページを再検証する（全ページ共通の外枠＝ヘッダー・フッター・メニューに出る設定値が変わったとき）。
+ * ルートのレイアウトごと無効化するので、/letter や 404 のような時間ベースの再検証を持たないページも更新される。
+ */
+export async function revalidateAllPages() {
+  try {
+    const { revalidatePath } = await import('next/cache')
+    revalidatePath('/', 'layout')
+  } catch (e) {
+    console.warn('[revalidate] skipped (outside request scope):', (e as Error)?.message)
+  }
 }

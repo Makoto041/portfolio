@@ -4,6 +4,10 @@ import SodaPageHead from '@/components/soda/SodaPageHead'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import LetterForm from './LetterForm'
 
+// 外枠（フッター・メニュー）にサイト設定を出すため、他のページと同じく ISR にする
+// （設定変更時は SiteSettings の afterChange が全ページを再検証する）
+export const revalidate = 60
+
 const letterDescription = '岩渕誠（いわぶちまこと）へのお便り・メッセージはこちらから。感想やおしらせ、なんでもどうぞ。'
 
 export const metadata: Metadata = {
