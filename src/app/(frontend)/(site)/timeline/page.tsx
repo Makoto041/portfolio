@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
-import MistPageHead from '@/components/mist/MistPageHead'
-import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
-import MistLogTimeline from '@/components/mist/MistLogTimeline'
-import { TIMELINE_PAGE_SIZE } from '@/lib/timeline'
+import SodaPageHead from '@/components/soda/SodaPageHead'
+import SodaTimeline from '@/components/soda/SodaTimeline'
+import SodaToday from '@/components/soda/SodaToday'
 import AdminLinks from '@/components/admin/AdminLinks'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
+import { TIMELINE_PAGE_SIZE } from '@/lib/timeline'
 import { getPayloadClient } from '@/lib/payloadClient'
+import { getTodayData } from '@/features/site/getTodayData'
 import type { TimelineDoc } from '@/lib/payloadTypes'
 
 export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
@@ -37,41 +39,40 @@ export const metadata: Metadata = {
 }
 
 export default async function TimelinePage() {
-  // 初期表示は最新1ページ分のみ。以降は MistLogTimeline が Payload REST
-  // （GET /api/timeline）からページ単位で追加取得する（100件一括取得を廃止）。
+  // 初期表示は最新1ページ分のみ。以降は SodaTimeline が Payload REST
+  // （GET /api/timeline）からページ単位で追加取得する。
   // limit は page 2 以降とずれないよう TIMELINE_PAGE_SIZE を共有する
   let posts: TimelineDoc[] = []
   let total = 0
-  try {
-    const payload = await getPayloadClient()
-    const [postsRes, totalRes] = await Promise.all([
-      payload.find({
-        collection: 'timeline',
-        limit: TIMELINE_PAGE_SIZE,
-        sort: '-publishedAt',
-        depth: 2,
-      }),
-      payload.count({ collection: 'timeline' }),
-    ])
-    posts = postsRes.docs as unknown as TimelineDoc[]
-    total = totalRes.totalDocs
-  } catch (error) {
-    console.error('Timeline fetch failed (rendering empty):', error)
-  }
+  const [today] = await Promise.all([
+    getTodayData(),
+    (async () => {
+      try {
+        const payload = await getPayloadClient()
+        const res = await payload.find({
+          collection: 'timeline',
+          limit: TIMELINE_PAGE_SIZE,
+          sort: '-publishedAt',
+          depth: 2,
+        })
+        posts = res.docs as unknown as TimelineDoc[]
+        total = res.totalDocs
+      } catch (error) {
+        console.error('Timeline fetch failed (rendering empty):', error)
+      }
+    })(),
+  ])
 
   return (
-    <main className="content">
-      <MistPageHead
-        cmd="git log --diary --photos"
-        title="Timeline"
-        desc="日々の記録"
-        actions={<AdminLinks />}
-      />
-
-      {/* トップと同じ git log 風タイムライン（読み幅を確保） */}
-      <div style={{ maxWidth: 840 }}>
-        <MistLogTimeline posts={posts} total={total} showHead={false} />
+    <div className="s-wrap">
+      <SodaPageHead en="Timeline" title="タイムライン" desc={`日々の記録 · ${total}件`} actions={<AdminLinks />} />
+      <div className="s-pbody s-tl-layout">
+        <div className="s-tl-main">
+          <SodaTimeline posts={posts} total={total} />
+        </div>
+        {/* PC（1080px〜）のみ右列に表示（SP はホームで見せる） */}
+        <SodaToday notices={today.notices} stats={today.stats} />
       </div>
-    </main>
+    </div>
   )
 }

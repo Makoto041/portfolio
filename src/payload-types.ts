@@ -332,7 +332,7 @@ export interface Letter {
 export interface Notice {
   id: number;
   /**
-   * バーに「12.06」形式で表示されます
+   * ティッカーと TODAY カードに「12.06」形式で表示されます
    */
   date: string;
   /**
@@ -640,17 +640,17 @@ export interface SiteSetting {
   };
   hero?: {
     /**
-     * ヒーロー大型ワードマーク直下に表示される日本語コピー
+     * ホームの表紙（ロゴ「MAKOTO」の上のカバーライン）とメニューに表示される日本語コピー
      */
     tagline?: string | null;
     /**
-     * タグライン横に添える英字ロール
+     * カバーラインの「LIFE LOG」に続けて表示する英字（例: — tokyo）
      */
     roleEn?: string | null;
   };
   spotify?: {
     /**
-     * Spotify の共有URL（例: https://open.spotify.com/playlist/XXXX）。設定するとトップページ右レールに埋め込み表示されます。未設定ならリンク一覧を表示。
+     * Spotify の共有URL（例: https://open.spotify.com/playlist/XXXX）。設定するとプロフィールページに埋め込み表示されます。
      */
     playlistUrl?: string | null;
   };

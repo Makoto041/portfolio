@@ -35,7 +35,7 @@ export function buildStreak(dates: string[], now: number = Date.now()): number {
 }
 
 // Intl.DateTimeFormat の生成は比較的重いため、オプション別にキャッシュして再利用する
-// （タイムラインは1行ごとに fmtDateTimeMeta を呼ぶ）
+// （タイムラインは1行ごとに dayParts / fmtTime を呼ぶ）
 const fmtCache = new Map<string, Intl.DateTimeFormat>()
 function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
   const key = JSON.stringify(options)
@@ -69,18 +69,61 @@ export function fmtDateBadge(dateStr: string): string {
   return `${get('month')}.${get('day')}`
 }
 
-/** タイムラインのメタ行用 `2025-12-06 sat 18:26` */
-export function fmtDateTimeMeta(dateStr: string): string {
-  const get = parts(dateStr, {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  })
+const WEEKDAY_JA: Record<string, string> = {
+  Sun: '日',
+  Mon: '月',
+  Tue: '火',
+  Wed: '水',
+  Thu: '木',
+  Fri: '金',
+  Sat: '土',
+}
+
+export type DayParts = {
+  /** 日付キー `YYYY-MM-DD`（日ごとのグルーピング用） */
+  key: string
+  year: number
+  month: number
+  day: number
+  /** 曜日（漢字1文字） */
+  weekday: string
+}
+
+/** Asia/Tokyo での年月日と曜日。不正値は null */
+export function dayParts(dateStr: string): DayParts | null {
+  const get = parts(dateStr, { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' })
+  if (!get) return null
+  const year = Number(get('year'))
+  const month = Number(get('month'))
+  const day = Number(get('day'))
+  return {
+    key: `${get('year')}-${get('month')}-${get('day')}`,
+    year,
+    month,
+    day,
+    weekday: WEEKDAY_JA[get('weekday')] ?? '',
+  }
+}
+
+/** 時刻 `HH:MM`（Asia/Tokyo・24時間制） */
+export function fmtTime(dateStr: string): string {
+  const get = parts(dateStr, { hour: '2-digit', minute: '2-digit', hour12: false })
   if (!get) return ''
-  const day = get('weekday').toLowerCase()
-  return `${get('year')}-${get('month')}-${get('day')} ${day} ${get('hour')}:${get('minute')}`
+  // 一部ランタイムは 0 時を "24" と返すため正規化
+  const hour = get('hour') === '24' ? '00' : get('hour')
+  return `${hour}:${get('minute')}`
+}
+
+/** 和文の日付 `2026年7月5日（日）` */
+export function fmtDateJa(dateStr?: string | null): string {
+  if (!dateStr) return ''
+  const p = dayParts(dateStr)
+  if (!p) return ''
+  return `${p.year}年${p.month}月${p.day}日（${p.weekday}）`
+}
+
+/** ティッカー用の短い日付 `7.5` */
+export function fmtMonthDay(dateStr: string): string {
+  const p = dayParts(dateStr)
+  return p ? `${p.month}.${p.day}` : ''
 }

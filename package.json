@@ -1,7 +1,7 @@
 {
   "name": "portfolio",
   "version": "1.0.0",
-  "description": "岩渕誠のライフログ/ポートフォリオサイト（Next.js 15 + Payload CMS 3 + Mist Terminal デザイン）",
+  "description": "岩渕誠のライフログ/ポートフォリオサイト（Next.js 15 + Payload CMS 3 + Soda Press デザイン）",
   "license": "MIT",
   "type": "module",
   "scripts": {

@@ -1,9 +1,10 @@
 // app/(frontend)/(site)/layout.tsx
-// サブページ共通シェル。トップページ（Mist Terminal）と同じ意匠に統一するため、
-// 全サブページを MistShell（ターミナルバー + ミスト背景 + $ exit 0 フッター）で包む。
+// サブページ共通の外枠。ホームと同じ SodaShell（ヘッダー・フッター・SP ドック・メニュー）で包む。
 import React from 'react'
-import MistShell from '@/components/mist/MistShell'
+import SodaShell from '@/components/soda/SodaShell'
+import { getSiteChrome } from '@/features/site/getSiteChrome'
 
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
-  return <MistShell>{children}</MistShell>
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  const chrome = await getSiteChrome()
+  return <SodaShell chrome={chrome}>{children}</SodaShell>
 }

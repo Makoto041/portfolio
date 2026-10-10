@@ -25,7 +25,17 @@ export interface TimelineDoc extends BaseDoc {
   postType?: TimelinePostType | null
   text: any // richText JSON または文字列
   publishedAt?: string
-  images?: { id: string; image: { id: string; url: string; sizes?: Record<string, { url: string }> } }[]
+  images?: {
+    id?: string | null
+    image: {
+      id?: string | number
+      url: string
+      alt?: string | null
+      width?: number | null
+      height?: number | null
+      sizes?: Record<string, { url: string }>
+    }
+  }[]
   likes?: number
   embedUrl?: string
   urlMetadata?: {

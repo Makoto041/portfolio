@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { buildStreak, fmtDate, fmtDateBadge, fmtDateTimeMeta, toDayKey } from '../date'
+import {
+  buildStreak,
+  dayParts,
+  fmtDate,
+  fmtDateBadge,
+  fmtDateJa,
+  fmtMonthDay,
+  fmtTime,
+  toDayKey,
+} from '../date'
 
 // Asia/Tokyo 正午（JST の日付跨ぎに影響されない基準時刻）
 const NOW = Date.parse('2026-08-05T12:00:00+09:00')
@@ -69,12 +78,54 @@ describe('fmtDateBadge', () => {
   })
 })
 
-describe('fmtDateTimeMeta', () => {
-  it('`YYYY-MM-DD ddd HH:MM` 形式（曜日は小文字）', () => {
-    expect(fmtDateTimeMeta('2025-12-06T18:26:00+09:00')).toBe('2025-12-06 sat 18:26')
+describe('dayParts', () => {
+  it('Asia/Tokyo の年月日・曜日（漢字）とキーを返す', () => {
+    expect(dayParts('2026-07-05T07:39:57.365Z')).toEqual({
+      key: '2026-07-05',
+      year: 2026,
+      month: 7,
+      day: 5,
+      weekday: '日',
+    })
+  })
+
+  it('UTC では前日でも JST の日付と曜日になる', () => {
+    // 2025-12-05 20:00 UTC = 2025-12-06 05:00 JST（土）
+    expect(dayParts('2025-12-05T20:00:00Z')).toMatchObject({ key: '2025-12-06', weekday: '土' })
+  })
+
+  it('不正値は null', () => {
+    expect(dayParts('not-a-date')).toBeNull()
+  })
+})
+
+describe('fmtTime', () => {
+  it('JST の HH:MM（24時間制）', () => {
+    expect(fmtTime('2026-07-05T07:39:57.365Z')).toBe('16:39')
+  })
+
+  it('0 時台は 00 と表記する', () => {
+    expect(fmtTime('2026-07-04T15:05:00Z')).toBe('00:05')
   })
 
   it('不正値は空文字', () => {
-    expect(fmtDateTimeMeta('not-a-date')).toBe('')
+    expect(fmtTime('nope')).toBe('')
+  })
+})
+
+describe('fmtDateJa', () => {
+  it('`YYYY年M月D日（曜）` 形式', () => {
+    expect(fmtDateJa('2025-10-12T05:14:50.340Z')).toBe('2025年10月12日（日）')
+  })
+
+  it('未指定・不正値は空文字', () => {
+    expect(fmtDateJa(undefined)).toBe('')
+    expect(fmtDateJa('not-a-date')).toBe('')
+  })
+})
+
+describe('fmtMonthDay', () => {
+  it('ゼロ埋めなしの `M.D`', () => {
+    expect(fmtMonthDay('2026-07-05T07:39:57.365Z')).toBe('7.5')
   })
 })

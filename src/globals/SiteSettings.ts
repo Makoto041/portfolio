@@ -121,7 +121,7 @@ export const SiteSettings: GlobalConfig = {
           label: 'タグライン',
           defaultValue: '日々の記録、ときどき写真。つぶやきくらいの気軽さで。',
           admin: {
-            description: 'ヒーロー大型ワードマーク直下に表示される日本語コピー',
+            description: 'ホームの表紙（ロゴ「MAKOTO」の上のカバーライン）とメニューに表示される日本語コピー',
           },
         },
         {
@@ -130,7 +130,7 @@ export const SiteSettings: GlobalConfig = {
           label: 'ロール（英字）',
           defaultValue: '— web engineer, tokyo',
           admin: {
-            description: 'タグライン横に添える英字ロール',
+            description: 'カバーラインの「LIFE LOG」に続けて表示する英字（例: — tokyo）',
           },
         },
       ],
@@ -138,7 +138,7 @@ export const SiteSettings: GlobalConfig = {
     {
       name: 'spotify',
       type: 'group',
-      label: '右レール Spotify',
+      label: 'Spotify',
       fields: [
         {
           name: 'playlistUrl',
@@ -146,7 +146,7 @@ export const SiteSettings: GlobalConfig = {
           label: 'プレイリスト/アルバムURL',
           admin: {
             description:
-              'Spotify の共有URL（例: https://open.spotify.com/playlist/XXXX）。設定するとトップページ右レールに埋め込み表示されます。未設定ならリンク一覧を表示。',
+              'Spotify の共有URL（例: https://open.spotify.com/playlist/XXXX）。設定するとプロフィールページに埋め込み表示されます。',
           },
         },
       ],

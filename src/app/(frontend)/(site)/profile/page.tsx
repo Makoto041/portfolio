@@ -5,12 +5,14 @@ export const revalidate = 60 // ISR: 更新時は各コレクションの afterC
 
 import Image from 'next/image'
 import type { Metadata } from 'next'
-import MistPageHead from '@/components/mist/MistPageHead'
+import SodaPageHead from '@/components/soda/SodaPageHead'
+import SodaIcon, { socialIcon } from '@/components/soda/SodaIcon'
 import { toCFUrl } from '@/lib/cfUrl'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { getPayloadClient } from '@/lib/payloadClient'
 import { socialLabel, type ProfileData, type SocialLink } from '@/lib/social'
 import { spotifyEmbedUrl } from '@/lib/spotify'
+import { getTodayData } from '@/features/site/getTodayData'
 
 const FALLBACK_PROFILE: Required<Pick<ProfileData, 'name' | 'nameJapanese' | 'title' | 'description'>> & ProfileData = {
   name: 'Makoto Iwabuchi',
@@ -101,59 +103,80 @@ async function getProfilePageData(): Promise<{ profile: ProfileData; spotifyUrl:
 }
 
 export default async function ProfilePage() {
-  const { profile, spotifyUrl } = await getProfilePageData()
+  const [{ profile, spotifyUrl }, today] = await Promise.all([getProfilePageData(), getTodayData()])
   const profileImageUrl = profile.imageUrl ? toCFUrl(profile.imageUrl) : toCFUrl('/profile.jpg')
   const spotifyEmbed = spotifyEmbedUrl(spotifyUrl)
 
   return (
-    <main className="content">
-      <MistPageHead cmd="cat ./profile.txt" title="Profile" />
-      <section className="single">
-        <div className="card profilecard">
-          <div className="avatar">
-            <Image
-              src={profileImageUrl}
-              alt={`${profile.nameJapanese}（${profile.name}）のプロフィール写真`}
-              width={140}
-              height={140}
-              sizes="140px"
-              priority
-              className="object-cover w-full h-full"
-            />
-          </div>
-          <h2>{profile.name}</h2>
-          <p className="sub jp">
-            {profile.nameJapanese}・{profile.title}
+    <div className="s-wrap">
+      <SodaPageHead en="Profile" title="プロフィール" desc="このサイトを書いている人" />
+      <div className="s-pbody s-prof">
+        <div className="s-prof-ph">
+          <Image
+            src={profileImageUrl}
+            alt={`${profile.nameJapanese}（${profile.name}）のプロフィール写真`}
+            fill
+            priority
+            sizes="(max-width: 900px) 92vw, 420px"
+            className="object-cover"
+          />
+        </div>
+        <div>
+          <h2 className="s-prof-nm">{profile.nameJapanese}</h2>
+          <p className="s-prof-en">
+            {profile.name} · {profile.title}
           </p>
-          <p className="bio jp">{profile.description}</p>
-          <div className="socials">
+          <p className="s-prof-bio">{profile.description}</p>
+          <div className="s-sns">
             {profile.socialLinks?.map((link) =>
               link.url ? (
-                <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer">
-                  {socialLabel(link, 'full')} ↗
+                <a key={link.url} className="s-pill" href={link.url} target="_blank" rel="noopener noreferrer">
+                  <SodaIcon name={socialIcon(link.platform)} />
+                  {socialLabel(link, 'full')}
+                  <SodaIcon name="external" />
                 </a>
               ) : null,
             )}
           </div>
-        </div>
 
-        {/* Spotify（SiteSettings.spotify.playlistUrl 設定時のみ。
-            SP のトップページからは撤去したため、ここが常設の置き場所） */}
-        {spotifyEmbed && (
-          <div className="card">
-            <span className="cmd">$ spotify --playlist</span>
-            <iframe
-              className="spotify-embed"
-              src={spotifyEmbed}
-              height={352}
-              // Spotify 公式埋め込みに準拠し sandbox は付けない（MistRail 側の注記参照）
-              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              loading="lazy"
-              title="Spotify プレイリスト"
-            />
+          <div className="s-facts">
+            <div>
+              <b>{today.stats.entries}</b>
+              <span>投稿</span>
+            </div>
+            <div>
+              <b>{today.stats.photos}</b>
+              <span>写真</span>
+            </div>
+            <div>
+              <b>{today.stats.streak}日</b>
+              <span>連続</span>
+            </div>
           </div>
-        )}
-      </section>
-    </main>
+
+          {/* Spotify（SiteSettings.spotify.playlistUrl 設定時のみ） */}
+          {spotifyEmbed && (
+            <section className="s-spotify" aria-labelledby="h-spotify">
+              <div className="s-sh">
+                <h2 id="h-spotify">
+                  いま聴いてる<span className="s-en">Spotify</span>
+                </h2>
+              </div>
+              <iframe
+                src={spotifyEmbed}
+                height={352}
+                // Spotify 公式埋め込みに準拠し sandbox は付けない。
+                // 再生には自オリジン(open.spotify.com)のストレージが必要で、sandbox で allow-same-origin を外すと
+                // 不透明オリジン化して再生不可。src は固定の信頼オリジンかつ cross-origin のため、
+                // フレーム内容から親 DOM へは到達できない。参考: https://developer.spotify.com/documentation/embeds
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+                title="Spotify プレイリスト"
+              />
+            </section>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }

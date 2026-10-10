@@ -6,16 +6,19 @@ Payload CMS 駆動の Next.js サイトです。
 
 **公開URL**: https://iwabuchi-makoto.com
 
-## デザイン — Mist Terminal
+## デザイン — Soda Press
 
-「群青 × ミスト × ターミナル」をコンセプトにした独自デザインシステム。
+雑誌の表紙のような大きな丸いロゴと、パステルの地 × 黒い1本線で組んだ独自デザインシステム。
+タイムライン（日記帳）が主役。詳細は `docs/README.md`。
 
-- `whoami` / `git log` / `ls ./gallery` などのターミナルメタファーで全ページを統一
-- git log 風のコミットタイムライン、macOS 風タイトルバー
-- ライトターミナル固定（ダークモードなし）。トークンは `src/app/(frontend)/mist.css` の
-  `.mist` スコープに集約（タイポ6段 `--fs-*`・本文系カラー10トークン `--m-*`・4px 系余白）
-- テキストトークンは背景 `#eef1f4` 上で WCAG AA (4.5:1) 以上を維持
-- `prefers-reduced-motion` 対応（タイプライター・マーキー・ブロブは停止）
+- 表紙: 巨大ワードマーク「MAKOTO」の下に、いちばん新しい投稿をカバーストーリーとして置く
+- タイムラインは日付ごとの日記帳（曜日の丸 + M.D）。写真・リンクプレビュー・いいね
+- 写真に重ねる罫線タブ（ラベル / タイトル / 補足）でカードを統一
+- SP は画面下のドック（ホーム / 写真 / ブログ / プロフィール / メニュー）で親指で移動
+- 地色は「今月の色」パレット（`src/lib/palette.ts`。固定 or 月替わりを1行で切替）
+- トークンは `src/app/(frontend)/soda.css` の `.soda` スコープに集約（文字・線 `--s-*`・
+  タイポ `--s-fs-*`・角丸 `--s-r-*`・4px 系余白）。本文テキストはどのパレットでも AA (4.5:1) 以上
+- `prefers-reduced-motion` 対応（ティッカー・ロゴの弾み・アニメーションを停止）
 
 ## 技術スタック
 
@@ -25,7 +28,7 @@ Payload CMS 駆動の Next.js サイトです。
 | CMS | Payload CMS 3（管理画面 `/admin`） |
 | DB | Neon (PostgreSQL) — `@payloadcms/db-vercel-postgres` |
 | ストレージ | Cloudflare R2（S3 互換）+ CloudFront 配信（`toCFUrl`） |
-| スタイル | Tailwind CSS 4（CSS-first）+ ハンドメイドの Mist Terminal トークン |
+| スタイル | Tailwind CSS 4（CSS-first）+ ハンドメイドの Soda Press トークン |
 | 計測 | Vercel Analytics |
 | デプロイ | Vercel |
 | テスト | Vitest（純関数ユーティリティの単体テスト） |
@@ -35,28 +38,32 @@ Payload CMS 駆動の Next.js サイトです。
 ```text
 src/
 ├── app/
-│   ├── (frontend)/            # 公開ページ（トップは独自シェル）
-│   │   ├── page.tsx           # トップ: Timeline ダイジェスト + Gallery + Portal
-│   │   ├── mist.css           # Mist Terminal デザイントークン + 全スタイル
-│   │   └── (site)/            # サブページ共通シェル（MistShell）
-│   │       ├── timeline/      # 全件タイムライン（20件 + REST 追加読込）
+│   ├── (frontend)/            # 公開ページ
+│   │   ├── layout.tsx         # <html>（フォント・地色パレット・JSON-LD）
+│   │   ├── page.tsx           # ホーム: 表紙 + カバーストーリー + タイムライン + TODAY + 写真
+│   │   ├── soda.css           # Soda Press デザイントークン + 全スタイル
+│   │   ├── og/                # OGP 画像（1200×630 を動的生成）
+│   │   └── (site)/            # サブページ共通シェル（SodaShell）
+│   │       ├── timeline/      # 全件タイムライン（20件 + REST 追加読込・フィルタ）
 │   │       ├── posts/         # ブログ（Lexical リッチテキスト）
-│   │       ├── gallery/       # 写真アーカイブ（masonry + <dialog> モーダル）
+│   │       ├── gallery/       # 写真アーカイブ（masonry + 前後移動つき写真ビューア）
 │   │       ├── events/ products/ profile/ letter/
 │   ├── (payload)/             # Payload 管理画面 + REST API（/api/<collection>）
 │   └── api/                   # カスタム API（weather / letter / like / LINE webhook）
 ├── collections/               # Payload コレクション定義
-├── features/home/             # トップページのデータ取得・集計・表示モデル
-├── components/mist/           # Mist Terminal コンポーネント群
-└── lib/                       # date / social / spotify / cfUrl などの純関数・クライアント
+├── features/                  # ページのデータ取得・集計・表示モデル（home / site）
+├── components/soda/           # Soda Press コンポーネント群（シェル・表紙・タイムライン・カード）
+├── components/gallery/        # 写真ビューア（<dialog>）とギャラリー
+└── lib/                       # date / palette / phrase / richtext / social / cfUrl などの純関数
 ```
 
 ### データフロー
 
 - 各ページは ISR（`revalidate = 60`）+ コレクションの `afterChange` フックによる
   on-demand `revalidatePath` で更新が即時反映される
-- トップページの取得は `src/features/home/getHomePageData.ts` に集約。コレクション単位で
-  `catch` して縮退するため、一部の取得失敗がページ全体を巻き込まない
+- ホームの取得は `src/features/home/getHomePageData.ts`、TODAY（おしらせ・数字）と外枠（SNS）は
+  `src/features/site/` に集約。コレクション単位で `catch` して縮退するため、一部の取得失敗が
+  ページ全体を巻き込まない
 - タイムラインの追加読込は Payload REST（`GET /api/timeline?page=N&where[postType][in]=...`）
   をクライアントから直接叩く（`read: anyone` の公開コレクション）
 - LINE から Timeline へ投稿する webhook（`/api/line/webhook`）を持つ
@@ -71,7 +78,7 @@ src/
 | `media` | 写真（ギャラリー / タイムライン専用フラグ付き） |
 | `events` | 配信・イベント記録（プラットフォーム・期間・LIVE 判定） |
 | `products` | 制作物カタログ |
-| `notices` | トップの NOTICE ローテーション |
+| `notices` | おしらせ（ティッカー・TODAY カード） |
 | `letters` | 問い合わせフォーム送信 |
 | `users` | 管理者認証 |
 | グローバル `site-settings` | プロフィール・ヒーロー文言・Spotify プレイリスト |

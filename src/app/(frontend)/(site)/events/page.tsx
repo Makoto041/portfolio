@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
-import MistPageHead from '@/components/mist/MistPageHead'
+import SodaPageHead from '@/components/soda/SodaPageHead'
+import SodaTabCard from '@/components/soda/SodaTabCard'
+import Phrase from '@/components/soda/Phrase'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { fetchInEvent } from '@/lib/fetchInEvent'
-import EventCard from '@/components/cards/EventCard'
+import { eventCard } from '@/features/site/cardViews'
 
 const eventsDescription =
   '岩渕誠（いわぶちまこと）の配信・イベントの記録一覧。Twitch / YouTube などでの配信や現地イベントの情報を公開しています。'
@@ -33,18 +35,33 @@ export const metadata: Metadata = {
 }
 export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
-export default async function InEventPage() {
-  const inEvent = await fetchInEvent()
+export default async function EventsPage() {
+  const events = await fetchInEvent()
 
   return (
-    <main className="content">
-      <MistPageHead cmd="ls ./events" title="Events" desc="配信・イベントの記録" />
-      {inEvent.length === 0 && <p className="empty">$ no upcoming events</p>}
-      <div className="cardgrid">
-        {inEvent.map((e) => (
-          <EventCard key={e.id} e={e} />
-        ))}
+    <div className="s-wrap">
+      <SodaPageHead en="Events" title="イベント" desc="配信・イベントの記録" />
+      <div className="s-pbody">
+        {events.length === 0 ? (
+          <p className="s-empty">予定しているイベントはまだありません</p>
+        ) : (
+          <div className="s-cgrid">
+            {events.map((e) => {
+              const card = eventCard(e, false)
+              return (
+                <div key={card.id}>
+                  <SodaTabCard
+                    {...card}
+                    title={<Phrase text={card.label} />}
+                    sizes="(max-width: 600px) 92vw, (max-width: 1080px) 46vw, 400px"
+                  />
+                  {e.summary && <p className="s-cnote">{e.summary}</p>}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
-    </main>
+    </div>
   )
 }

@@ -1,232 +1,157 @@
 'use client'
 
+// タイムライン本文（Payload の Lexical JSON）を React に描画する。
+// 文字装飾（format ビット）・リンク（fields.url）・画像（upload / image ノード）に対応。
+// スタイルは soda.css の .s-rt（親要素に付与）が担う。
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
+import { safeHref } from '@/lib/safeHref'
 import ImageModal from '@/components/gallery/ImageModal'
 
 interface RichTextNode {
-  children?: RichTextNode[]
+  type?: string
+  tag?: string
   text?: string
+  /** text ノード: 装飾のビットフラグ / 要素ノード: 揃え（文字列） */
+  format?: number | string
+  // 旧 Slate 形式の装飾フラグ（過去データ互換）
   bold?: boolean
   italic?: boolean
   underline?: boolean
   strikethrough?: boolean
   code?: boolean
-  type?: string
-  format?: string
-  indent?: number
-  direction?: string
+  listType?: string
   url?: string
+  fields?: { url?: string; newTab?: boolean }
   src?: string
   alt?: string
-  width?: number
-  height?: number
-  // For upload nodes from rich text editor
-  value?: {
-    id?: string | number
-    url?: string
-    alt?: string
-    width?: number
-    height?: number
-    [key: string]: any
-  }
+  value?: { url?: string; alt?: string | null; [key: string]: unknown }
+  children?: RichTextNode[]
 }
 
-interface RichTextRoot {
-  root: {
-    children: RichTextNode[]
-  }
-}
+type RichTextData = { root: { children: RichTextNode[] } } | string | number | boolean | null | undefined
 
-type RichTextData = RichTextRoot | string | number | boolean | null | undefined
+// Lexical の text format ビット
+const IS_BOLD = 1
+const IS_ITALIC = 1 << 1
+const IS_STRIKETHROUGH = 1 << 2
+const IS_UNDERLINE = 1 << 3
+const IS_CODE = 1 << 4
+
+type OpenImage = (img: { src: string; alt: string; poster: string | null }) => void
 
 export default function RichTextRenderer({ data }: { data: RichTextData }) {
-  const [modalImage, setModalImage] = useState<{ src: string; alt: string; width?: number; height?: number } | null>(null)
-  
-  if (!data) return null
-  
-  // 文字列の場合はそのまま表示
-  if (typeof data === 'string') {
-    return <span className="whitespace-pre-line">{data}</span>
-  }
-  
-  // プリミティブ型の場合は文字列に変換
-  if (typeof data === 'number' || typeof data === 'boolean') {
-    return <span>{String(data)}</span>
-  }
-  
-  // JSONオブジェクトの場合はパース
-  try {
-    // dataがオブジェクトでrootプロパティを持つ場合
-    if (data && typeof data === 'object' && 'root' in data) {
-      const content = data.root?.children || []
-      if (Array.isArray(content)) {
-        return (
-          <div className="rich-text">
-            {renderNodes(content, setModalImage)}
-            <ImageModal
-              src={modalImage?.src || ''}
-              alt={modalImage?.alt || ''}
-              isOpen={!!modalImage}
-              onClose={() => setModalImage(null)}
-            />
-          </div>
-        )
-      }
-    }
-    
-    // その他のオブジェクトの場合はJSON.stringifyで表示
-    if (typeof data === 'object') {
-      console.warn('Unexpected rich text data format:', data)
-      return <span className="text-gray-500 italic">不明なテキスト形式</span>
-    }
-    
-    return <span>テキストの表示でエラーが発生しました</span>
-  } catch (error) {
-    console.error('Error rendering rich text:', error, data)
-    return <span className="text-gray-500 italic">テキストの表示でエラーが発生しました</span>
-  }
-}
+  const [modalImage, setModalImage] = useState<{ src: string; alt: string; poster: string | null } | null>(null)
 
-function renderNodes(nodes: RichTextNode[], setModalImage?: (image: { src: string; alt: string; width?: number; height?: number } | null) => void): React.ReactNode {
-  if (!Array.isArray(nodes)) {
-    console.warn('renderNodes: nodes is not an array:', nodes)
+  if (data === null || data === undefined || data === false) return null
+
+  // 文字列・プリミティブはそのまま（改行は保持）
+  if (typeof data === 'string') return <p style={{ whiteSpace: 'pre-line' }}>{data}</p>
+  if (typeof data === 'number' || typeof data === 'boolean') return <p>{String(data)}</p>
+
+  const content = typeof data === 'object' && 'root' in data ? data.root?.children : null
+  if (!Array.isArray(content)) {
+    console.warn('Unexpected rich text data format:', data)
     return null
   }
-  
+
+  return (
+    <>
+      {renderNodes(content, setModalImage, 'rt')}
+      <ImageModal
+        src={modalImage?.src ?? ''}
+        alt={modalImage?.alt ?? ''}
+        posterSrc={modalImage?.poster}
+        isOpen={!!modalImage}
+        onClose={() => setModalImage(null)}
+      />
+    </>
+  )
+}
+
+function renderText(node: RichTextNode, key: string): React.ReactNode {
+  const fmt = typeof node.format === 'number' ? node.format : 0
+  let el: React.ReactNode = String(node.text ?? '')
+  if (fmt & IS_CODE || node.code) el = <code>{el}</code>
+  if (fmt & IS_BOLD || node.bold) el = <strong>{el}</strong>
+  if (fmt & IS_ITALIC || node.italic) el = <em>{el}</em>
+  if (fmt & IS_UNDERLINE || node.underline) el = <u>{el}</u>
+  if (fmt & IS_STRIKETHROUGH || node.strikethrough) el = <s>{el}</s>
+  return <React.Fragment key={key}>{el}</React.Fragment>
+}
+
+function renderImage(src: string, alt: string, key: string, open: OpenImage) {
+  const imageSrc = toCFUrl(src)
+  return (
+    <button
+      key={key}
+      type="button"
+      className="s-rt-img"
+      aria-label="画像を拡大"
+      onClick={(e) => open({ src: imageSrc, alt, poster: e.currentTarget.querySelector('img')?.currentSrc || null })}
+    >
+      <Image
+        src={imageSrc}
+        alt={alt}
+        width={320}
+        height={240}
+        sizes="160px"
+        // リッチテキストは外部ホストの画像も入り得るため、CF/相対以外は最適化を通さない
+        unoptimized={!isOptimizableSrc(imageSrc)}
+      />
+    </button>
+  )
+}
+
+function renderNodes(nodes: RichTextNode[], open: OpenImage, prefix: string): React.ReactNode[] {
   return nodes.map((node, index) => {
-    try {
-      if (!node || typeof node !== 'object') {
-        console.warn('renderNodes: invalid node:', node)
-        return <span key={index}>[Invalid node]</span>
+    const key = `${prefix}-${index}`
+    if (!node || typeof node !== 'object') return null
+
+    if (node.type === 'text' || (node.type === undefined && node.text !== undefined)) {
+      return renderText(node, key)
+    }
+
+    const children = node.children ? renderNodes(node.children, open, key) : null
+
+    switch (node.type) {
+      case 'paragraph':
+        return <p key={key}>{children}</p>
+      // 投稿内の見出しは本文の流れを崩さないよう太字の段落として描く
+      case 'heading':
+        return (
+          <p key={key}>
+            <strong>{children}</strong>
+          </p>
+        )
+      case 'list': {
+        const ordered = node.listType === 'number' || node.tag === 'ol'
+        return ordered ? <ol key={key}>{children}</ol> : <ul key={key}>{children}</ul>
       }
-      
-      if (node.text !== undefined) {
-        // テキストノード
-        let element: React.ReactNode = String(node.text || '')
-        
-        if (node.bold) element = <strong key={`bold-${index}`}>{element}</strong>
-        if (node.italic) element = <em key={`italic-${index}`}>{element}</em>
-        if (node.underline) element = <u key={`underline-${index}`}>{element}</u>
-        if (node.strikethrough) element = <s key={`strike-${index}`}>{element}</s>
-        if (node.code) element = <code key={`code-${index}`} className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">{element}</code>
-        
-        return <span key={index}>{element}</span>
+      case 'listitem':
+        return <li key={key}>{children}</li>
+      case 'quote':
+        return <blockquote key={key}>{children}</blockquote>
+      case 'link':
+      case 'autolink': {
+        const href = safeHref(node.fields?.url ?? node.url)
+        if (!href) return <React.Fragment key={key}>{children}</React.Fragment>
+        return (
+          <a key={key} href={href} target="_blank" rel="noopener noreferrer">
+            {children}
+          </a>
+        )
       }
-      
-      // 要素ノード
-      const children = node.children ? renderNodes(node.children, setModalImage) : null
-      
-      switch (node.type) {
-        case 'paragraph':
-          return <p key={index} className="mb-2 last:mb-0">{children}</p>
-        
-        case 'heading':
-          const level = node.format || 'h2'
-          const HeadingTag = level as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
-          const headingClasses = {
-            h1: 'text-2xl font-bold mb-3',
-            h2: 'text-xl font-bold mb-2',
-            h3: 'text-lg font-bold mb-2',
-            h4: 'text-base font-bold mb-1',
-            h5: 'text-sm font-bold mb-1',
-            h6: 'text-xs font-bold mb-1',
-          }
-          return React.createElement(HeadingTag, { 
-            key: index, 
-            className: headingClasses[level as keyof typeof headingClasses] || headingClasses.h2 
-          }, children)
-        
-        case 'list':
-          const ListTag = node.format === 'ordered' ? 'ol' : 'ul'
-          const listClass = node.format === 'ordered' ? 'list-decimal list-inside mb-2' : 'list-disc list-inside mb-2'
-          return React.createElement(ListTag, { key: index, className: listClass }, children)
-        
-        case 'listitem':
-          return <li key={index} className="mb-1">{children}</li>
-        
-        case 'quote':
-          return (
-            <blockquote key={index} className="border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-2">
-              {children}
-            </blockquote>
-          )
-        
-        case 'link':
-          return (
-            <a 
-              key={index} 
-              href={node.url || '#'} 
-              className="text-blue-500 hover:text-blue-700 underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {children}
-            </a>
-          )
-        
-        case 'linebreak':
-          return <br key={index} />
-        
-        case 'image':
-          if (node.src) {
-            const imageSrc = toCFUrl(node.src)
-            return (
-              <div key={index} className="my-4">
-                <Image
-                  src={imageSrc}
-                  alt={node.alt || ''}
-                  width={160}
-                  height={120}
-                  sizes="(max-width: 768px) 100vw, 160px"
-                  className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
-                  unoptimized={!isOptimizableSrc(imageSrc)}
-                  onClick={() => setModalImage?.({ 
-                    src: imageSrc, 
-                    alt: node.alt || '', 
-                    width: node.width || 800, 
-                    height: node.height || 600 
-                  })}
-                />
-              </div>
-            )
-          }
-          return null
-        
-        case 'upload':
-          // Handle upload nodes (images from rich text editor)
-          if (node.value && typeof node.value === 'object' && node.value.url) {
-            const uploadData = node.value as any
-            const imageSrc = toCFUrl(uploadData.url)
-            return (
-              <div key={index} className="my-4">
-                <Image
-                  src={imageSrc}
-                  alt={uploadData.alt || ''}
-                  width={160}
-                  height={120}
-                  sizes="(max-width: 768px) 100vw, 160px"
-                  className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
-                  onClick={() => setModalImage?.({ 
-                    src: imageSrc, 
-                    alt: uploadData.alt || '', 
-                    width: uploadData.width || 800, 
-                    height: uploadData.height || 600 
-                  })}
-                />
-              </div>
-            )
-          }
-          return null
-        
-        default:
-          // 不明なタイプの場合はそのまま子要素を表示
-          return <span key={index}>{children}</span>
-      }
-    } catch (error) {
-      console.error('Error rendering node:', error, node)
-      return <span key={index} className="text-red-500 text-xs">[レンダリングエラー]</span>
+      case 'linebreak':
+        return <br key={key} />
+      case 'image':
+        return node.src ? renderImage(node.src, node.alt ?? '', key, open) : null
+      case 'upload':
+        return node.value?.url ? renderImage(node.value.url, node.value.alt ?? '', key, open) : null
+      default:
+        // 未知のノードは子要素だけを描く
+        return children ? <React.Fragment key={key}>{children}</React.Fragment> : null
     }
   })
 }
