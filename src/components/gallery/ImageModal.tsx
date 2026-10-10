@@ -177,6 +177,8 @@ function ModalBody({ src, alt, posterSrc }: { src: string; alt: string; posterSr
       height={1200}
       sizes="100vw"
       className={`imgmodal-img${poster ? ' imgmodal-full' : ''}${status === 'loaded' ? ' is-loaded' : ''}`}
+      // 画像のネイティブなドラッグ（pointercancel になる）を止め、マウスでもスワイプで前後に移動できるように
+      draggable={false}
       onLoad={() => setStatus('loaded')}
       onError={() => {
         console.error('ImageModal: 画像の読み込みに失敗しました', src)
@@ -202,6 +204,7 @@ function ModalBody({ src, alt, posterSrc }: { src: string; alt: string; posterSr
           className="imgmodal-img imgmodal-poster"
           // currentSrc(最適化済みURL)を再最適化せず素通しし、キャッシュ命中を保つ
           unoptimized
+          draggable={false}
           onError={() => setPosterFailed(true)}
         />
         {original}

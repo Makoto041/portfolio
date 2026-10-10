@@ -5,6 +5,7 @@
 // なり得るため、共用の定数・純関数はこの境界なしモジュールに置く。
 // ───────────────────────────────────────────
 import { lexicalToPlainText } from '@/lib/richtext'
+import { clip } from '@/lib/text'
 import type { TimelineDoc, TimelinePostType } from '@/lib/payloadTypes'
 
 /** 1ページの取得件数。/timeline の SSR 初期取得（page 1 とみなす）と
@@ -49,7 +50,7 @@ export function postPhotos(post: TimelineDoc): GridPhoto[] {
 export function postSummary(post: TimelineDoc, max = 40): string {
   const text = post.title || lexicalToPlainText(post.text)
   const first = text.split('\n')[0] ?? ''
-  return first.length > max ? `${first.slice(0, max)}…` : first
+  return clip(first, max)
 }
 
 /** TODAY カード・プロフィールの数字（投稿数・写真数・連続日数・最終更新日） */

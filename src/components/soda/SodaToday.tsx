@@ -73,8 +73,13 @@ function useActive(query?: string): boolean {
     const mq = window.matchMedia(query)
     const update = () => setActive(mq.matches)
     update()
-    mq.addEventListener?.('change', update)
-    return () => mq.removeEventListener?.('change', update)
+    // 古い Safari は MediaQueryList に addEventListener が無い（addListener のみ）
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', update)
+      return () => mq.removeEventListener('change', update)
+    }
+    mq.addListener(update)
+    return () => mq.removeListener(update)
   }, [query])
   return active
 }

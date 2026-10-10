@@ -5,6 +5,7 @@
 // ───────────────────────────────────────────
 import { fmtDateJa } from '@/lib/date'
 import { lexicalFirstImageUrl, lexicalToPlainText } from '@/lib/richtext'
+import { clip } from '@/lib/text'
 import { safeHref } from '@/lib/safeHref'
 import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
 import type { TabCardView } from '@/components/soda/SodaTabCard'
@@ -52,7 +53,7 @@ export const PLATFORM_LABELS: Record<string, string> = {
 /** 本文の最初の空でない1行（ティッカー・抜粋用） */
 export function firstLine(text: string, max: number): string {
   const line = text.split('\n').find((l) => l.trim()) ?? ''
-  return line.length > max ? `${line.slice(0, max)}…` : line
+  return clip(line, max)
 }
 
 /** 開催中か（終了日時が無いものは開始から3時間を目安にする） */

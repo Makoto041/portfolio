@@ -323,8 +323,8 @@
   .soda .s-coverline { grid-template-columns: 1fr 1fr; font-size: 10.5px; letter-spacing: 0.12em; }
   .soda .s-coverline .s-tagline { grid-row: 2; grid-column: 1 / -1; text-align: center; font-size: 12px; letter-spacing: 0.04em; }
   /* 1行目を帯の中央に置き、右端はお便りアイコンを避ける */
-  .soda .s-hdr.is-home + .s-main .s-mast { padding-top: 16px; }
-  .soda .s-hdr.is-home + .s-main .s-coverline > :last-child { padding-right: 48px; }
+  .soda .s-main.is-home .s-mast { padding-top: 16px; }
+  .soda .s-main.is-home .s-coverline > :last-child { padding-right: 48px; }
 }
 
 /* ══════════════ ホーム 3段組（写真 | タイムライン | TODAY） ══════════════ */
@@ -378,10 +378,14 @@
 .soda .s-big.is-long { font-size: clamp(20px, 2.6vw, 27px); line-height: 1.75; text-wrap: pretty; }
 /* 長文は数行で畳み、「続きを読む」でタイムラインの該当投稿へ */
 .soda .s-big.is-folded,
-.soda .s-lead-sub.is-folded { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.soda .s-lead-sub.is-folded,
+.soda .s-lead-body.is-folded { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
 .soda .s-big.is-folded { -webkit-line-clamp: 6; }
-.soda .s-lead-sub.is-folded { -webkit-line-clamp: 4; }
+.soda .s-lead-sub.is-folded,
+.soda .s-lead-body.is-folded { -webkit-line-clamp: 4; }
 .soda .s-lead-sub { font-size: var(--s-fs-body); color: var(--s-sub); white-space: pre-line; }
+/* 写真つきの表紙の下に置く本文（タイムラインの本文と同じ組み） */
+.soda .s-lead-body { font-size: var(--s-fs-post); font-weight: 500; line-height: 1.85; white-space: pre-line; overflow-wrap: anywhere; }
 .soda .s-lead-more { align-self: flex-start; }
 .soda .s-lead-foot { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 /* 写真つき: 表紙（写真＋タブ）の下に本文・リンク・続きへの導線を紙面で続ける */
@@ -397,7 +401,8 @@
   .soda .s-lead.is-text { gap: 16px; }
   .soda .s-lead.is-text,
   .soda .s-lead.is-empty { padding: calc(var(--s-overlap) + 16px) 20px 20px; }
-  .soda .s-lead-cover { aspect-ratio: 4 / 5; }
+  /* SP は横長（5:4）にして、表紙の直下に TODAY とタイムラインの1件目が最初の画面に入るようにする */
+  .soda .s-lead-cover { aspect-ratio: 5 / 4; }
   .soda .s-lead-after { padding: 16px 20px 20px; }
 }
 
@@ -729,7 +734,9 @@
   .soda .s-phs { grid-template-columns: repeat(6, 1fr); }
 }
 @media (min-width: 1080px) {
-  .soda .s-phs { grid-template-columns: 1fr; gap: 16px; }
+  /* タイムラインの行の高さいっぱいに伸ばし、写真を等間隔に散らして「もっと見る」を下端にそろえる */
+  .soda .s-photocol { display: flex; flex-direction: column; }
+  .soda .s-phs { flex: 1; grid-template-columns: 1fr; align-content: space-between; gap: 16px; }
 }
 
 /* ══════════════ 下段セクション ══════════════ */
@@ -1383,6 +1390,7 @@
 /* ── reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .soda .s-ticker-view { overflow-x: auto; scrollbar-width: none; }
+  .soda .s-ticker-track { padding-right: 72px; }
   .soda .s-ticker .s-tk-dup { display: none; }
   .soda .s-ticker-track,
   .soda .s-wordmark span,

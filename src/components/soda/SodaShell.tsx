@@ -29,7 +29,7 @@ export default function SodaShell({ children, chrome, home = false, before }: Pr
       <SodaNavProvider>
         {before}
         <SodaHeader home={home} />
-        <main id="main" className="s-main">
+        <main id="main" className={`s-main${home ? ' is-home' : ''}`}>
           {children}
         </main>
         <SodaFooter socials={chrome.socials} />
