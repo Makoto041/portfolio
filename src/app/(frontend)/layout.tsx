@@ -1,9 +1,12 @@
 // app/(frontend)/layout.tsx
 import '../global.css'
-import type { Metadata } from 'next'
+import './soda.css'
+import type { Metadata, Viewport } from 'next'
 import React from 'react'
 import { toCFUrl } from '@/lib/cfUrl'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
+import { sodaFontVars } from '@/lib/sodaFonts'
+import { PALETTES, currentPalette } from '@/lib/palette'
 
 export const metadata: Metadata = {
   title: {
@@ -67,16 +70,22 @@ export const metadata: Metadata = {
   },
 }
 
-// 本文フォント: 全ページ .mist（IBM Plex Mono / Noto Sans JP / Outfit）で描画するため
-// ローカルフォント定義は撤去。error/404/modal 等 .mist 外は global.css の --font-body（システムJP）で描画。
-
+// SP のブラウザ UI（アドレスバー等）を地色になじませ、ドックが iPhone の
+// ホームインジケーター領域を避けられるよう viewport-fit=cover にする（env(safe-area-inset-*) を有効化）
+export function generateViewport(): Viewport {
+  return {
+    themeColor: PALETTES[currentPalette()].bg,
+    colorScheme: 'light',
+    viewportFit: 'cover',
+  }
+}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // 地色パレット（src/lib/palette.ts）。soda.css の :root[data-palette] が色を持つ
+  const palette = currentPalette()
   return (
-    <html lang="ja">
+    <html lang="ja" data-palette={palette} className={sodaFontVars}>
       <head>
-        {/* サイトはライトターミナル固定（Mist Terminal）。フォーム・スクロールバーも明るく */}
-        <meta name="color-scheme" content="light" />
         {/* iOS Safari は touchstart リスナーが無いと :active を描画しないため、
             グローバルに空の passive リスナーを登録してタッチ押下フィードバックを有効化 */}
         <script
@@ -143,9 +152,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
 
-      <body className="antialiased overflow-x-hidden text-[color:var(--fg-base)]">
-        {/* ページシェル（ナビ・コンテナ・フッター）は (site) レイアウトが持つ。
-            トップページは Mist Terminal デザインの独自シェルで描画する */}
+      <body>
+        {/* ページの外枠（ヘッダー・フッター・ドック・メニュー）は SodaShell が持つ。
+            ホームは page.tsx、サブページは (site)/layout.tsx から描画する */}
         {children}
       </body>
     </html>

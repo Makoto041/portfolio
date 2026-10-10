@@ -2,11 +2,12 @@
 // src/app/(frontend)/gallery/page.tsx
 // ───────────────────────────────────────────
 
-import MistPageHead from '@/components/mist/MistPageHead'
+import SodaPageHead from '@/components/soda/SodaPageHead'
 import type { Metadata } from 'next'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { fetchLatest } from '@/lib/payload'
 import GalleryGrid from '@/components/gallery/GalleryGridMain'
+import { getTodayData } from '@/features/site/getTodayData'
 
 export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
@@ -38,18 +39,21 @@ export const metadata: Metadata = {
 }
 
 export default async function GalleryPage() {
-  // サーバーコンポーネント内でデータ取得
-  // includeTimelineOnly=falseでタイムライン専用画像をサーバー側で除外
-  const { gallery } = await fetchLatest({
-    mediaLimit: 100,
-    includeTimelineOnly: false
-  })
+  // タイムライン専用画像はサーバー側で除外（includeTimelineOnly=false）
+  const [{ gallery }, today] = await Promise.all([
+    fetchLatest({ mediaLimit: 100, includeTimelineOnly: false }),
+    getTodayData(),
+  ])
+  // 取得失敗・0件時のダミー画像は出さず、空状態の文言にする
+  const photos = gallery.filter((m) => m.id !== 'dummy-media' && m.id !== 'error-media')
+  const count = Math.max(today.stats.photos, photos.length)
 
   return (
-    <main className="content">
-      <MistPageHead cmd="open ./gallery" title="Gallery" desc="写真のアーカイブ" />
-      {/* サーバーサイドでフィルタリング済みのギャラリーデータを使用 */}
-      <GalleryGrid gallery={gallery} />
-    </main>
+    <div className="s-wrap">
+      <SodaPageHead en="Photos" title="写真" desc={`写真のアーカイブ · ${count}枚`} />
+      <div className="s-pbody">
+        <GalleryGrid gallery={photos} />
+      </div>
+    </div>
   )
 }

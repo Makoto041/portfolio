@@ -1,8 +1,10 @@
-import MistPageHead from '@/components/mist/MistPageHead'
 import type { Metadata } from 'next'
+import SodaPageHead from '@/components/soda/SodaPageHead'
+import SodaTabCard from '@/components/soda/SodaTabCard'
+import Phrase from '@/components/soda/Phrase'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { fetchProducts } from '@/lib/fetchProducts'
-import ProductCard from '@/components/cards/ProductCard'
+import { productCard } from '@/features/site/cardViews'
 
 export const metadata: Metadata = {
   // template が「| 岩渕誠（いわぶちまこと）」を付与するためページ名のみ
@@ -36,14 +38,29 @@ export default async function ProductsPage() {
   const products = await fetchProducts()
 
   return (
-    <main className="content">
-      <MistPageHead cmd="ls ./products" title="Products" desc="作ったもののログ" />
-      {products.length === 0 && <p className="empty">$ no products yet</p>}
-      <div className="cardgrid">
-        {products.map((p) => (
-          <ProductCard key={p.id} p={p} />
-        ))}
+    <div className="s-wrap">
+      <SodaPageHead en="Products" title="つくったもの" desc="作ったもののログ" />
+      <div className="s-pbody">
+        {products.length === 0 ? (
+          <p className="s-empty">まだ公開しているものはありません</p>
+        ) : (
+          <div className="s-cgrid">
+            {products.map((p) => {
+              const card = productCard(p)
+              return (
+                <div key={card.id}>
+                  <SodaTabCard
+                    {...card}
+                    title={<Phrase text={card.label} />}
+                    sizes="(max-width: 600px) 92vw, (max-width: 1080px) 46vw, 400px"
+                  />
+                  {p.description && <p className="s-cnote">{p.description}</p>}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
-    </main>
+    </div>
   )
 }

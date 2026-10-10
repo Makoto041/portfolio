@@ -1,45 +1,20 @@
-'use client'
-
-import Image from 'next/image'
-import Link from 'next/link'
-import type { BlogPost } from '@/lib/payloadTypes'
-import { toCFUrl } from '@/lib/cfUrl'
+// src/app/(frontend)/(site)/posts/PostsList.tsx
+// ブログ一覧（日付・題・抜粋・正方サムネの行。1px の罫で区切る）。
+import SodaBlogRow from '@/components/soda/SodaBlogRow'
+import { blogRow } from '@/features/site/cardViews'
+import type { BlogPost } from '@/payload-types'
 
 export default function PostsList({ posts }: { posts: BlogPost[] }) {
   if (!posts?.length) {
-    return <p className="empty">$ no posts found</p>
+    return <p className="s-empty">まだ記事がありません</p>
   }
 
   return (
-    <div className="cardgrid">
-      {posts.map((post) => (
-        <Link
-          key={post.id}
-          href={post.slug ? `/posts/${post.slug}` : '/maintenance'}
-          className="ccard"
-        >
-          {post.coverImage?.url && (
-            <div className="thumb">
-              <Image
-                src={toCFUrl(post.coverImage.url)}
-                alt={post.title}
-                fill
-                sizes="(max-width:720px) 100vw, 320px"
-                className="object-cover"
-              />
-            </div>
-          )}
-          <div className="cbody">
-            <span className="cmeta">
-              <time dateTime={post.publishedAt ?? post.createdAt}>
-                {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString('ja-JP')}
-              </time>
-            </span>
-            <span className="ctitle jp">{post.title}</span>
-            {post.excerpt && <span className="cexcerpt jp line-clamp-3">{post.excerpt}</span>}
-          </div>
-        </Link>
-      ))}
+    <div className="s-blist is-page">
+      {posts.map((post) => {
+        const row = blogRow(post)
+        return <SodaBlogRow key={row.id} {...row} />
+      })}
     </div>
   )
 }

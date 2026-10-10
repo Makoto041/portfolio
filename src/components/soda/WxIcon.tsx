@@ -1,6 +1,6 @@
-// src/components/mist/WxIcon.tsx
+// src/components/soda/WxIcon.tsx
 // 天気の線画SVGアイコン（デザインリファレンスの wxIcon() を移植）
-// 24px表示 / viewBox 64 / stroke currentColor / 晴れの光線は28sでゆっくり回転（CSS側 .rays）
+// 24px表示 / viewBox 64 / stroke currentColor / 晴れの光線は28sでゆっくり回転（soda.css の .s-wx-icon .rays）
 import React from 'react'
 
 export type WxKind = 'sun' | 'partly' | 'cloud' | 'fog' | 'rain' | 'snow' | 'thunder'

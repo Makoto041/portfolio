@@ -7,9 +7,12 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPayloadClient } from '@/lib/payloadClient'
 import { toCFUrl } from '@/lib/cfUrl'
-import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
+import { fmtDateJa } from '@/lib/date'
+import { OG_IMAGE, OG_IMAGE_URL, toJsonLd } from '@/lib/seo'
 import type { BlogPost } from '@/lib/payloadTypes'
-import { RenderRichTextWithModal } from '@/lib/renderRichTextWithModal'
+import { RenderRichTextWithModal, type LexicalNode } from '@/lib/renderRichTextWithModal'
+import SodaIcon from '@/components/soda/SodaIcon'
+import Phrase from '@/components/soda/Phrase'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -108,46 +111,52 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     "inLanguage": "ja-JP"
   }
 
+  const date = post.publishedAt ?? post.createdAt
+  const nodes = ((post.body as { root?: { children?: LexicalNode[] } } | undefined)?.root?.children ?? [])
+
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <main className="content">
-        <article className="article">
-          <span className="cmd" style={{ fontSize: 'var(--fs-meta)', color: 'var(--m-sub)' }}>
-            ~/life $ cat ./posts/{slug}
-          </span>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(jsonLd) }} />
+      <div className="s-wrap">
+        <article className="s-article s-pbody">
+          <header className="s-ahead">
+            <div className="s-ameta">
+              <span className="s-cat">ブログ</span>
+              <time className="s-num" dateTime={date}>
+                {fmtDateJa(date)}
+              </time>
+            </div>
+            <h1>
+              <Phrase text={post.title} />
+            </h1>
+          </header>
+
           {post.coverImage?.url && (
-            <div className="cover" style={{ marginTop: 18 }}>
+            <div className="s-cover">
               <Image
                 src={toCFUrl(post.coverImage.url)}
-                alt={post.title}
+                alt=""
                 fill
-                sizes="760px"
+                priority
+                sizes="(max-width: 760px) 100vw, 700px"
                 className="object-cover"
               />
             </div>
           )}
 
-          <h1 className="jp" style={{ marginTop: post.coverImage?.url ? 0 : 18 }}>
-            {post.title}
-          </h1>
-          <time className="ameta" dateTime={post.publishedAt ?? post.createdAt}>
-            {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString('ja-JP')}
-          </time>
-
-          {/* renderRichText で Lexical の JSON を React 要素に変換 */}
-          <div className="prose jp">
-            <RenderRichTextWithModal nodes={(post.body as any)?.root?.children || []} />
+          {/* Lexical の JSON を React 要素に変換（画像はタップで拡大） */}
+          <div className="s-prose">
+            <RenderRichTextWithModal nodes={nodes} />
           </div>
 
-          <Link href="/posts" className="backlink">
-            ← cd ./posts
-          </Link>
+          <div className="s-back">
+            <Link href="/posts" className="s-pill">
+              <SodaIcon name="arrow-left" />
+              ブログ一覧へ
+            </Link>
+          </div>
         </article>
-      </main>
+      </div>
     </>
   )
 }

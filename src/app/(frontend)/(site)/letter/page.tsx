@@ -1,72 +1,46 @@
-// src/app/(frontend)/letter/page.tsx
-'use client'
+// src/app/(frontend)/(site)/letter/page.tsx
+import type { Metadata } from 'next'
+import SodaPageHead from '@/components/soda/SodaPageHead'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
+import LetterForm from './LetterForm'
 
-import { useState } from 'react'
-import MistPageHead from '@/components/mist/MistPageHead'
+// 外枠（フッター・メニュー）にサイト設定を出すため、他のページと同じく ISR にする
+// （設定変更時は SiteSettings の afterChange が全ページを再検証する）
+export const revalidate = 60
+
+const letterDescription = '岩渕誠（いわぶちまこと）へのお便り・メッセージはこちらから。感想やおしらせ、なんでもどうぞ。'
+
+export const metadata: Metadata = {
+  // template が「| 岩渕誠（いわぶちまこと）」を付与するためページ名のみ
+  title: 'お便り',
+  description: letterDescription,
+  openGraph: {
+    title: 'お便り | 岩渕誠（いわぶちまこと）',
+    description: letterDescription,
+    url: 'https://iwabuchi-makoto.com/letter',
+    siteName: 'いわぶちまこと',
+    locale: 'ja_JP',
+    type: 'website',
+    images: [OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'お便り | 岩渕誠（いわぶちまこと）',
+    description: letterDescription,
+    images: [OG_IMAGE_URL],
+  },
+  alternates: {
+    canonical: 'https://iwabuchi-makoto.com/letter',
+  },
+}
 
 export default function LetterPage() {
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-    const form = e.currentTarget
-    const data = {
-      name: (form.elements.namedItem('name') as HTMLInputElement).value,
-
-      message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
-    }
-    try {
-      const res = await fetch('/api/letter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-      if (!res.ok) throw new Error('送信に失敗しました')
-      setSent(true)
-      form.reset()
-    } catch (err: any) {
-      setError(err.message || '送信に失敗しました')
-    } finally {
-      setLoading(false)
-      setTimeout(() => setSent(false), 2000)
-    }
-  }
-
   return (
-    <main className="content">
-      <MistPageHead cmd="vim ./letter" title="Letter" desc="お便り・メッセージはこちらから" />
-      <section className="single">
-        <div className="card" style={{ padding: '26px 26px' }}>
-          <span className="cmd">$ echo &quot;...&quot; &gt;&gt; letter</span>
-          <form onSubmit={handleSubmit} className="mform">
-            <label>
-              お名前
-              <input name="name" type="text" placeholder="name" maxLength={100} required />
-            </label>
-            <label>
-              メッセージ
-              <textarea name="message" placeholder="message" rows={5} maxLength={5000} required />
-            </label>
-            <button type="submit" className="submit" disabled={loading}>
-              {loading ? '$ sending...' : '$ send --letter'}
-            </button>
-            {sent && (
-              <p className="formnote" style={{ color: 'oklch(0.6 0.14 155)' }}>
-                ✓ 送信しました！
-              </p>
-            )}
-            {error && (
-              <p className="formnote" style={{ color: 'oklch(0.6 0.18 25)' }}>
-                ✗ {error}
-              </p>
-            )}
-          </form>
-        </div>
-      </section>
-    </main>
+    <div className="s-wrap">
+      <SodaPageHead en="Letter" title="お便り" desc="感想・おしらせ・なんでもどうぞ" />
+      <div className="s-pbody s-letter">
+        <LetterForm />
+      </div>
+    </div>
   )
 }

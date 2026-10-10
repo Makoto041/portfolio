@@ -1,7 +1,7 @@
 // ───────────────────────────────────────────
 // src/lib/spotify.ts
 // Spotify 共有URL → 埋め込みURL 変換（playlist/album/track/artist）。
-// MistRail / Profile ページで共用する。
+// プロフィールページの「いま聴いてる」で使う。
 // ───────────────────────────────────────────
 
 /** Spotify 共有URL → 埋め込みURL。不正なら null */

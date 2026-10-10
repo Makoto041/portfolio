@@ -1,176 +1,175 @@
 // src/lib/renderRichTextWithModal.tsx
+// ブログ記事本文（Payload の Lexical JSON）を React に描画する。
+// 見出し・段落・リスト・引用・コード・リンク（fields.url）・文字装飾（format ビット）・
+// 画像（upload / image ノード。本文幅いっぱい・タップで写真ビューア、記事内の画像を前後移動）に対応。
+// スタイルは soda.css の .s-prose（親要素）が担う。
 'use client'
 
-import React, { ReactNode, ElementType, useState } from 'react'
+import React, { type ElementType, type ReactNode } from 'react'
 import Image from 'next/image'
 import ImageModal from '@/components/gallery/ImageModal'
+import { usePhotoViewer } from '@/components/gallery/usePhotoViewer'
 import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
+import { safeHref } from '@/lib/safeHref'
 
 export interface LexicalNode {
   type?: string
   tag?: string
   text?: string
+  /** text ノード: 装飾のビットフラグ / 要素ノード: 揃え（文字列） */
+  format?: number | string
+  listType?: string
   url?: string
+  fields?: { url?: string }
   src?: string
   alt?: string
+  value?: { url?: string; alt?: string | null; width?: number | null; height?: number | null } | number | string
   children?: LexicalNode[]
 }
 
-const defaultClassNames: Record<string, string> = {
-  h1: 'mt-8 mb-4 text-3xl font-bold',
-  h2: 'mt-6 mb-3 text-2xl font-semibold',
-  h3: 'mt-5 mb-2 text-xl font-semibold',
-  p: 'mb-4 leading-relaxed',
-  ul: 'mb-4 list-disc list-inside',
-  ol: 'mb-4 list-decimal list-inside',
-  li: 'ml-6 mb-1',
-  blockquote: 'border-l-4 pl-4 italic my-4 text-gray-600',
-  pre: 'bg-gray-100 p-4 rounded my-4 overflow-auto',
-  code: 'bg-gray-200 px-1 rounded text-sm font-mono',
-  a: 'text-[var(--accent)] underline',
-  img: 'my-4 max-w-full rounded',
+const IS_BOLD = 1
+const IS_ITALIC = 1 << 1
+const IS_STRIKETHROUGH = 1 << 2
+const IS_UNDERLINE = 1 << 3
+const IS_CODE = 1 << 4
+
+const HEADING_TAGS = new Set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+
+type ArticleImage = { src: string; alt: string; width?: number | null; height?: number | null }
+
+/** 描画順に本文中の画像を集める（ビューアの前後移動用） */
+function collectImages(nodes: LexicalNode[], out: ArticleImage[] = []): ArticleImage[] {
+  for (const node of nodes) {
+    const img = imageOf(node)
+    if (img) out.push(img)
+    if (node.children) collectImages(node.children, out)
+  }
+  return out
 }
 
-export function RenderRichTextWithModal({ nodes = [], keyPrefix = 'rt' }: { nodes: LexicalNode[], keyPrefix?: string }): ReactNode {
-  const [modalImage, setModalImage] = useState<{ src: string; alt: string; poster?: string | null; width?: number; height?: number } | null>(null)
+function imageOf(node: LexicalNode): ArticleImage | null {
+  if (node.type === 'upload' && node.value && typeof node.value === 'object' && node.value.url) {
+    return { src: toCFUrl(node.value.url), alt: node.value.alt ?? '', width: node.value.width, height: node.value.height }
+  }
+  if ((node.type === 'image' || node.tag === 'img') && node.src) {
+    return { src: toCFUrl(node.src), alt: node.alt ?? '' }
+  }
+  return null
+}
 
-  const renderNodes = (nodeList: LexicalNode[] = [], prefix = 'rt'): ReactNode[] => {
-    return nodeList.map((node, idx) => {
-      const key = `${prefix}-${idx}`
+export function RenderRichTextWithModal({ nodes = [] }: { nodes: LexicalNode[] }): ReactNode {
+  const images = collectImages(nodes)
+  const { open, modalProps } = usePhotoViewer(images.map(({ src, alt }) => ({ src, alt })))
+  let imageIndex = 0
 
-      // テキストノード（改行を <br/> に変換）
-      if (node.type === 'text' && typeof node.text === 'string') {
-        const lines = node.text.split(/\r\n|\r|\n/)
-        return (
-          <React.Fragment key={key}>
-            {lines.map((line, i) => (
-              <React.Fragment key={`${key}-line-${i}`}>
-                {line}
-                {i < lines.length - 1 && <br />}
-              </React.Fragment>
-            ))}
-          </React.Fragment>
-        )
-      }
-
-      // 明示的な改行ノード（Lexical の line-break）
-      if (node.type === 'linebreak') {
-        return <br key={key} />
-      }
-
-      // 段落
-      if (node.type === 'paragraph') {
-        return (
-          <p key={key} className={defaultClassNames.p}>
-            {renderNodes(node.children, key)}
-          </p>
-        )
-      }
-
-      // 見出し
-      if (node.type === 'heading' && node.tag) {
-        const Tag = node.tag as ElementType
-        const className = defaultClassNames[node.tag] || ''
-        return (
-          <Tag key={key} className={className}>
-            {renderNodes(node.children, key)}
-          </Tag>
-        )
-      }
-
-      // リスト (ol/ul)
-      if (node.type === 'list' && node.tag) {
-        const ListTag = node.tag as ElementType
-        const className = defaultClassNames[node.tag] || ''
-        return (
-          <ListTag key={key} className={className}>
-            {renderNodes(node.children, key)}
-          </ListTag>
-        )
-      }
-
-      // リストアイテム
-      if (node.type === 'listitem') {
-        return (
-          <li key={key} className={defaultClassNames.li}>
-            {renderNodes(node.children, key)}
-          </li>
-        )
-      }
-
-      // 画像
-      if ((node.tag === 'img' && node.src) || (node.type === 'image' && node.src)) {
-        // 相対URLは CloudFront へ正規化。外部ホストの絶対URLは remotePatterns 外のため
-        // unoptimized で直接参照する（RichTextRenderer / UrlPreview と同ポリシー）
-        const imageSrc = toCFUrl(node.src)
-        return (
-          <div key={key} className="my-4">
-            <Image
-              src={imageSrc}
-              alt={node.alt || ''}
-              width={160}
-              height={120}
-              sizes="(max-width: 768px) 100vw, 160px"
-              className="rounded-lg cursor-pointer hover:opacity-80 transition-opacity object-cover max-w-[160px] h-auto"
-              unoptimized={!isOptimizableSrc(imageSrc)}
-              onClick={(e) => setModalImage({
-                src: imageSrc,
-                alt: node.alt || '',
-                // インライン表示済みのURL（=キャッシュ命中確実）をモーダルのポスターに使う
-                poster: e.currentTarget.currentSrc || null,
-                width: 800,
-                height: 600
-              })}
-            />
-          </div>
-        )
-      }
-
-      // リンク
-      if (node.tag === 'a' && node.url) {
-        return (
-          <a
-            key={key}
-            href={node.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={defaultClassNames.a}
-          >
-            {renderNodes(node.children, key)}
-          </a>
-        )
-      }
-
-      // その他のタグ
-      if (node.tag) {
-        const Tag = node.tag as ElementType
-        const className = defaultClassNames[node.tag] || ''
-        return (
-          <Tag key={key} className={className}>
-            {renderNodes(node.children, key)}
-          </Tag>
-        )
-      }
-
-      // ネストされた子供だけがある場合
-      if (node.children) {
-        return <React.Fragment key={key}>{renderNodes(node.children, key)}</React.Fragment>
-      }
-
-      return null
-    })
+  const renderText = (node: LexicalNode, key: string): ReactNode => {
+    const fmt = typeof node.format === 'number' ? node.format : 0
+    // 改行文字は <br/> に変換
+    const lines = String(node.text ?? '').split(/\r\n|\r|\n/)
+    let el: ReactNode = lines.map((line, i) => (
+      <React.Fragment key={`${key}-l${i}`}>
+        {line}
+        {i < lines.length - 1 && <br />}
+      </React.Fragment>
+    ))
+    if (fmt & IS_CODE) el = <code>{el}</code>
+    if (fmt & IS_BOLD) el = <strong>{el}</strong>
+    if (fmt & IS_ITALIC) el = <em>{el}</em>
+    if (fmt & IS_UNDERLINE) el = <u>{el}</u>
+    if (fmt & IS_STRIKETHROUGH) el = <s>{el}</s>
+    return <React.Fragment key={key}>{el}</React.Fragment>
   }
 
+  const renderNodes = (list: LexicalNode[] = [], prefix: string): ReactNode[] =>
+    list.map((node, idx) => {
+      const key = `${prefix}-${idx}`
+      if (!node || typeof node !== 'object') return null
+
+      if (node.type === 'text') return renderText(node, key)
+      if (node.type === 'linebreak') return <br key={key} />
+      if (node.type === 'tab') return ' '
+
+      const img = imageOf(node)
+      if (img) {
+        const index = imageIndex++
+        const ratio = img.width && img.height ? img.width / img.height : 16 / 9
+        return (
+          <figure key={key}>
+            <button
+              type="button"
+              className="s-prose-img"
+              aria-label={img.alt ? `画像を拡大: ${img.alt}` : '画像を拡大'}
+              onClick={(e) => open(index, e.currentTarget.querySelector('img')?.currentSrc || null)}
+            >
+              <Image
+                src={img.src}
+                alt={img.alt}
+                width={1400}
+                height={Math.round(1400 / ratio)}
+                sizes="(max-width: 760px) 100vw, 700px"
+                // 外部ホストの絶対URLは remotePatterns 外のため unoptimized で直接参照する
+                unoptimized={!isOptimizableSrc(img.src)}
+              />
+            </button>
+          </figure>
+        )
+      }
+
+      const children = node.children ? renderNodes(node.children, key) : null
+
+      switch (node.type) {
+        case 'paragraph':
+          // 空段落（Lexical が改行用に入れるもの）は余白を増やさないよう描かない
+          return node.children && node.children.length > 0 ? <p key={key}>{children}</p> : null
+        case 'heading': {
+          const tag = node.tag && HEADING_TAGS.has(node.tag) ? node.tag : 'h2'
+          // 記事タイトルが h1 のため、本文中の h1 は h2 として扱う
+          const Tag = (tag === 'h1' ? 'h2' : tag) as ElementType
+          return <Tag key={key}>{children}</Tag>
+        }
+        case 'list': {
+          const ordered = node.listType === 'number' || node.tag === 'ol'
+          return ordered ? <ol key={key}>{children}</ol> : <ul key={key}>{children}</ul>
+        }
+        case 'listitem': {
+          // 入れ子リストだけを持つ項目（Lexical の構造）は記号を付けない
+          const nestOnly = node.children?.length === 1 && node.children[0]?.type === 'list'
+          return (
+            <li key={key} className={nestOnly ? 'is-nest' : undefined}>
+              {children}
+            </li>
+          )
+        }
+        case 'quote':
+          return <blockquote key={key}>{children}</blockquote>
+        case 'code':
+          return (
+            <pre key={key}>
+              <code>{children}</code>
+            </pre>
+          )
+        case 'link':
+        case 'autolink': {
+          const href = safeHref(node.fields?.url ?? node.url)
+          if (!href) return <React.Fragment key={key}>{children}</React.Fragment>
+          const external = /^https?:/i.test(href)
+          return (
+            <a key={key} href={href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+              {children}
+            </a>
+          )
+        }
+        case 'horizontalrule':
+          return <hr key={key} />
+        default:
+          return children ? <React.Fragment key={key}>{children}</React.Fragment> : null
+      }
+    })
+
   return (
-    <div className="rich-text-content">
-      {renderNodes(nodes, keyPrefix)}
-      <ImageModal
-        src={modalImage?.src || ''}
-        alt={modalImage?.alt || ''}
-        posterSrc={modalImage?.poster}
-        isOpen={!!modalImage}
-        onClose={() => setModalImage(null)}
-      />
-    </div>
+    <>
+      {renderNodes(nodes, 'rt')}
+      <ImageModal {...modalProps} />
+    </>
   )
 }

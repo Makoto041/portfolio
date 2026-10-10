@@ -8,8 +8,8 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 
 変更対応は、以下を**自走で最後まで**完結させる。軽微な変更（typo・単純修正）は 1・3 を省略してよい。
 
-1. **設計/UX を変える変更はまずモック**: Artifact で HTML モックを作り、方向性の合意を得てから実装に入る（既存の「Mist Terminal」トークン/意匠を踏襲）。**サーバー環境で作業していて Artifact が使えない/実機で見せたい場合は、下記「サーバー環境でのプレビュー」の tailnet 配信で URL を渡し、実機（iPhone / Mac など SP・PC 両方）で確認してもらう。**
-2. **差分で実装**: 既存パターン（コンポーネント構成・Payloadコレクション・`src/app/(frontend)/mist.css`）に沿って、ゼロから作り直さず改修する。
+1. **設計/UX を変える変更はまずモック**: Artifact で HTML モックを作り、方向性の合意を得てから実装に入る（既存の「Soda Press」トークン/意匠を踏襲）。**サーバー環境で作業していて Artifact が使えない/実機で見せたい場合は、下記「サーバー環境でのプレビュー」の tailnet 配信で URL を渡し、実機（iPhone / Mac など SP・PC 両方）で確認してもらう。**
+2. **差分で実装**: 既存パターン（コンポーネント構成・Payloadコレクション・`src/app/(frontend)/soda.css`）に沿って、ゼロから作り直さず改修する。
 3. **Fable 5 レビュー**: 非自明な実装は Fable 5 をサブエージェント（Agentツール `model: fable`）に指名して設計/コードレビュー → 指摘修正 → 再確認のループを回す（専用 `advisor()` が使えない環境のため、Fableサブエージェントで代替）。
 4. **自走で PR → マージ**: 完了したらブランチを切って PR を作成（**main への直コミット禁止**）。CI（Vercelビルド）と PRレビュー（CodeRabbit）の完了を待ち、**指摘があれば修正して再確認、無ければ `gh pr merge --squash` でマージ**する。
 5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用（`pnpm payload migrate`）はデプロイ側に委ねる（`.env` は本番 Neon を指すためローカル/CIから本番へは適用しない）。
@@ -44,7 +44,7 @@ pnpm dev -H "$TS_IP"               # 既定 3000 番
 上記「開発フロー」に加え、環境を問わず守る規約。
 
 - **ライブ配信物に生成ツールの痕跡を残さない**: 公開サイトが配信する HTML/CSS/JS（第三者が DevTools/View Source で見える成果物）に、AI/ツール由来の文字列・メタ・可視コメント・attribution を残さない。本番ビルドは minify でコメント除去されるため通常は自然に満たされる。**GitHub のソース/コミット履歴は対象外**（判断基準は「通常のサイトから見えるか」だけ）。
-- **設計トークン体系（Mist Terminal）に沿う**: `src/app/(frontend)/mist.css` の `.mist` スコープに集約。タイポは6段 `--fs-caption/meta/ui/body/h3`（display は各要素の `clamp` を維持）、カラーは本文系10トークン `--m-ink / ink-2 / sub / faint / accent-ink / accent / line / hairline / surface / bg`（本文系は生 `oklch` を持たずトークン経由・装飾色は literal 例外）、余白は 4px 系。テキストトークンは `#eef1f4` 上で AA(4.5:1) 以上を維持。新規実装もゼロから色/寸法を足さずトークン経由で。
+- **設計トークン体系（Soda Press）に沿う**: `src/app/(frontend)/soda.css` の `.soda` スコープに集約し、クラスは `s-` 接頭辞（Tailwind ユーティリティと衝突させない）。地色は「今月の色」パレット `--s-bg / --s-logo / --s-card`（`:root[data-palette]`。キーと固定/月替わりの切替は `src/lib/palette.ts`）。文字・線は `--s-ink / --s-sub / --s-faint`、面は `--s-paper`、赤は `--s-hot`（いいね・LIVE のみ）。タイポは `--s-fs-cap/meta/ui/body/post/h3`（display は各要素の `clamp`）、角丸は `--s-r-xl/l/m/s`、余白は 4px 系、ガターは `--s-gut`。書体はロゴ/英字見出し Bagel Fat One・欧文 DM Sans・和文 Zen Kaku Gothic New（`src/lib/sodaFonts.ts`）。本文テキストはどのパレットの地・カード・紙面上でも AA(4.5:1) 以上を維持。新規実装もゼロから色/寸法を足さずトークン経由で。大きな和文見出しは `<Phrase>`（語の切れ目で改行）を使う。
 - **Fable 5 レビューを必須ゲートに**: 非自明な実装は Agent ツール（`model: fable`）でサブエージェント指名し設計/コードレビュー → Blocking/Should-fix を修正・再確認してから PR。
 
 ## 技術スタック
@@ -164,9 +164,9 @@ S3_REGION=                # Cloudflareリージョン
 ## コンポーネントガイドライン
 
 ### スタイリング
-- サイト本体は Mist Terminal（`src/app/(frontend)/mist.css` の `.mist` スコープ・ライト固定）
-- 旧 Quiet Glass テーマ / ダークモード切替は削除済み（`src/app/global.css` は
-  .mist 外の error 画面用の最小トークンのみ）
+- サイト本体は Soda Press（`src/app/(frontend)/soda.css` の `.soda` スコープ・ライト固定）
+- 外枠は `SodaShell`（ヘッダー / フッター / SP ドック / メニュー）。ホームは page.tsx、サブページは `(site)/layout.tsx` から使う
+- `src/app/global.css` は Tailwind の読み込みと html/body の地色だけを持つ
 - レスポンシブデザインパターンに従う（760px / 1080px ブレークポイント）
 
 ### 状態管理
@@ -225,6 +225,7 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
+- デザインを Mist Terminal から Soda Press に全面刷新（タイムライン主役の表紙・SP ドック・写真ビューアの前後移動）
 - いいねボタンAPIエンドポイントパスを修正
 - いいね機能の楽観的UI更新を実装
 - Xスタイルのハートアニメーションを追加

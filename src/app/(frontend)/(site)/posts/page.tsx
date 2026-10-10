@@ -3,10 +3,11 @@
 export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
 
 import type { Metadata } from 'next'
-import MistPageHead from '@/components/mist/MistPageHead'
-import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
-import { fetchLatest } from '@/lib/payload'
 import { Suspense } from 'react'
+import SodaPageHead from '@/components/soda/SodaPageHead'
+import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
+import { getPayloadClient } from '@/lib/payloadClient'
+import type { BlogPost } from '@/payload-types'
 import PostsList from './PostsList'
 import PostsListLoading from './PostsListLoading'
 
@@ -37,17 +38,27 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function BlogPage() {
-  // blogLimit: 10 件取得
-  const { posts } = await fetchLatest({ blogLimit: 10 })
+async function PostsSection() {
+  let posts: BlogPost[] = []
+  try {
+    const payload = await getPayloadClient()
+    const res = await payload.find({ collection: 'blogPosts', limit: 50, sort: '-publishedAt', depth: 1 })
+    posts = res.docs as BlogPost[]
+  } catch (error) {
+    console.error('Blog list fetch failed (rendering empty):', error)
+  }
+  return <PostsList posts={posts} />
+}
 
+export default function BlogPage() {
   return (
-    <main className="content">
-      <MistPageHead cmd="cat ./posts" title="Blog" desc="考えていることを書き留めておく場所" />
-      {/* Suspense でラップ！ */}
-      <Suspense fallback={<PostsListLoading />}>
-        <PostsList posts={posts} />
-      </Suspense>
-    </main>
+    <div className="s-wrap">
+      <SodaPageHead en="Blog" title="ブログ" desc="考えていることを書き留めておく場所" />
+      <div className="s-pbody">
+        <Suspense fallback={<PostsListLoading />}>
+          <PostsSection />
+        </Suspense>
+      </div>
+    </div>
   )
 }

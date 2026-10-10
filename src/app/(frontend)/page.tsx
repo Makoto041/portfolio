@@ -1,22 +1,33 @@
 // src/app/(frontend)/page.tsx
-// トップページ「ミスト・ターミナル」— 群青×ミストの透明感 × ターミナル/git log のメタファー
-// （docs/README.md + docs/design-reference-top.html の hifi 移植。Timeline が主役）
+// ホーム（Soda Press）— 雑誌の表紙のような巨大ロゴ「MAKOTO」の下に、
+// いちばん新しい投稿をカバーストーリーとして置き、タイムライン（日記帳）が主役の3段組:
+//   PC: [写真の柱 | カバーストーリー＋タイムライン | TODAY]  SP: 1段（TODAY は表紙の直下）
+// その下にブログ・つくったもの・イベント・プロフィール。
 // データ取得・集計は src/features/home/getHomePageData.ts に分離し、ここはレイアウトに専念する。
 export const dynamic = 'force-static'
 export const revalidate = 60
 
-import './mist.css'
-import { mistFontVars } from '@/lib/mistFonts'
 import { Analytics } from '@vercel/analytics/next'
-import MistTitlebar from '@/components/mist/MistTitlebar'
-import MistHero from '@/components/mist/MistHero'
-import MistStatusBar from '@/components/mist/MistStatusBar'
-import MistLogTimeline from '@/components/mist/MistLogTimeline'
-import MistGallery from '@/components/mist/MistGallery'
-import MistPortalSection from '@/components/mist/MistPortalSection'
-import MistRail from '@/components/mist/MistRail'
-import MistCompactIntro from '@/components/mist/MistCompactIntro'
-import { getHomePageData, emptyHomePageData, type HomePageData } from '@/features/home/getHomePageData'
+import SodaShell from '@/components/soda/SodaShell'
+import SodaTicker from '@/components/soda/SodaTicker'
+import SodaMasthead from '@/components/soda/SodaMasthead'
+import SodaLead from '@/components/soda/SodaLead'
+import SodaToday from '@/components/soda/SodaToday'
+import SodaTimeline from '@/components/soda/SodaTimeline'
+import SodaPhotoColumn from '@/components/soda/SodaPhotoColumn'
+import SodaSectionHead from '@/components/soda/SodaSectionHead'
+import SodaRail from '@/components/soda/SodaRail'
+import SodaTabCard from '@/components/soda/SodaTabCard'
+import SodaBlogRow from '@/components/soda/SodaBlogRow'
+import SodaProfileBlock from '@/components/soda/SodaProfileBlock'
+import Phrase from '@/components/soda/Phrase'
+import {
+  getHomePageData,
+  emptyHomePageData,
+  issueMonth,
+  type HomePageData,
+} from '@/features/home/getHomePageData'
+import { getSiteChrome } from '@/features/site/getSiteChrome'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 
 export const metadata = {
@@ -48,93 +59,80 @@ export const metadata = {
 }
 
 export default async function Home() {
-  let data: HomePageData
-  try {
-    data = await getHomePageData()
-  } catch (error) {
-    console.error('Error fetching top page data:', error)
-    data = emptyHomePageData()
-  }
-
-  const {
-    posts,
-    entriesTotal,
-    photosTotal,
-    gallery,
-    streak,
-    notices,
-    hero,
-    profile,
-    spotifyUrl,
-    blog,
-    events,
-    products,
-  } = data
+  const [data, chrome] = await Promise.all([
+    getHomePageData().catch((error): HomePageData => {
+      console.error('Error fetching top page data:', error)
+      return emptyHomePageData()
+    }),
+    getSiteChrome(),
+  ])
+  const { lead, feed, ticker, today, gallery, hero, profile, blog, events, products } = data
 
   return (
-    <div className={`mist ${mistFontVars}`}>
+    <SodaShell chrome={chrome} home before={<SodaTicker items={ticker} />}>
       <Analytics />
-      <div className="page">
-        <div className="mist1" aria-hidden />
-        <div className="mist2" aria-hidden />
-        <main className="inner">
-          {/* ── ウィンドウタイトルバー ── */}
-          <MistTitlebar />
+      <div className="s-wrap">
+        <SodaMasthead
+          role={hero.role}
+          tagline={hero.tagline}
+          issue={today.stats.entries}
+          month={issueMonth()}
+        />
 
-          {/* ── ヒーロー（ワードマーク→タグラインをタイプライター表示） ── */}
-          <header className="hero">
-            <MistHero tagline={hero.tagline} role={hero.role} />
-          </header>
+        <div className="s-home-grid">
+          <SodaLead post={lead} />
+          <SodaToday notices={today.notices} stats={today.stats} />
+          <section className="s-feedsec" aria-labelledby="h-timeline">
+            <SodaSectionHead id="h-timeline" ja="タイムライン" en="Timeline" href="/timeline" />
+            {feed.length > 0 ? (
+              <SodaTimeline posts={feed} total={today.stats.entries} compact />
+            ) : (
+              <p className="s-empty">まだ投稿がありません</p>
+            )}
+          </section>
+          <SodaPhotoColumn photos={gallery} total={today.stats.photos} />
+        </div>
 
-          {/* SP のみ: hero 直下のコンパクト自己紹介（D-1 案2） */}
-          <MistCompactIntro profile={profile} />
-
-          {/* ── 統合バー: NOTICE ローテ + entries/photos/streak + 天気/時計 ── */}
-          <MistStatusBar
-            notices={notices}
-            entries={entriesTotal}
-            photos={photosTotal}
-            streak={streak}
-          />
-
-          {/* ── メイン: [タイムライン | 中央(Gallery+Blog/Events/Products)] + 右固定プロフィール ── */}
-          <div className="main">
-            <div className="homecols">
-              <MistLogTimeline posts={posts} total={entriesTotal} compact />
-              <div className="mid">
-                <MistGallery photos={gallery} photosTotal={photosTotal} />
-                <MistPortalSection
-                  cmd="ls ./posts"
-                  moreHref="/posts"
-                  moreLabel={`${blog.total} files →`}
-                  items={blog.items}
-                />
-                <MistPortalSection
-                  cmd="ls ./events"
-                  moreHref="/events"
-                  moreLabel={`${events.total} files →`}
-                  items={events.items}
-                />
-                <MistPortalSection
-                  cmd="ls ./products"
-                  moreHref="/products"
-                  moreLabel={`${products.total} files →`}
-                  items={products.items}
-                />
+        <div className="s-sections">
+          {blog.length > 0 && (
+            <section aria-labelledby="h-blog">
+              <SodaSectionHead id="h-blog" ja="ブログ" en="Blog" href="/posts" />
+              <div className="s-blist">
+                {blog.map((b) => (
+                  <SodaBlogRow key={b.id} {...b} />
+                ))}
               </div>
-            </div>
-            <MistRail profile={profile} spotifyUrl={spotifyUrl} />
-          </div>
+            </section>
+          )}
 
-          {/* ── フッター ── */}
-          <footer className="footer">
-            <span>
-              © {new Date().getFullYear()} makoto iwabuchi — <i>slowly, but daily.</i>
-            </span>
-            <span className="ex">$ exit 0</span>
-          </footer>
-        </main>
+          {products.length > 0 && (
+            <section aria-labelledby="h-products">
+              <SodaSectionHead id="h-products" ja="つくったもの" en="Products" href="/products" />
+              <SodaRail count={products.length} four>
+                {products.map((p) => (
+                  <SodaTabCard key={p.id} {...p} title={<Phrase text={p.label} />} />
+                ))}
+              </SodaRail>
+            </section>
+          )}
+
+          {events.length > 0 && (
+            <section aria-labelledby="h-events">
+              <SodaSectionHead id="h-events" ja="イベント" en="Events" href="/events" />
+              <SodaRail count={events.length} four={events.length >= 4}>
+                {events.map((e) => (
+                  <SodaTabCard key={e.id} {...e} title={<Phrase text={e.label} />} />
+                ))}
+              </SodaRail>
+            </section>
+          )}
+
+          <section aria-labelledby="h-profile">
+            <SodaSectionHead id="h-profile" ja="プロフィール" en="Profile" href="/profile" more="くわしく" />
+            <SodaProfileBlock profile={profile} />
+          </section>
+        </div>
       </div>
-    </div>
+    </SodaShell>
   )
 }

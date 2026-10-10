@@ -6,6 +6,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import SodaIcon from '@/components/soda/SodaIcon'
 
 export default function AdminLinks() {
   const [isAdmin, setIsAdmin] = useState(false)
@@ -29,19 +30,16 @@ export default function AdminLinks() {
   if (!isAdmin) return null
 
   return (
-    // フェードインで出現させ、遅延表示によるちらつきを抑える
-    <span className="inline-flex animate-[fadeIn_.3s_ease] items-center gap-3 text-xs text-muted">
+    <span className="s-admin">
       {/* PayloadCMS Admin は別レイアウトのため、フルページ遷移させる */}
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-      <a
-        href="/admin/collections/timeline/create"
-        className="transition-opacity hover:opacity-70"
-      >
-        ＋ New Post
+      <a href="/admin/collections/timeline/create" className="s-pill is-solid">
+        <SodaIcon name="pencil" />
+        新しく投稿
       </a>
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-      <a href="/admin" className="transition-opacity hover:opacity-70">
-        Admin
+      <a href="/admin" className="s-pill">
+        管理画面
       </a>
     </span>
   )

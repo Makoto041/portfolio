@@ -1,139 +1,33 @@
 /* ──────────────────────────────────────────────
-   グローバルベース（.mist 外の error / 404 など用）
-   Tailwind v4 ― CSS-first (@theme / @layer)
+   グローバルベース（Tailwind v4 ― CSS-first）
 
-   サイト本体は Mist Terminal（src/app/(frontend)/mist.css の
-   .mist スコープ・ライト固定）で描画する。ここには
-   .mist 外のフォールバック画面が使う最小限のトークンと
-   ユーティリティのみを置く（旧 Quiet Glass のダークモード
-   切替・カード/チップ群は撤去済み）。
+   サイト本体のデザインは src/app/(frontend)/soda.css（Soda Press）の
+   .soda スコープと :root[data-palette] の地色トークンが担う。
+   ここには Tailwind の読み込みと、.soda の外（html / body の地）にだけ
+   効く最小限のベースを置く。
 ─────────────────────────────────────────────── */
 @import "tailwindcss";
-
-/* === TOKENS ================================== */
-@theme {
-  /* 本文フォント: 通常ページは .mist 側で上書きされる。ここは .mist 外（error/404）用のシステムJPスタック */
-  --font-body: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'BIZ UDPGothic', 'Meiryo', sans-serif;
-
-  /* アクセント（群青 / ウルトラマリン — サイトのシグネチャーカラー） */
-  --accent: #3d5cc9;
-
-  /* radius / blur */
-  --radius-m: 1.1rem;
-  --blur-m: clamp(10px, 2vw, 18px);
-}
-
-:root {
-  --glass-surface: hsl(210 40% 100% / 0.55);
-  --glass-border: hsl(210 30% 60% / 0.16);
-  --glass-highlight: hsl(0 0% 100% / 0.6);
-  --bg-base: #f6f9fc;
-  --fg-base: #1c2733;
-  --fg-muted: #64748b;
-  --card-shadow: 0 4px 24px hsl(212 45% 40% / 0.07);
-  --accent: #3d5cc9;
-  --accent-hover: #2b449f;
-  /* ページ背景（明るい白 + ごく薄い群青のグラデーション） */
-  --page-gradient: linear-gradient(
-    180deg,
-    #f9fbff 0%,
-    #f2f6fd 45%,
-    #ecf2fb 100%
-  );
-}
-
-/* === UTILITIES ================================= */
-@layer utilities {
-  /* 基本のガラス面（error 画面のパネル用）
-     上端のinsetハイライトと彩度ブーストで「液体ガラス」の質感を出す */
-  .glass {
-    @apply rounded-[var(--radius-m)]
-           backdrop-blur-[var(--blur-m)]
-           backdrop-saturate-150
-           bg-[color:var(--glass-surface)]
-           border border-[color:var(--glass-border)];
-
-    box-shadow:
-      inset 0 1px 0 var(--glass-highlight),
-      var(--card-shadow);
-  }
-
-  /* 補助テキスト */
-  .text-muted {
-    color: var(--fg-muted);
-  }
-}
-
-/* === BASE ===================================== */
 
 /* ページごとのスクロールバー有無で横位置がずれないよう常にガター確保 */
 html {
   scrollbar-gutter: stable;
+  /* iOS のバウンス領域や読み込み直後も地色で塗る（--s-bg は soda.css の :root が定義） */
+  background: var(--s-bg, #e3e8f8);
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  @apply text-[color:var(--fg-base)]
-         antialiased selection:bg-(--accent)/25;
-
-  font-family: var(--font-body);
-  background-color: var(--bg-base);
-  background-image: var(--page-gradient);
-  background-attachment: fixed;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--s-bg, #e3e8f8);
+  color: #141414;
+  font-family:
+    var(--font-dm), var(--font-zkg), 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* 明るい群青のアンビエント光彩（ガラス面に映り込む「奥行き」と個性） */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(40rem 28rem at 85% -8%, hsl(224 85% 82% / 0.5), transparent 70%),
-    radial-gradient(32rem 24rem at -10% 25%, hsl(204 90% 85% / 0.42), transparent 70%),
-    radial-gradient(28rem 20rem at 60% 110%, hsl(232 70% 86% / 0.3), transparent 70%);
-}
-
-/* コンテンツ内のリンクはアクセシブルに保つ（群青アクセントで統一） */
-article a,
-.prose a,
-.content a,
-p a {
-  color: var(--accent);
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
-  text-underline-offset: 2px;
-  transition: all 0.2s;
-}
-
-article a:hover,
-.prose a:hover,
-.content a:hover,
-p a:hover {
-  color: var(--accent-hover);
-  text-decoration-color: color-mix(in srgb, var(--accent-hover) 60%, transparent);
-}
-
-article a:focus,
-.prose a:focus,
-.content a:focus,
-p a:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-/* カードコンポーネント内のリンクはリセット（視覚的にカード全体がクリッカブル） */
-.card-link,
-nav a,
-header a {
-  text-decoration: none;
-}
-
-.card-link:focus,
-nav a:focus,
-header a:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
+::selection {
+  background: #141414;
+  color: var(--s-bg, #e3e8f8);
 }
