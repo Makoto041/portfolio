@@ -4,6 +4,7 @@
 
 import { useState, type FormEvent } from 'react'
 import SodaIcon from '@/components/soda/SodaIcon'
+import { timeoutSignal } from '@/lib/timeoutSignal'
 
 type Status = { kind: 'idle' } | { kind: 'sending' } | { kind: 'sent' } | { kind: 'error'; message: string }
 
@@ -23,7 +24,7 @@ export default function LetterForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
-        signal: AbortSignal.timeout(20_000),
+        signal: timeoutSignal(20_000),
       })
       if (res.status === 429) throw new Error('送信が続いています。少し時間をおいてからもう一度お試しください。')
       if (!res.ok) throw new Error('送信に失敗しました。時間をおいてもう一度お試しください。')

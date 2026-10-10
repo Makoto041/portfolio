@@ -3,12 +3,14 @@
 // 各ページの openGraph.images から明示的に参照する（src/lib/seo.ts の OG_IMAGE_URL）。
 // デザインはサイトと同じ Soda Press: 地色 + 丸いロゴ「MAKOTO」+ 罫線タブの見出し。
 import { ImageResponse } from 'next/og'
-import { PALETTES } from '@/lib/palette'
+import { PALETTES, SITE_PALETTE } from '@/lib/palette'
 
 const size = { width: 1200, height: 630 }
 
-const BG = PALETTES.gunjo.bg
-const LOGO = '#95a1da'
+// SNS 側で長くキャッシュされるため、月替わり設定のときも定番の群青ソーダで固定する
+const PALETTE = PALETTES[SITE_PALETTE === 'monthly' ? 'gunjo' : SITE_PALETTE]
+const BG = PALETTE.bg
+const LOGO = PALETTE.logo
 const INK = '#141414'
 const WORD = 'MAKOTO'
 

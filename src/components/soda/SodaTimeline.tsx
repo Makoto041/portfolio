@@ -3,6 +3,7 @@
 // 追加分は Payload REST（GET /api/timeline）からページ単位で取得する（初期転送量の削減）。
 // フィルタは postType の where 句としてサーバー側に問い合わせ、結果をキーごとにキャッシュする。
 // compact（ホーム）ではフィルタ・追加読込を出さず、専用ページへの導線を出す。
+// 1件は「時刻・種類（日記以外）・いいね」の1行 + 本文 + リンク/写真。短い投稿でも枠が主張しすぎない密度にする。
 'use client'
 
 import { useRef, useState } from 'react'
@@ -14,6 +15,7 @@ import SodaLike from '@/components/soda/SodaLike'
 import SodaPhotoGrid from '@/components/soda/SodaPhotoGrid'
 import { dayParts, fmtTime, type DayParts } from '@/lib/date'
 import { TIMELINE_PAGE_SIZE, TYPE_LABELS, postPhotos, postSummary } from '@/lib/timeline'
+import { timeoutSignal } from '@/lib/timeoutSignal'
 import type { TimelineDoc, TimelinePostType } from '@/lib/payloadTypes'
 
 /** フィルタ → 投稿タイプの対応 */
@@ -27,7 +29,8 @@ const FILTERS: { key: string; label: string; types: TimelinePostType[] | null }[
 function PostItem({ post }: { post: TimelineDoc }) {
   const date = post.publishedAt ?? post.createdAt
   const photos = postPhotos(post)
-  const typeLabel = post.postType ? TYPE_LABELS[post.postType] : null
+  // 大半を占める「日記」は既定扱いでラベルを出さない（ほかの種類だけ目印にする）
+  const typeLabel = post.postType && post.postType !== 'diary' ? TYPE_LABELS[post.postType] : null
   const hasLink = Boolean(post.embedUrl || post.urlMetadata?.url)
 
   return (
@@ -35,7 +38,7 @@ function PostItem({ post }: { post: TimelineDoc }) {
       <div className="s-post-meta">
         <time dateTime={date}>{fmtTime(date)}</time>
         {typeLabel && <span className="s-cat">{typeLabel}</span>}
-        {photos.length > 0 && <span>写真 {photos.length}枚</span>}
+        <SodaLike id={post.id} initialLikes={post.likes ?? 0} />
       </div>
       {post.title && <p className="s-post-title">{post.title}</p>}
       <div className="s-post-body s-rt">
@@ -54,9 +57,6 @@ function PostItem({ post }: { post: TimelineDoc }) {
         />
       )}
       {photos.length > 0 && <SodaPhotoGrid photos={photos} alt={postSummary(post) || 'タイムラインの写真'} />}
-      <div className="s-post-acts">
-        <SodaLike id={post.id} initialLikes={post.likes ?? 0} />
-      </div>
     </article>
   )
 }
@@ -79,8 +79,8 @@ function DayFeed({ posts }: { posts: TimelineDoc[] }) {
   return (
     <>
       {groupByDay(posts).map(({ key, parts, items }) => (
-        <section key={key} className="s-day" aria-labelledby={`day-${key}`}>
-          <h3 className="s-dayhead" id={`day-${key}`}>
+        <div key={key} className="s-day">
+          <h3 className="s-dayhead">
             {parts ? (
               <>
                 <span className="s-wd" aria-hidden="true">
@@ -105,7 +105,7 @@ function DayFeed({ posts }: { posts: TimelineDoc[] }) {
               <PostItem key={post.id} post={post} />
             ))}
           </div>
-        </section>
+        </div>
       ))}
     </>
   )
@@ -125,7 +125,7 @@ async function fetchTimelinePage(filterKey: string, page: number) {
   params.set('depth', '2')
   types?.forEach((t, i) => params.append(`where[postType][in][${i}]`, t))
   // 無応答時に loading/disabled が解除されなくなるのを防ぐタイムアウト
-  const res = await fetch(`/api/timeline?${params.toString()}`, { signal: AbortSignal.timeout(15_000) })
+  const res = await fetch(`/api/timeline?${params.toString()}`, { signal: timeoutSignal(15_000) })
   if (!res.ok) throw new Error(`timeline fetch failed: ${res.status}`)
   return (await res.json()) as { docs: TimelineDoc[]; totalDocs: number; hasNextPage: boolean }
 }
@@ -211,7 +211,11 @@ export default function SodaTimeline({ posts, total, compact = false }: Props) {
         {shown.length > 0 ? (
           <DayFeed posts={shown} />
         ) : (
-          !failed && <p className="s-feed-state">{loading ? '読み込み中…' : 'この種類の投稿はまだありません'}</p>
+          !failed && (
+            <p className="s-feed-state">
+              {loading ? '読み込み中…' : filter === 'all' ? 'まだ投稿がありません' : 'この種類の投稿はまだありません'}
+            </p>
+          )
         )}
       </div>
 
@@ -236,7 +240,13 @@ export default function SodaTimeline({ posts, total, compact = false }: Props) {
             disabled={loading}
             onClick={() => void loadFeed(filter, (current?.page ?? 0) + 1)}
           >
-            {loading ? '読み込み中…' : failed ? 'もう一度読み込む' : `もっと見る（あと ${remaining} 件）`}
+            {loading
+              ? '読み込み中…'
+              : failed
+                ? 'もう一度読み込む'
+                : remaining > 0
+                  ? `もっと見る（あと ${remaining} 件）`
+                  : '読み込む'}
           </button>
         </div>
       ) : (

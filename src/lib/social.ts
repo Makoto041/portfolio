@@ -1,8 +1,6 @@
 // ───────────────────────────────────────────
 // src/lib/social.ts
-// SNS プラットフォーム表記の単一ソース。
-// MistRail / MistCompactIntro / Profile ページで重複していた
-// ラベルマップとプロフィール表示型を集約する。
+// SNS プラットフォーム表記の単一ソース（ヘッダーのメニュー・フッター・プロフィールで共用）。
 // ───────────────────────────────────────────
 
 /** SiteSettings.profile.socialLinks の1件（表示用） */
@@ -22,45 +20,22 @@ export type ProfileData = {
   socialLinks?: SocialLink[]
 }
 
-type LabelStyle = 'full' | 'term' | 'short'
-
-/** full: 正式表記 / term: ターミナル意匠の小文字 / short: SP コンパクト行の略記 */
-const LABELS: Record<LabelStyle, Record<string, string>> = {
-  full: {
-    twitter: 'X',
-    instagram: 'Instagram',
-    github: 'GitHub',
-    linkedin: 'LinkedIn',
-    youtube: 'YouTube',
-  },
-  term: {
-    twitter: 'x',
-    instagram: 'instagram',
-    github: 'github',
-    linkedin: 'linkedin',
-    youtube: 'youtube',
-  },
-  short: {
-    twitter: 'x',
-    instagram: 'ig',
-    github: 'gh',
-    linkedin: 'in',
-    youtube: 'yt',
-  },
+/** プラットフォームの正式表記 */
+const LABELS: Record<string, string> = {
+  twitter: 'X',
+  instagram: 'Instagram',
+  github: 'GitHub',
+  linkedin: 'LinkedIn',
+  youtube: 'YouTube',
 }
 
 /** プラットフォーム名の表示ラベル。未知のプラットフォームは null */
-export function platformLabel(
-  platform: string | null | undefined,
-  style: LabelStyle,
-): string | null {
+export function platformLabel(platform: string | null | undefined): string | null {
   if (!platform) return null
-  return LABELS[style][platform] ?? null
+  return LABELS[platform] ?? null
 }
 
-/** リンク1件の表示名（displayName 優先 → プラットフォーム表記 → fallback） */
-export function socialLabel(link: SocialLink, style: LabelStyle, fallback = 'link'): string {
-  const display = link.displayName ?? undefined
-  if (display) return style === 'full' ? display : display.toLowerCase()
-  return platformLabel(link.platform, style) ?? (style === 'full' ? (link.platform ?? fallback) : fallback)
+/** リンク1件の表示名（displayName 優先 → プラットフォーム表記 → スラッグ → fallback） */
+export function socialLabel(link: SocialLink, fallback = 'link'): string {
+  return link.displayName || platformLabel(link.platform) || link.platform || fallback
 }

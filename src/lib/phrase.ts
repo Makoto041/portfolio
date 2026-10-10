@@ -18,6 +18,9 @@ function getSegmenter(): Segmenter | null {
 
 // 直前の語にくっつける短いかな（助詞・助動詞の断片）と記号
 const ATTACH = /^(?:[ぁ-ゖー]{1,2}|[、。，．！？!?…‥）」』】〕〉》"'・ー〜~：:；;]+)$/
+// カタカナ語どうしの連続（「サイト」+「リニューアル」）は1つの複合語として切らない
+const KATA_END = /[ァ-ヺー]$/
+const KATA_START = /^[ァ-ヺ]/
 
 /**
  * 文字列を「改行してよい位置」で区切ったチャンク配列にする。
@@ -29,7 +32,8 @@ export function phraseChunks(text: string): string[] {
   const out: string[] = []
   let buf = ''
   for (const { segment, isWordLike } of seg.segment(text)) {
-    const attach = !buf || !isWordLike || ATTACH.test(segment)
+    const attach =
+      !buf || !isWordLike || ATTACH.test(segment) || (KATA_END.test(buf) && KATA_START.test(segment))
     if (!attach) {
       out.push(buf)
       buf = ''

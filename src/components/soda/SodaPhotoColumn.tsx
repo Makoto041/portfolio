@@ -1,5 +1,6 @@
 // src/components/soda/SodaPhotoColumn.tsx
-// ホームの「写真」の柱（PC: 左の縦1列 / タブレット: 6列 / SP: 3列×2段）。各写真は /gallery へ。
+// ホームの「写真」の柱（PC: 左の縦1列・最大10枚 / タブレット: 6列 / SP: 3列×2段）。各写真は /gallery へ。
+// PC はタイムラインの長さに合わせて枚数を増やす（7枚目以降は 1080px 未満で CSS が隠す）。
 import Image from 'next/image'
 import Link from 'next/link'
 import SodaIcon from '@/components/soda/SodaIcon'
@@ -14,7 +15,7 @@ export default function SodaPhotoColumn({ photos, total }: { photos: ColumnPhoto
     <section className="s-photocol" aria-labelledby="h-photos">
       <SodaSectionHead id="h-photos" ja="写真" en="Photos" />
       <div className="s-phs">
-        {photos.slice(0, 6).map((p) => (
+        {photos.slice(0, 10).map((p) => (
           <Link key={p.key} href="/gallery" aria-label={p.alt ? `写真: ${p.alt}` : '写真のページへ'}>
             <Image
               src={toCFUrl(p.url)}

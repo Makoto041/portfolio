@@ -4,7 +4,8 @@
 // Escape で閉じる・フォーカストラップ・閉時の呼び出し元へのフォーカス復帰を
 // ブラウザ標準の挙動に委ねる（独自ポータル/z-index 管理はしない）。
 // 複数枚のときは onPrev / onNext を渡すと、前後ボタン・←→キー・左右スワイプで移動できる。
-import { useEffect, useRef, useState } from 'react'
+// 写真・ボタン以外（暗幕の余白・上下の帯）をタップすると閉じる。スワイプ直後のクリックは閉じる操作にしない。
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react'
 import Image from 'next/image'
 import SodaIcon from '@/components/soda/SodaIcon'
 import { toCFUrl, isOptimizableSrc } from '@/lib/cfUrl'
@@ -27,6 +28,11 @@ interface ImageModalProps {
 
 const SWIPE_PX = 40
 
+/** 写真・ボタン・状態ピルの上か（それ以外は「余白」として閉じる対象） */
+function onContent(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest('img, button, .imgmodal-loading, .imgmodal-error'))
+}
+
 export default function ImageModal({
   src,
   alt = '',
@@ -38,8 +44,43 @@ export default function ImageModal({
   counter,
 }: ImageModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const swipeX = useRef<number | null>(null)
+  // 1本指のスワイプだけを追う（2本目の指＝ピンチが加わったら取り消す）
+  const swipe = useRef<{ id: number; x: number } | null>(null)
+  // 余白で押したか（写真の上で押して余白で離したドラッグでは閉じない）
+  const downOnBackdrop = useRef(false)
+  // スワイプで移動した直後に来る click を閉じる操作として扱わない
+  const swiped = useRef(false)
   const canStep = Boolean(onPrev && onNext)
+
+  const handlePointerDown = (e: PointerEvent<HTMLDialogElement>) => {
+    if (!e.isPrimary) {
+      swipe.current = null
+      return
+    }
+    swipe.current = { id: e.pointerId, x: e.clientX }
+    downOnBackdrop.current = !onContent(e.target)
+    swiped.current = false
+  }
+
+  const handlePointerUp = (e: PointerEvent<HTMLDialogElement>) => {
+    const start = swipe.current
+    swipe.current = null
+    if (!start || start.id !== e.pointerId || !canStep) return
+    const dx = e.clientX - start.x
+    if (Math.abs(dx) > SWIPE_PX) {
+      swiped.current = true
+      ;(dx < 0 ? onNext : onPrev)?.()
+    }
+  }
+
+  const handleClick = (e: MouseEvent<HTMLDialogElement>) => {
+    if (swiped.current) {
+      swiped.current = false
+      return
+    }
+    // キーボード操作の click（detail=0）は対象外。余白で押して余白で離したときだけ閉じる
+    if (e.detail > 0 && downOnBackdrop.current && !onContent(e.target)) onClose()
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -71,6 +112,12 @@ export default function ImageModal({
         if (e.key === 'ArrowRight') onNext?.()
         if (e.key === 'ArrowLeft') onPrev?.()
       }}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => {
+        swipe.current = null
+      }}
+      onClick={handleClick}
     >
       {isOpen && (
         <div className="imgmodal-frame">
@@ -80,22 +127,7 @@ export default function ImageModal({
               <SodaIcon name="close" />
             </button>
           </div>
-          <div
-            className="imgmodal-body"
-            // 写真の外（余白）をクリックしたら閉じる
-            onClick={(e) => {
-              if (e.target === e.currentTarget) onClose()
-            }}
-            onPointerDown={(e) => {
-              swipeX.current = e.clientX
-            }}
-            onPointerUp={(e) => {
-              if (swipeX.current === null || !canStep) return
-              const dx = e.clientX - swipeX.current
-              swipeX.current = null
-              if (Math.abs(dx) > SWIPE_PX) (dx < 0 ? onNext : onPrev)?.()
-            }}
-          >
+          <div className="imgmodal-body">
             {/* 読み込み状態は ModalBody 内に閉じる。key=src で写真ごとにマウントし直すため、
                 必ず loading から始まり前の写真の loaded/error が漏れない */}
             {src && <ModalBody key={src} src={src} alt={alt} posterSrc={posterSrc} />}

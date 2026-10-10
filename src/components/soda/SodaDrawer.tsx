@@ -1,6 +1,7 @@
 // src/components/soda/SodaDrawer.tsx
 // 全画面メニュー（反転色）。ネイティブ <dialog> + showModal() で
 // フォーカストラップ・Escape で閉じる・閉時のフォーカス復帰をブラウザ標準に委ねる。
+// SP はドックの「メニュー」から開くため、閉じるボタンをドックと同じ位置（親指の届く画面下）にも置く。
 'use client'
 
 import { useEffect, useRef } from 'react'
@@ -57,7 +58,7 @@ export default function SodaDrawer({ socials, tagline }: Props) {
             const on = isActive(pathname, href)
             return (
               <Link key={href} href={href} aria-current={on ? 'page' : undefined} onClick={close}>
-                {ja}
+                <span>{ja}</span>
                 <small>{en}</small>
               </Link>
             )
@@ -70,7 +71,7 @@ export default function SodaDrawer({ socials, tagline }: Props) {
                 link.url ? (
                   <a key={link.url} className="s-pill" href={link.url} target="_blank" rel="noopener noreferrer">
                     <SodaIcon name={socialIcon(link.platform)} />
-                    {socialLabel(link, 'full')}
+                    {socialLabel(link)}
                   </a>
                 ) : null,
               )}
@@ -83,6 +84,10 @@ export default function SodaDrawer({ socials, tagline }: Props) {
           </p>
         </div>
       </div>
+      <button type="button" className="s-dclose" onClick={close}>
+        <SodaIcon name="close" />
+        閉じる
+      </button>
     </dialog>
   )
 }

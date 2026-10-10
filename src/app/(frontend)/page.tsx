@@ -59,14 +59,13 @@ export const metadata = {
 }
 
 export default async function Home() {
-  let data: HomePageData
-  try {
-    data = await getHomePageData()
-  } catch (error) {
-    console.error('Error fetching top page data:', error)
-    data = emptyHomePageData()
-  }
-  const chrome = await getSiteChrome()
+  const [data, chrome] = await Promise.all([
+    getHomePageData().catch((error): HomePageData => {
+      console.error('Error fetching top page data:', error)
+      return emptyHomePageData()
+    }),
+    getSiteChrome(),
+  ])
   const { lead, feed, ticker, today, gallery, hero, profile, blog, events, products } = data
 
   return (

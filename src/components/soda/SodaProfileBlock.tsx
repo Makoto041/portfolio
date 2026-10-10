@@ -32,7 +32,7 @@ export default function SodaProfileBlock({ profile }: { profile: ProfileData }) 
             link.url ? (
               <a key={link.url} className="s-pill" href={link.url} target="_blank" rel="noopener noreferrer">
                 <SodaIcon name={socialIcon(link.platform)} />
-                {socialLabel(link, 'full')}
+                {socialLabel(link)}
               </a>
             ) : null,
           )}

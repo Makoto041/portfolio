@@ -4,16 +4,16 @@
 // 地色(bg) / ロゴの淡色(logo) / 差し色(card) の3色セット。黒（--s-ink）は線と文字だけに使う。
 // どのパレットでも本文テキスト（--s-ink / --s-sub / --s-faint）は AA(4.5:1) 以上を満たす。
 // 実際の色値は soda.css の :root[data-palette=…] が持ち、ここはキーと割当だけを管理する
-// （theme-color 用に bg だけはここにも持つ）。
+// （theme-color と OGP 画像用に bg / logo だけはここにも持つ。値は soda.css と一致させること）。
 // ───────────────────────────────────────────
 
 export const PALETTES = {
-  gunjo: { label: '群青ソーダ', bg: '#e3e8f8' },
-  ramune: { label: 'ラムネ', bg: '#dbecf8' },
-  melon: { label: 'メロン', bg: '#e0f0e1' },
-  lemon: { label: 'レモン', bg: '#f6f0cc' },
-  peach: { label: 'ピーチ', bg: '#fae3d9' },
-  milk: { label: 'ミルク', bg: '#f5f5f0' },
+  gunjo: { label: '群青ソーダ', bg: '#e3e8f8', logo: '#95a1da' },
+  ramune: { label: 'ラムネ', bg: '#dbecf8', logo: '#8aaecd' },
+  melon: { label: 'メロン', bg: '#e0f0e1', logo: '#7fb38a' },
+  lemon: { label: 'レモン', bg: '#f6f0cc', logo: '#c8b14f' },
+  peach: { label: 'ピーチ', bg: '#fae3d9', logo: '#dc9076' },
+  milk: { label: 'ミルク', bg: '#f5f5f0', logo: '#a6abba' },
 } as const
 
 export type PaletteKey = keyof typeof PALETTES

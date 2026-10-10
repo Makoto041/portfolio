@@ -13,7 +13,7 @@ export default async function NotFound() {
       <div className="s-wrap">
         <SodaPageHead en="404" title="ページが見つかりませんでした" />
         <div className="s-oops">
-          <p>URL が変わったか、削除されたのかもしれません。</p>
+          <p>URL が変わったか、削除されたようです。</p>
           <div className="s-oops-actions">
             <Link href="/" className="s-pill is-solid">
               <SodaIcon name="home" />

@@ -13,6 +13,7 @@ import { getPayloadClient } from '@/lib/payloadClient'
 import { socialLabel, type ProfileData, type SocialLink } from '@/lib/social'
 import { spotifyEmbedUrl } from '@/lib/spotify'
 import { getTodayData } from '@/features/site/getTodayData'
+import { streakFact } from '@/lib/timeline'
 
 const FALLBACK_PROFILE: Required<Pick<ProfileData, 'name' | 'nameJapanese' | 'title' | 'description'>> & ProfileData = {
   name: 'Makoto Iwabuchi',
@@ -104,6 +105,7 @@ async function getProfilePageData(): Promise<{ profile: ProfileData; spotifyUrl:
 
 export default async function ProfilePage() {
   const [{ profile, spotifyUrl }, today] = await Promise.all([getProfilePageData(), getTodayData()])
+  const fact = streakFact(today.stats)
   const profileImageUrl = profile.imageUrl ? toCFUrl(profile.imageUrl) : toCFUrl('/profile.jpg')
   const spotifyEmbed = spotifyEmbedUrl(spotifyUrl)
 
@@ -132,8 +134,7 @@ export default async function ProfilePage() {
               link.url ? (
                 <a key={link.url} className="s-pill" href={link.url} target="_blank" rel="noopener noreferrer">
                   <SodaIcon name={socialIcon(link.platform)} />
-                  {socialLabel(link, 'full')}
-                  <SodaIcon name="external" />
+                  {socialLabel(link)}
                 </a>
               ) : null,
             )}
@@ -149,8 +150,8 @@ export default async function ProfilePage() {
               <span>写真</span>
             </div>
             <div>
-              <b>{today.stats.streak}日</b>
-              <span>連続</span>
+              <b>{fact.value}</b>
+              <span>{fact.label}</span>
             </div>
           </div>
 

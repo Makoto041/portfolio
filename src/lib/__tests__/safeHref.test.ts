@@ -10,6 +10,7 @@ describe('safeHref', () => {
 
   it('サイト内の相対パスは通す', () => {
     expect(safeHref('/posts/tech')).toBe('/posts/tech')
+    expect(safeHref('/timeline#post-12?x=1')).toBe('/timeline#post-12?x=1')
   })
 
   it('危険なスキーム・プロトコル相対・不正値は null', () => {
@@ -17,6 +18,10 @@ describe('safeHref', () => {
     expect(safeHref(' JavaScript:alert(1)')).toBeNull()
     expect(safeHref('data:text/html,<script>alert(1)</script>')).toBeNull()
     expect(safeHref('//evil.example.com')).toBeNull()
+    // ブラウザは \\ を / とみなし、タブ・改行を取り除くため、これらもプロトコル相対になる
+    expect(safeHref('/\\evil.example.com')).toBeNull()
+    expect(safeHref('/\t/evil.example.com')).toBeNull()
+    expect(safeHref('/\n/evil.example.com')).toBeNull()
     expect(safeHref('not a url')).toBeNull()
     expect(safeHref('')).toBeNull()
     expect(safeHref(undefined)).toBeNull()

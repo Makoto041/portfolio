@@ -67,11 +67,14 @@ export default async function TimelinePage() {
     <div className="s-wrap">
       <SodaPageHead en="Timeline" title="タイムライン" desc={`日々の記録 · ${total}件`} actions={<AdminLinks />} />
       <div className="s-pbody s-tl-layout">
-        <div className="s-tl-main">
+        <section className="s-tl-main" aria-labelledby="h-feed">
+          <h2 id="h-feed" className="sr-only">
+            投稿
+          </h2>
           <SodaTimeline posts={posts} total={total} />
-        </div>
-        {/* PC（1080px〜）のみ右列に表示（SP はホームで見せる） */}
-        <SodaToday notices={today.notices} stats={today.stats} />
+        </section>
+        {/* PC（1080px〜）のみ右列に表示（SP はホームで見せる）。隠れている間は時計・天気を動かさない */}
+        <SodaToday notices={today.notices} stats={today.stats} activeFrom="(min-width: 1080px)" />
       </div>
     </div>
   )

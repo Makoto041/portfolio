@@ -51,3 +51,22 @@ export function postSummary(post: TimelineDoc, max = 40): string {
   const first = text.split('\n')[0] ?? ''
   return first.length > max ? `${first.slice(0, max)}…` : first
 }
+
+/** TODAY カード・プロフィールの数字（投稿数・写真数・連続日数・最終更新日） */
+export type TodayStats = {
+  entries: number
+  photos: number
+  streak: number
+  /** いちばん新しい投稿の日付 `7.5`（投稿が無ければ空） */
+  last: string
+}
+
+/**
+ * 3つ目の数字の表示。連続投稿が途切れているときは「連続 0日」ではなく最終更新日を出す。
+ */
+export function streakFact(stats: Pick<TodayStats, 'streak' | 'last'>): { value: string; label: string } {
+  if (stats.streak > 0) return { value: `${stats.streak}日`, label: '連続' }
+  if (stats.last) return { value: stats.last, label: '最終更新' }
+  return { value: '—', label: '連続' }
+}
+

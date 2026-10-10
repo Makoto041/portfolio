@@ -20,6 +20,12 @@ describe('phraseChunks', () => {
     expect(chunks.at(-1)?.endsWith('！')).toBe(true)
   })
 
+  it('カタカナ語の連続（複合語）は途中で切らない', () => {
+    const chunks = phraseChunks('サイトリニューアルしました！')
+    expect(chunks.some((c) => c.includes('サイトリニューアル'))).toBe(true)
+    expect(chunks.join('')).toBe('サイトリニューアルしました！')
+  })
+
   it('空文字は空配列', () => {
     expect(phraseChunks('')).toEqual([])
   })

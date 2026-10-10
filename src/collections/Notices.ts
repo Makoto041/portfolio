@@ -28,8 +28,8 @@ export const Notices: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
-  // お知らせ更新で Home（NOTICE バー）を再検証
-  hooks: makeRevalidate(['/']),
+  // お知らせ更新でホーム（ティッカー・TODAY）とタイムライン（PC の TODAY）を再検証
+  hooks: makeRevalidate(['/', '/timeline']),
   fields: [
     {
       name: 'date',

@@ -4,7 +4,7 @@
 // ホームと各一覧ページで共用する。
 // ───────────────────────────────────────────
 import { fmtDateJa } from '@/lib/date'
-import { lexicalToPlainText } from '@/lib/richtext'
+import { lexicalFirstImageUrl, lexicalToPlainText } from '@/lib/richtext'
 import { safeHref } from '@/lib/safeHref'
 import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
 import type { TabCardView } from '@/components/soda/SodaTabCard'
@@ -102,7 +102,8 @@ export function productCard(p: ProductLike): TabCardView {
 /** ブログ記事 → 行 */
 export function blogRow(p: BlogPostDoc): BlogRowView {
   const date = p.publishedAt ?? p.createdAt
-  const cover = p.coverImage && typeof p.coverImage === 'object' ? p.coverImage.url : null
+  // カバー画像が無い記事は本文の最初の画像をサムネイルに使う
+  const cover = (p.coverImage && typeof p.coverImage === 'object' ? p.coverImage.url : null) ?? lexicalFirstImageUrl(p.body)
   const excerpt = firstLine(lexicalToPlainText(p.body), 80)
   return {
     id: String(p.id),

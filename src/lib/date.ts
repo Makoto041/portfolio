@@ -54,14 +54,6 @@ function parts(dateStr: string, options: Intl.DateTimeFormatOptions) {
   return (type: string) => list.find((p) => p.type === type)?.value ?? ''
 }
 
-/** `YYYY.MM.DD` */
-export function fmtDate(dateStr?: string): string {
-  if (!dateStr) return ''
-  const get = parts(dateStr, { year: 'numeric', month: '2-digit', day: '2-digit' })
-  if (!get) return ''
-  return `${get('year')}.${get('month')}.${get('day')}`
-}
-
 /** お知らせバッジ用の `MM.DD` */
 export function fmtDateBadge(dateStr: string): string {
   const get = parts(dateStr, { month: '2-digit', day: '2-digit' })
@@ -69,15 +61,7 @@ export function fmtDateBadge(dateStr: string): string {
   return `${get('month')}.${get('day')}`
 }
 
-const WEEKDAY_JA: Record<string, string> = {
-  Sun: '日',
-  Mon: '月',
-  Tue: '火',
-  Wed: '水',
-  Thu: '木',
-  Fri: '金',
-  Sat: '土',
-}
+const WEEKDAY_JA = ['日', '月', '火', '水', '木', '金', '土'] as const
 
 export type DayParts = {
   /** 日付キー `YYYY-MM-DD`（日ごとのグルーピング用） */
@@ -91,17 +75,19 @@ export type DayParts = {
 
 /** Asia/Tokyo での年月日と曜日。不正値は null */
 export function dayParts(dateStr: string): DayParts | null {
-  const get = parts(dateStr, { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' })
+  const get = parts(dateStr, { year: 'numeric', month: '2-digit', day: '2-digit' })
   if (!get) return null
   const year = Number(get('year'))
   const month = Number(get('month'))
   const day = Number(get('day'))
+  // 曜日は暦日から計算する（ブラウザごとに異なる曜日の略記テキストに依存しない＝SSR と一致する）
+  const weekday = WEEKDAY_JA[new Date(Date.UTC(year, month - 1, day)).getUTCDay()]
   return {
     key: `${get('year')}-${get('month')}-${get('day')}`,
     year,
     month,
     day,
-    weekday: WEEKDAY_JA[get('weekday')] ?? '',
+    weekday,
   }
 }
 

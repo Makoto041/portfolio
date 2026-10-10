@@ -62,7 +62,8 @@ export async function getHomePageData(): Promise<HomePageData> {
   const [postsRes, galleryRes, settings, blogRes, eventsRes, productsRes, today] = await Promise.all([
     payload.find({ collection: 'timeline', limit: HOME_POSTS, sort: '-publishedAt', depth: 2 }),
     payload
-      .find({ collection: 'media', limit: 6, sort: '-createdAt', where: GALLERY_WHERE, depth: 0 })
+      // PC の写真の柱は 10 枚（SP・タブレットは CSS で 6 枚に絞る）
+      .find({ collection: 'media', limit: 10, sort: '-createdAt', where: GALLERY_WHERE, depth: 0 })
       .catch((e) => {
         console.error('Gallery fetch failed (section hidden):', e)
         return emptyDocs
@@ -102,14 +103,13 @@ export async function getHomePageData(): Promise<HomePageData> {
   const ticker: TickerItem[] = [
     ...today.notices.map((n) => ({
       key: `n-${n.key}`,
-      mark: '☞',
+      kind: 'notice' as const,
       date: n.badge,
       text: n.text,
-      href: '/timeline',
     })),
     ...posts.slice(0, 4).map((p) => ({
       key: `p-${p.id}`,
-      mark: '✎',
+      kind: 'post' as const,
       date: fmtMonthDay(p.publishedAt ?? p.createdAt),
       text: firstLine(p.title || lexicalToPlainText(p.text), 40),
       href: `/timeline#post-${p.id}`,

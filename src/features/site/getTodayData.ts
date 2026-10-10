@@ -6,9 +6,10 @@
 // ───────────────────────────────────────────
 import { cache } from 'react'
 import { getPayloadClient } from '@/lib/payloadClient'
-import { buildStreak, fmtDateBadge } from '@/lib/date'
+import { buildStreak, fmtDateBadge, fmtMonthDay } from '@/lib/date'
 import { phraseChunks } from '@/lib/phrase'
-import type { NoticeView, TodayStats } from '@/components/soda/SodaToday'
+import type { TodayStats } from '@/lib/timeline'
+import type { NoticeView } from '@/components/soda/SodaToday'
 
 /** タイムライン専用画像を除いた「ギャラリー写真」の条件 */
 export const GALLERY_WHERE = {
@@ -17,7 +18,7 @@ export const GALLERY_WHERE = {
 
 export type TodayData = { notices: NoticeView[]; stats: TodayStats }
 
-export const EMPTY_TODAY: TodayData = { notices: [], stats: { entries: 0, photos: 0, streak: 0 } }
+export const EMPTY_TODAY: TodayData = { notices: [], stats: { entries: 0, photos: 0, streak: 0, last: '' } }
 
 export const getTodayData = cache(async (): Promise<TodayData> => {
   try {
@@ -50,11 +51,11 @@ export const getTodayData = cache(async (): Promise<TodayData> => {
         }),
     ])
 
-    const streak = buildStreak(
-      (dates.docs as { publishedAt?: string | null; createdAt: string }[]).map(
-        (d) => d.publishedAt ?? d.createdAt,
-      ),
+    const postDates = (dates.docs as { publishedAt?: string | null; createdAt: string }[]).map(
+      (d) => d.publishedAt ?? d.createdAt,
     )
+    const streak = buildStreak(postDates)
+    const last = postDates[0] ? fmtMonthDay(postDates[0]) : ''
 
     return {
       notices: (notices.docs as { id: number | string; date: string; body: string }[])
@@ -65,7 +66,7 @@ export const getTodayData = cache(async (): Promise<TodayData> => {
           text: n.body,
           chunks: phraseChunks(n.body),
         })),
-      stats: { entries: entries.totalDocs, photos: photos.totalDocs, streak },
+      stats: { entries: entries.totalDocs, photos: photos.totalDocs, streak, last },
     }
   } catch (error) {
     console.error('Today data fetch failed (rendering empty):', error)

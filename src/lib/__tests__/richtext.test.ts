@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lexicalToPlainText } from '../richtext'
+import { lexicalFirstImageUrl, lexicalToPlainText } from '../richtext'
 
 const para = (...texts: string[]) => ({
   type: 'paragraph',
@@ -40,3 +40,26 @@ describe('lexicalToPlainText', () => {
     expect(lexicalToPlainText({})).toBe('')
   })
 })
+
+describe('lexicalFirstImageUrl', () => {
+  it('populate 済みの upload ノードの URL を本文の順で返す', () => {
+    const data = {
+      root: {
+        children: [
+          { type: 'paragraph', children: [{ type: 'text', text: 'はじめに' }] },
+          { type: 'upload', value: 42 },
+          { type: 'list', children: [{ type: 'listitem', children: [{ type: 'upload', value: { url: '/media/a.jpg' } }] }] },
+          { type: 'upload', value: { url: '/media/b.jpg' } },
+        ],
+      },
+    }
+    expect(lexicalFirstImageUrl(data)).toBe('/media/a.jpg')
+  })
+
+  it('画像が無い・不正値は null', () => {
+    expect(lexicalFirstImageUrl({ root: { children: [{ type: 'paragraph', children: [] }] } })).toBeNull()
+    expect(lexicalFirstImageUrl(null)).toBeNull()
+    expect(lexicalFirstImageUrl('text')).toBeNull()
+  })
+})
+

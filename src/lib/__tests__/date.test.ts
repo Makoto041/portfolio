@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   buildStreak,
   dayParts,
-  fmtDate,
   fmtDateBadge,
   fmtDateJa,
   fmtMonthDay,
@@ -55,19 +54,6 @@ describe('buildStreak', () => {
   })
 })
 
-describe('fmtDate', () => {
-  it('YYYY.MM.DD（Asia/Tokyo）', () => {
-    expect(fmtDate('2026-08-05T00:30:00+09:00')).toBe('2026.08.05')
-    // UTC では前日でも JST の日付で表示する
-    expect(fmtDate('2026-08-04T16:00:00Z')).toBe('2026.08.05')
-  })
-
-  it('未指定・不正値は空文字', () => {
-    expect(fmtDate(undefined)).toBe('')
-    expect(fmtDate('not-a-date')).toBe('')
-  })
-})
-
 describe('fmtDateBadge', () => {
   it('MM.DD 形式', () => {
     expect(fmtDateBadge('2026-08-05T10:00:00+09:00')).toBe('08.05')
@@ -92,6 +78,11 @@ describe('dayParts', () => {
   it('UTC では前日でも JST の日付と曜日になる', () => {
     // 2025-12-05 20:00 UTC = 2025-12-06 05:00 JST（土）
     expect(dayParts('2025-12-05T20:00:00Z')).toMatchObject({ key: '2025-12-06', weekday: '土' })
+  })
+
+  it('1週間ぶんの曜日が暦どおりに並ぶ（閏年の2月末をまたいでも）', () => {
+    const week = ['2028-02-27', '2028-02-28', '2028-02-29', '2028-03-01', '2028-03-02', '2028-03-03', '2028-03-04']
+    expect(week.map((d) => dayParts(`${d}T12:00:00+09:00`)?.weekday).join('')).toBe('日月火水木金土')
   })
 
   it('不正値は null', () => {

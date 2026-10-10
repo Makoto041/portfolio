@@ -2,6 +2,7 @@
 // 全ページ共通の sticky ヘッダー。
 // ホームでは最上部で表紙ロゴ（#soda-wordmark）が見えている間だけ帯を透明にして小ロゴを隠し、
 // ロゴがヘッダーの下に隠れたら小ロゴ付きの帯に切り替える。
+// SP のホームは帯の高さ分だけ表紙を持ち上げ、空いた帯にカバーラインを差し込む（.is-home）。
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -39,7 +40,7 @@ export default function SodaHeader({ home = false }: { home?: boolean }) {
   }, [home, pathname])
 
   return (
-    <header className={`s-hdr${atTop ? ' is-top' : ''}`}>
+    <header className={`s-hdr${home ? ' is-home' : ''}${atTop ? ' is-top' : ''}`}>
       <Link
         href="/"
         className="s-logo-s"
