@@ -110,7 +110,7 @@
 
 /* 本文へスキップ（フォーカス時のみ表示） */
 .soda .s-skip {
-  position: absolute;
+  position: fixed;
   left: 12px;
   top: -100px;
   z-index: 60;
