@@ -37,7 +37,7 @@ export const Notices: CollectionConfig = {
       required: true,
       label: '日付',
       admin: {
-        description: 'ホームのティッカーと TODAY カードに「12.06」形式で表示されます（SP の TODAY は最新の1件）',
+        description: 'ホームのティッカーと TODAY カードに「12.06」形式で表示されます（ティッカーは最新の3件、SP の TODAY は最新の1件）',
         date: { pickerAppearance: 'dayOnly' },
       },
     },
