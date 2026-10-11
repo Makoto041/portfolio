@@ -19,6 +19,9 @@ export class PhotoError extends Error {
   }
 }
 
+/** 読み直せなかった写真の代わりの値（File ごとに1つ） */
+const unreadablePrints = new WeakMap<File, string>()
+
 /**
  * 写真の中身の指紋（SHA-256 の先頭 128bit）。同じ写真なら選び直しても同じ値になる。
  * 応答が届かなかったあとの送り直しで、写真を差し替えたかを見分けるのに使う
@@ -29,8 +32,14 @@ export async function photoPrint(file: File): Promise<string> {
     const head = new Uint8Array(digest).subarray(0, 16)
     return Array.from(head, (b) => b.toString(16).padStart(2, '0')).join('')
   } catch {
-    // 読み直せないときは名前と大きさで代える（違って見えるぶんには、下書きを残す側に倒れるだけ）
-    return `${file.name}:${file.size}:${file.lastModified}`
+    // 読み直せないときは、同じ File には同じ値、別の File には必ず違う値を返す
+    // （中身を比べられない写真は「差し替えた」とみなし、下書きを残す側に倒す。読み込み直しをまたいでも重ならないよう乱数を入れる）
+    let print = unreadablePrints.get(file)
+    if (!print) {
+      print = `unreadable:${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+      unreadablePrints.set(file, print)
+    }
+    return print
   }
 }
 

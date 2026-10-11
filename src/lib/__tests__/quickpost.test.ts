@@ -376,13 +376,18 @@ describe('photoPrint', () => {
     expect(await photoPrint(file([1, 2, 3]))).not.toBe(await photoPrint(file([1, 2, 4])))
   })
 
-  it('読み直せないときは名前・大きさ・更新日時で代える', async () => {
-    const unreadable = {
-      name: 'a.jpg',
-      size: 3,
-      lastModified: 123,
-      arrayBuffer: () => Promise.reject(new Error('NotReadableError')),
-    } as unknown as File
-    expect(await photoPrint(unreadable)).toBe('a.jpg:3:123')
+  it('読み直せないときは、同じ File には同じ値・名前や大きさが同じ別の File には違う値', async () => {
+    const unreadable = () =>
+      ({
+        name: 'a.jpg',
+        size: 3,
+        lastModified: 123,
+        arrayBuffer: () => Promise.reject(new Error('NotReadableError')),
+      }) as unknown as File
+    const a = unreadable()
+    const first = await photoPrint(a)
+    expect(first).toMatch(/^unreadable:/)
+    expect(await photoPrint(a)).toBe(first)
+    expect(await photoPrint(unreadable())).not.toBe(first)
   })
 })
