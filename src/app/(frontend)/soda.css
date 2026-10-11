@@ -27,6 +27,7 @@
 :root[data-palette='peach'] { --s-bg: #fae3d9; --s-logo: #dc9076; --s-card: #dbe8cb; }
 :root[data-palette='milk'] { --s-bg: #f5f5f0; --s-logo: #a6abba; --s-card: #e3e8f8; }
 
+@keyframes s-tick { to { transform: translateX(-50%); } }
 @keyframes s-pop {
   0% { transform: translateY(18%) scale(0.94); }
   55% { transform: translateY(-5%) scale(1.02); }
@@ -173,6 +174,62 @@
 @media (hover: hover) {
   .soda .s-iconbtn:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
 }
+
+/* ══════════════ ティッカー（おしらせ＋最新の投稿が流れる） ══════════════ */
+.soda .s-ticker {
+  position: relative;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  font-size: var(--s-fs-ui);
+}
+.soda .s-ticker-view {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  /* 右端の一時停止ボタンの下に文字が潜り込まないよう、手前でフェードさせる */
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 72px), transparent calc(100% - 40px));
+  mask-image: linear-gradient(90deg, #000 calc(100% - 72px), transparent calc(100% - 40px));
+}
+.soda .s-ticker-track {
+  display: inline-flex;
+  gap: 44px;
+  padding-left: 44px;
+  animation: s-tick 46s linear infinite;
+}
+.soda .s-ticker:hover .s-ticker-track,
+.soda .s-ticker:focus-within .s-ticker-track { animation-play-state: paused; }
+.soda .s-ticker .s-tk-item { text-decoration: none; font-weight: 500; letter-spacing: 0.06em; }
+@media (hover: hover) {
+  .soda .s-ticker a:hover { text-decoration: underline; text-underline-offset: 3px; }
+}
+.soda .s-ticker .s-tk { display: inline-flex; align-items: center; gap: 6px; margin-right: 8px; font-family: var(--s-font-num); font-weight: 700; letter-spacing: 0.04em; }
+.soda .s-ticker .s-tk-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--s-hot); }
+.soda .s-ticker.is-paused .s-ticker-track { animation-play-state: paused; }
+/* 流れる文字の一時停止（WCAG 2.2.2）。右端に固定 */
+.soda .s-ticker-toggle {
+  position: absolute;
+  right: max(8px, env(safe-area-inset-right, 0px));
+  top: 50%;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--s-ink);
+  border-radius: 50%;
+  background: var(--s-bg);
+  color: var(--s-ink);
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+.soda .s-ticker-toggle::after { content: ''; position: absolute; inset: -8px; }
+.soda .s-ticker-toggle .s-ico { width: 14px; height: 14px; }
 
 /* ══════════════ ヘッダー（全ページ・sticky） ══════════════ */
 .soda .s-hdr {
@@ -1384,6 +1441,10 @@
 
 /* ── reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
+  .soda .s-ticker-view { overflow-x: auto; scrollbar-width: none; }
+  .soda .s-ticker-track { padding-right: 72px; }
+  .soda .s-ticker .s-tk-dup { display: none; }
+  .soda .s-ticker-track,
   .soda .s-wordmark span,
   .soda .s-like.is-pop .s-ico,
   .soda .s-wx-icon .rays,

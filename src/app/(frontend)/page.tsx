@@ -1,6 +1,7 @@
 // src/app/(frontend)/page.tsx
-// ホーム（Soda Press）— 大きな丸いロゴ「MAKOTO」の題字の下に、いちばん新しい投稿と
-// タイムライン（日記帳）を主役に置く。題字は下の投稿に重ねない。
+// ホーム（Soda Press）— 最上部におしらせと最新の投稿が流れるティッカー、
+// 大きな丸いロゴ「MAKOTO」の題字の下に、いちばん新しい投稿とタイムライン（日記帳）を主役に置く。
+// 題字は下の投稿に重ねない。
 //   PC・タブレット: [最新の投稿＋タイムライン | TODAY] の2段組
 //   SP: 1段（最新の投稿 → TODAY → タイムライン）
 // その下に写真（横長）・ブログ・つくったもの・イベント・プロフィール。
@@ -10,6 +11,7 @@ export const revalidate = 60
 
 import { Analytics } from '@vercel/analytics/next'
 import SodaShell from '@/components/soda/SodaShell'
+import SodaTicker from '@/components/soda/SodaTicker'
 import SodaMasthead from '@/components/soda/SodaMasthead'
 import SodaLead from '@/components/soda/SodaLead'
 import SodaToday from '@/components/soda/SodaToday'
@@ -69,10 +71,10 @@ export default async function Home() {
     }),
     getSiteChrome(),
   ])
-  const { lead, feed, today, gallery, hero, profile, blog, events, products } = data
+  const { lead, feed, ticker, today, gallery, hero, profile, blog, events, products } = data
 
   return (
-    <SodaShell chrome={chrome} home>
+    <SodaShell chrome={chrome} home before={<SodaTicker items={ticker} />}>
       <Analytics />
       <div className="s-wrap">
         <SodaMasthead

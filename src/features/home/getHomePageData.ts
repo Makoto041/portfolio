@@ -5,8 +5,11 @@
 // 別コレクションの取得失敗はセクション単位で握りつぶし、ホーム全体を巻き込まない。
 // ───────────────────────────────────────────
 import { getPayloadClient } from '@/lib/payloadClient'
+import { fmtMonthDay } from '@/lib/date'
+import { lexicalToPlainText } from '@/lib/richtext'
 import { GALLERY_WHERE, getTodayData, EMPTY_TODAY, type TodayData } from '@/features/site/getTodayData'
-import { blogRow, eventCard, productCard } from '@/features/site/cardViews'
+import { blogRow, eventCard, firstLine, productCard } from '@/features/site/cardViews'
+import type { TickerItem } from '@/components/soda/SodaTicker'
 import type { CardView } from '@/components/soda/SodaCard'
 import type { BlogRowView } from '@/components/soda/SodaBlogRow'
 import type { ColumnPhoto } from '@/components/soda/SodaPhotoColumn'
@@ -19,6 +22,8 @@ export type HomePageData = {
   lead?: TimelineDoc
   /** 最新の投稿に続く投稿 */
   feed: TimelineDoc[]
+  /** ホーム最上部のティッカー（おしらせ → 最新の投稿） */
+  ticker: TickerItem[]
   today: TodayData
   gallery: ColumnPhoto[]
   hero: { tagline: string; role: string }
@@ -37,6 +42,7 @@ const HERO_DEFAULTS = {
 export function emptyHomePageData(): HomePageData {
   return {
     feed: [],
+    ticker: [],
     today: EMPTY_TODAY,
     gallery: [],
     hero: { ...HERO_DEFAULTS },
@@ -94,6 +100,23 @@ export async function getHomePageData(): Promise<HomePageData> {
   const posts = postsRes.docs as unknown as TimelineDoc[]
   const [lead, ...feed] = posts
 
+  // ── ティッカー: おしらせ → 最新の投稿（4件） ──
+  const ticker: TickerItem[] = [
+    ...today.notices.map((n) => ({
+      key: `n-${n.key}`,
+      kind: 'notice' as const,
+      date: n.badge,
+      text: n.text,
+    })),
+    ...posts.slice(0, 4).map((p) => ({
+      key: `p-${p.id}`,
+      kind: 'post' as const,
+      date: fmtMonthDay(p.publishedAt ?? p.createdAt),
+      text: firstLine(p.title || lexicalToPlainText(p.text), 40),
+      href: `/timeline#post-${p.id}`,
+    })),
+  ].filter((t) => t.text)
+
   const gallery: ColumnPhoto[] = (galleryRes.docs as unknown as MediaDoc[])
     .filter((m) => m.url)
     .map((m) => ({ key: String(m.id), url: m.url as string, alt: m.alt }))
@@ -118,6 +141,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   return {
     lead,
     feed,
+    ticker,
     today,
     gallery,
     hero,
