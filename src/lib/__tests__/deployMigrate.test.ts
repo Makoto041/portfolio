@@ -4,6 +4,7 @@ import { hasDevPush, migrateDecision, pendingMigrations } from '../deployMigrate
 describe('migrateDecision', () => {
   it('Vercel の Production のビルドだけで適用する', () => {
     expect(migrateDecision({ VERCEL: '1', VERCEL_ENV: 'production' })).toEqual({ run: true })
+    expect(migrateDecision({ VERCEL_ENV: 'production' })).toEqual({ run: true })
   })
 
   it('Preview・development のビルドでは何もしない（失敗にもしない）', () => {
@@ -12,13 +13,10 @@ describe('migrateDecision', () => {
     }
   })
 
-  it('Vercel の外（ローカルのビルド）では何もしない', () => {
-    expect(migrateDecision({})).toMatchObject({ run: false, fail: false })
-    expect(migrateDecision({ VERCEL_ENV: 'production' })).toMatchObject({ run: false, fail: false })
-  })
-
-  it('Vercel 上で VERCEL_ENV が無いときは止める（黙って飛ばさない）', () => {
+  it('VERCEL_ENV が無い・知らない値のときは止める（システム環境変数が出ていない設定でも黙って飛ばさない）', () => {
+    expect(migrateDecision({})).toMatchObject({ run: false, fail: true })
     expect(migrateDecision({ VERCEL: '1' })).toMatchObject({ run: false, fail: true })
+    expect(migrateDecision({ VERCEL: '1', VERCEL_ENV: 'staging' })).toMatchObject({ run: false, fail: true })
   })
 })
 
@@ -30,14 +28,14 @@ describe('pendingMigrations', () => {
     expect(pendingMigrations(names, names.map((name) => ({ name, batch: 2 })))).toEqual([])
   })
 
-  it('dev mode の記録（batch -1）や batch の無い記録は適用済みに数えない', () => {
+  it('dev mode の記録（batch -1）は適用済みに数えない。batch の無い記録は Payload と同じく適用済み', () => {
     expect(
       pendingMigrations(names, [
         { name: 'a', batch: -1 },
         { name: 'b', batch: null },
         { name: 'c', batch: 3 },
       ]),
-    ).toEqual(['a', 'b'])
+    ).toEqual(['a'])
   })
 })
 

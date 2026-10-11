@@ -1,7 +1,8 @@
 // scripts/migrate-on-deploy.ts
 // 本番デプロイ（Vercel の Production）のビルドの最初に、未適用の DB マイグレーションを適用する。
 // vercel.json の buildCommand から `pnpm run migrate:deploy`（payload run）で呼ばれ、続けて next build が走る。
-// - Vercel の Production 以外（Preview・ローカルのビルド）では何もしない（src/lib/deployMigrate.ts）
+// - Vercel の Production のビルドだけで適用し、Preview・development では何もしない。VERCEL_ENV が無ければ止める
+//   （src/lib/deployMigrate.ts。ローカルの pnpm build はこのスクリプトを通らない）
 // - dev mode でスキーマを直接書き換えた記録（batch -1）があれば、適用せずに止める（データが消える確認を自動で通さない）
 // - 適用は Payload の migrate と同じ処理（1件ずつトランザクション。失敗したらその1件は戻る）
 // - 最後に src/migrations の全件が適用済みかを確かめ、残っていれば止める
@@ -31,7 +32,9 @@ async function main(): Promise<number> {
     import('../src/payload.config'),
     import('../src/migrations'),
   ])
-  await payload.init({ config, disableOnInit: true })
+  // ログは同期で書く（失敗するとすぐ終了するので、非同期だと原因がビルドログに残らないことがある）
+  const sanitized = await config
+  await payload.init({ config: { ...sanitized, logger: 'sync' }, disableOnInit: true })
 
   const recorded = async () =>
     (await payload.find({ collection: 'payload-migrations', limit: 0, pagination: false, depth: 0 }))
