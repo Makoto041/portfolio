@@ -2,13 +2,16 @@
 // さっと投稿（/post）に Face ID / Touch ID でログインするためのパスキー（公開鍵）。
 // 作成は /api/quickpost/register/verify だけ（管理画面のパスワード確認 + 端末での本人確認のあと）。
 // 管理画面では一覧・名前の変更・削除だけができる。削除すると、そのパスキーでログイン中の端末もログアウトする。
-import type { CollectionAfterDeleteHook, CollectionConfig } from 'payload'
+import type { CollectionBeforeDeleteHook, CollectionConfig } from 'payload'
 import { adminOnly } from '@/lib/access'
 
 const never = () => false
 
-/** パスキーを消したら、そのパスキーでログインした端末も締め出す */
-const revokeSessions: CollectionAfterDeleteHook = async ({ req, id }) => {
+/**
+ * パスキーを消すときは、そのパスキーでログインした端末も締め出す。
+ * 削除の「前」に行う（post_sessions.passkey_id は ON DELETE SET NULL のため、削除後だと参照が先に空になり見つけられない）
+ */
+const revokeSessions: CollectionBeforeDeleteHook = async ({ req, id }) => {
   await req.payload.delete({
     collection: 'post-sessions',
     where: { passkey: { equals: id } },
@@ -33,7 +36,7 @@ export const Passkeys: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
-  hooks: { afterDelete: [revokeSessions] },
+  hooks: { beforeDelete: [revokeSessions] },
   fields: [
     { name: 'name', type: 'text', label: '名前', required: true },
     {

@@ -165,17 +165,12 @@ export async function getSession(req: NextRequest): Promise<ActiveSession | null
     : null
   if (!user) return drop()
 
+  // ログインは必ずパスキーから発行する。パスキーが消えている（参照が空・存在しない）ログインは無効
   const passkeyId = relId(session.passkey)
-  if (passkeyId) {
-    const passkey = await payload.findByID({
-      collection: 'passkeys',
-      id: passkeyId,
-      depth: 0,
-      overrideAccess: true,
-      disableErrors: true,
-    })
-    if (!passkey) return drop()
-  }
+  const passkey = passkeyId
+    ? await payload.findByID({ collection: 'passkeys', id: passkeyId, depth: 0, overrideAccess: true, disableErrors: true })
+    : null
+  if (!passkey) return drop()
 
   return {
     payload,
