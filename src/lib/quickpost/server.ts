@@ -449,10 +449,12 @@ export async function claimPostReceipt(payload: Payload, key: string): Promise<R
   return { status: 'busy' }
 }
 
+/** 受付票に投稿の ID を残す（投稿の保存と同じトランザクションの req を渡す） */
 export async function completePostReceipt(
   payload: Payload,
   receiptId: ID,
   postId: number,
+  req: PayloadRequest,
 ): Promise<void> {
   await payload.update({
     collection: 'quickpost-nonces',
@@ -460,13 +462,21 @@ export async function completePostReceipt(
     data: { postId },
     depth: 0,
     overrideAccess: true,
+    req,
   })
 }
 
-/** 投稿できなかった受付票を消す（同じ下書きで送り直せるように） */
+/**
+ * 投稿できなかった受付票を消す（同じ下書きで送り直せるように）。
+ * 投稿の ID が残っている受付票は消さない（消すと送り直しで二重に投稿されうる）
+ */
 export async function releasePostReceipt(payload: Payload, receiptId: ID): Promise<void> {
   await payload
-    .delete({ collection: 'quickpost-nonces', id: receiptId, overrideAccess: true })
+    .delete({
+      collection: 'quickpost-nonces',
+      where: { and: [{ id: { equals: receiptId } }, { postId: { exists: false } }] },
+      overrideAccess: true,
+    })
     .catch((e) => console.error('quickpost: failed to release receipt', e))
 }
 

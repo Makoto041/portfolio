@@ -3,6 +3,7 @@
 // - 入力は src/lib/quickpost/input.ts で確かめる（本文・タイトル・種類・写真・二重投稿防止キー）
 // - 下書きごとのキーで受付票を取り、同じ下書きの再送・二度押しでは新しく作らずに最初の投稿を返す
 //   （受付票は quickpost-nonces に置く。タイムラインの表には手を入れない）
+// - 投稿の保存と「受付票に結果を残す」は1つのトランザクションで確定する（途中で止まっても二重にならない）
 // - 1台ごとの回数制限は SQL で原子的に数える
 // - 投稿は「その端末のユーザー」として作る（Payload のアクセス制御・フックをそのまま通す）
 import type { NextRequest } from 'next/server'
@@ -22,6 +23,7 @@ import {
   refreshSessionCookies,
   rejectCrossSite,
   releasePostReceipt,
+  withTransaction,
 } from '@/lib/quickpost/server'
 import { firstLine } from '@/features/site/cardViews'
 
@@ -50,7 +52,8 @@ export async function POST(req: NextRequest) {
     if (claim.status === 'busy') return fail(409, 'in_progress')
     const { receiptId } = claim
 
-    let postId: number | null = null
+    let post: Timeline
+    const media: MediaRow[] = []
     try {
       if (!(await consumeRate(payload, session.id, 'posts'))) {
         await releasePostReceipt(payload, receiptId)
@@ -58,7 +61,6 @@ export async function POST(req: NextRequest) {
       }
 
       // 写真がすべて存在するか（消された写真を指していないか）
-      const media: MediaRow[] = []
       for (const id of input.images) {
         const doc = await payload.findByID({
           collection: 'media',
@@ -74,69 +76,66 @@ export async function POST(req: NextRequest) {
         media.push(doc)
       }
 
-      const post = await payload.create({
-        collection: 'timeline',
-        data: {
-          title: input.title,
-          postType: input.postType,
-          text: textToLexical(input.text) as Timeline['text'],
-          images: input.images.map((image) => ({ image })),
-          publishedAt: new Date().toISOString(),
-        },
-        user,
-        overrideAccess: false,
-        depth: 0,
+      // 投稿の保存と、受付票に投稿の ID を残すことを1つのトランザクションで確定する。
+      // 間でサーバーが止まっても「投稿だけできて受付票が空」にならないので、送り直しで二重にならない
+      post = await withTransaction(payload, async (txReq) => {
+        const created = await payload.create({
+          collection: 'timeline',
+          data: {
+            title: input.title,
+            postType: input.postType,
+            text: textToLexical(input.text) as Timeline['text'],
+            images: input.images.map((image) => ({ image })),
+            publishedAt: new Date().toISOString(),
+          },
+          user,
+          overrideAccess: false,
+          depth: 0,
+          req: txReq,
+        })
+        await completePostReceipt(payload, receiptId, created.id, txReq)
+        return created
       })
-      postId = post.id
-      await completePostReceipt(payload, receiptId, post.id)
-
-      // ここから先は投稿ができたあとの後始末。失敗しても投稿は成功として返す
-
-      // 写真の代替テキストが空なら、投稿の見出しか本文の1行目を入れる（読み上げ用）
-      const alt = firstLine(input.title || input.text, 60)
-      await Promise.all(
-        media
-          .filter((m) => !m.alt)
-          .map((m) =>
-            payload
-              .update({
-                collection: 'media',
-                id: m.id,
-                data: { alt },
-                user,
-                overrideAccess: false,
-                depth: 0,
-              })
-              .catch((e) => console.error('quickpost: failed to set alt text', e)),
-          ),
-      )
-
-      const now = new Date().toISOString()
-      await recordPost(payload, session.id, now).then(
-        () => {
-          session.lastUsedAt = now
-        },
-        (e) => console.error('quickpost: failed to record post', e),
-      )
-      await pruneNonces(payload)
-
-      // 投稿したので「最後に使った日時」も更新済み。Cookie の期限も延ばす
-      const res = json({ id: post.id })
-      refreshSessionCookies(req, res, session)
-      return res
     } catch (e) {
-      if (postId === null) {
-        // 投稿ができていなければ、同じ下書きで送り直せるよう受付票を消す
-        await releasePostReceipt(payload, receiptId)
-      } else {
-        // 投稿はできている。受付票に結果を残せていなければもう一度試す（再送で二重にしない）
-        await completePostReceipt(payload, receiptId, postId).catch((e) =>
-          // ここも失敗すると、2分後の再送で同じ投稿がもう1件できうる
-          console.error(`quickpost: post ${postId} created but its receipt was not completed`, e),
-        )
-      }
+      // 投稿は確定していない。結果のない受付票を消して、同じ下書きで送り直せるようにする
+      await releasePostReceipt(payload, receiptId)
       throw e
     }
+
+    // ここから先は投稿ができたあとの後始末。失敗しても投稿は成功として返す
+
+    // 写真の代替テキストが空なら、投稿の見出しか本文の1行目を入れる（読み上げ用）
+    const alt = firstLine(input.title || input.text, 60)
+    await Promise.all(
+      media
+        .filter((m) => !m.alt)
+        .map((m) =>
+          payload
+            .update({
+              collection: 'media',
+              id: m.id,
+              data: { alt },
+              user,
+              overrideAccess: false,
+              depth: 0,
+            })
+            .catch((e) => console.error('quickpost: failed to set alt text', e)),
+        ),
+    )
+
+    const now = new Date().toISOString()
+    await recordPost(payload, session.id, now).then(
+      () => {
+        session.lastUsedAt = now
+      },
+      (e) => console.error('quickpost: failed to record post', e),
+    )
+    await pruneNonces(payload)
+
+    // 投稿したので「最後に使った日時」も更新済み。Cookie の期限も延ばす
+    const res = json({ id: post.id })
+    refreshSessionCookies(req, res, session)
+    return res
   } catch (e) {
     console.error('quickpost: post failed', e)
     return fail(500, 'server_error')
