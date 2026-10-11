@@ -67,14 +67,13 @@ export default function SodaLead({ post }: { post?: TimelineDoc }) {
       embedUrl={post.embedUrl}
     />
   ) : null
-  const foot = (extra?: string) => (
+  const foot = (
     <div className="s-lead-foot">
       <p className="s-lead-meta">
         <span className="s-cat">{typeLabel}</span>
         <time dateTime={date}>
           {fmtDateJa(date)} <span className="s-num">{fmtTime(date)}</span>
         </time>
-        {extra && <span>{extra}</span>}
       </p>
       <SodaLike id={post.id} initialLikes={post.likes ?? 0} />
     </div>
@@ -102,7 +101,7 @@ export default function SodaLead({ post }: { post?: TimelineDoc }) {
           {body && <p className={`s-lead-body${bodyFolded ? ' is-folded' : ''}`}>{body}</p>}
           {preview}
           {bodyFolded && <ReadMore id={post.id} />}
-          {foot(`写真${photos.length}枚`)}
+          {foot}
         </div>
       </article>
     )
@@ -122,7 +121,7 @@ export default function SodaLead({ post }: { post?: TimelineDoc }) {
       {sub && <p className={`s-lead-sub${subFolded ? ' is-folded' : ''}`}>{sub}</p>}
       {preview}
       {(bigFolded || subFolded) && <ReadMore id={post.id} />}
-      {foot()}
+      {foot}
     </article>
   )
 }

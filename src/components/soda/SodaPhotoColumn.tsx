@@ -3,7 +3,6 @@
 // 各写真は /gallery へ（7枚目以降は 1080px 未満で CSS が隠す）。
 import Image from 'next/image'
 import Link from 'next/link'
-import SodaIcon from '@/components/soda/SodaIcon'
 import SodaSectionHead from '@/components/soda/SodaSectionHead'
 import { toCFUrl } from '@/lib/cfUrl'
 
@@ -13,7 +12,7 @@ export default function SodaPhotoColumn({ photos, total }: { photos: ColumnPhoto
   if (photos.length === 0) return null
   return (
     <section className="s-photocol" aria-labelledby="h-photos">
-      <SodaSectionHead id="h-photos" ja="写真" en="Photos" />
+      <SodaSectionHead id="h-photos" ja="写真" en="Photos" href="/gallery" />
       <div className="s-phs">
         {photos.slice(0, 10).map((p) => (
           <Link key={p.key} href="/gallery" aria-label={p.alt ? `写真: ${p.alt}` : '写真のページへ'}>
@@ -29,13 +28,7 @@ export default function SodaPhotoColumn({ photos, total }: { photos: ColumnPhoto
           </Link>
         ))}
       </div>
-      <div className="s-photocol-foot">
-        <span className="s-num">{total}枚</span>
-        <Link className="s-more" href="/gallery">
-          写真をもっと見る
-          <SodaIcon name="arrow" />
-        </Link>
-      </div>
+      <p className="s-photocol-foot s-num">{total}枚</p>
     </section>
   )
 }

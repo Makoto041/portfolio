@@ -17,7 +17,7 @@
 /* ===== 地色パレット（src/lib/palette.ts のキーと対応。:root は既定のクリームソーダ） ===== */
 :root {
   --s-bg: #e6f1de;
-  --s-logo: #4f9d69;
+  --s-logo: #74b088;
   --s-card: #fbf3dc;
 }
 :root[data-palette='gunjo'] { --s-bg: #e3e8f8; --s-logo: #95a1da; --s-card: #f0e6c0; }
@@ -371,7 +371,7 @@
 .soda .s-lead-cover { position: relative; aspect-ratio: 16 / 10; }
 .soda .s-lead-cover > .s-lead-img { position: absolute; inset: 0; padding: 0; border: 0; background: var(--s-card); cursor: zoom-in; }
 /* 角丸の枠（overflow: hidden）に切られないよう、フォーカス枠は写真の内側に描く */
-.soda .s-lead-img:focus-visible { outline-offset: -4px; }
+.soda .s-lead-img:focus-visible { outline: none; }
 .soda .s-lead-count {
   position: absolute;
   top: 14px;
@@ -594,6 +594,13 @@
   cursor: zoom-in;
 }
 .soda .s-pgrid button:has(img.is-loaded) { animation: none; background: var(--s-card); }
+/* 写真ボタンのフォーカス枠: 写真（絶対配置の img）の上に内側の二重線で描く
+   （外側の outline は親の overflow: hidden に、内側の outline は写真に隠れて見えないため） */
+.soda .s-lead-img::after,
+.soda .s-pgrid button::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+.soda .s-pgrid button:focus-visible { outline: none; }
+.soda .s-lead-img:focus-visible::after,
+.soda .s-pgrid button:focus-visible::after { box-shadow: inset 0 0 0 3px var(--s-ink), inset 0 0 0 6px var(--s-paper); }
 .soda .s-pgrid img { transition: filter 0.25s; }
 @media (hover: hover) {
   .soda .s-pgrid button:hover img { filter: brightness(0.94); }
@@ -635,7 +642,7 @@
 .soda .s-wx-icon { display: flex; }
 .soda .s-wx-icon .rays { transform-origin: 32px 32px; animation: s-spin 28s linear infinite; }
 .soda .s-wx b { font-family: var(--s-font-num); font-size: var(--s-fs-body); font-weight: 500; }
-.soda .s-wx-credit { font-size: var(--s-fs-cap); color: var(--s-faint); text-decoration: underline dotted; text-underline-offset: 2px; }
+.soda .s-wx-credit { margin: -6px 0; padding: 6px 0; font-size: var(--s-fs-cap); color: var(--s-faint); text-decoration: underline dotted; text-underline-offset: 2px; }
 .soda .s-today hr { width: 100%; margin: 0; border: 0; border-top: 1px solid var(--s-ink); }
 .soda .s-today h3 { font-size: var(--s-fs-ui); font-weight: 500; text-align: center; letter-spacing: 0.08em; }
 .soda .s-notices { display: grid; gap: 10px; }
@@ -680,6 +687,18 @@
   .soda .s-notices li:nth-child(n + 2) { display: none; }
   .soda .s-notices li > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .soda .s-today-bottom { display: none; }
+}
+
+/* 幅の狭いスマホ（〜360px）: カバーラインの1行目を折り返さない。TODAY は
+   [日付・曜日] / [時刻 | 天気] の2段にして、日付を途中で折り返さず枠からもはみ出さない */
+@media (max-width: 360px) {
+  .soda .s-coverline { font-size: 10px; letter-spacing: 0.08em; }
+  .soda .s-coverline > span:not(.s-tagline) { white-space: nowrap; }
+  .soda .s-coverline .s-tagline { text-wrap: balance; }
+  .soda .s-clock { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+  .soda .s-clock-date { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+  .soda .s-d1 { white-space: nowrap; }
+  .soda .s-tm { font-size: 30px; }
 }
 
 /* ── 写真（PC 5列×2段 / タブレット 6列 / SP 3列×2段。下段の先頭に横長に並べる） ── */
@@ -751,6 +770,10 @@
 @media (min-width: 761px) {
   .soda .s-rail { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; overflow: visible; margin-inline: 0; padding-inline: 0; }
 }
+/* タブレットは4件を 2×2 に（3列だと1件だけ次の行に残る） */
+@media (min-width: 761px) and (max-width: 1079px) {
+  .soda .s-rail.is-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (min-width: 1080px) {
   .soda .s-rail.is-four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
@@ -762,7 +785,7 @@
   position: relative;
   display: block;
   overflow: hidden;
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 3;
   border-radius: var(--s-r-xl);
   background: var(--s-card);
 }
@@ -821,7 +844,10 @@
 /* ブログ行（日付・題・正方サムネ） */
 .soda .s-blist { display: grid; gap: 24px; }
 @media (min-width: 761px) {
-  .soda .s-blist { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  .soda .s-blist { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+}
+@media (min-width: 1080px) {
+  .soda .s-blist { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 .soda .s-blist.is-page { gap: 0; }
 @media (min-width: 761px) {
@@ -865,6 +891,11 @@
 }
 @media (min-width: 761px) {
   .soda .s-pblock { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto; gap: 32px; padding: 28px 32px; }
+}
+/* タブレットは3列だと名前が1〜2文字ずつ折り返すため、[名前 | SNS] / [紹介文] の2段にする */
+@media (min-width: 761px) and (max-width: 1079px) {
+  .soda .s-pblock { grid-template-columns: minmax(0, 1fr) auto; gap: 20px 32px; }
+  .soda .s-pblock .s-bio { grid-column: 1 / -1; grid-row: 2; }
 }
 .soda .s-who { display: flex; align-items: center; gap: 16px; }
 .soda .s-av { position: relative; flex: none; width: 84px; height: 84px; overflow: hidden; border: 1px solid var(--s-ink); border-radius: 50%; background: var(--s-card); }
@@ -1227,7 +1258,6 @@
 @media (min-width: 1080px) {
   .soda .s-cgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 24px; }
 }
-.soda .s-cgrid .s-card-ph { aspect-ratio: 4 / 3; }
 .soda .s-cnote { margin-top: 10px; font-size: var(--s-fs-ui); line-height: 1.8; color: var(--s-sub); white-space: pre-line; }
 
 /* 記事 */

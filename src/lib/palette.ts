@@ -8,7 +8,7 @@
 // ───────────────────────────────────────────
 
 export const PALETTES = {
-  creamsoda: { label: 'クリームソーダ', bg: '#e6f1de', logo: '#4f9d69' },
+  creamsoda: { label: 'クリームソーダ', bg: '#e6f1de', logo: '#74b088' },
   gunjo: { label: '群青ソーダ', bg: '#e3e8f8', logo: '#95a1da' },
   ramune: { label: 'ラムネ', bg: '#dbecf8', logo: '#8aaecd' },
   melon: { label: 'メロン', bg: '#e0f0e1', logo: '#7fb38a' },
