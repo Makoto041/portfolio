@@ -24,6 +24,7 @@ import {
   userHandle,
   verifyTicket,
 } from '@/lib/quickpost/tokens'
+import { photoPrint } from '@/components/quickpost/photo'
 import {
   asAuthenticationResponse,
   asRegistrationResponse,
@@ -358,5 +359,20 @@ describe('isQuickPostPhoto', () => {
     expect(isQuickPostPhoto({ filename: 'IMG_0001.jpg', isTimelineOnly: true })).toBe(false)
     expect(isQuickPostPhoto({ filename: null, isTimelineOnly: true })).toBe(false)
     expect(isQuickPostPhoto({})).toBe(false)
+  })
+})
+
+describe('photoPrint', () => {
+  const file = (bytes: number[], name = 'IMG_0001.jpg') =>
+    new File([new Uint8Array(bytes)], name, { type: 'image/jpeg' })
+
+  it('同じ中身なら、名前や選び直しに関係なく同じ指紋', async () => {
+    const a = await photoPrint(file([1, 2, 3], 'IMG_0001.jpg'))
+    expect(a).toMatch(/^[0-9a-f]{32}$/)
+    expect(await photoPrint(file([1, 2, 3], 'image.jpg'))).toBe(a)
+  })
+
+  it('中身が違えば違う指紋（差し替えを見分ける）', async () => {
+    expect(await photoPrint(file([1, 2, 3]))).not.toBe(await photoPrint(file([1, 2, 4])))
   })
 })

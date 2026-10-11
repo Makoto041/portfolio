@@ -16,7 +16,7 @@ import {
 import SodaIcon from '@/components/soda/SodaIcon'
 import { LIMITS, photoTypeOf, POST_TYPES } from '@/lib/quickpost/input'
 import { TYPE_LABELS } from '@/lib/timeline'
-import { PhotoError, prepareForUpload } from './photo'
+import { PhotoError, photoPrint, prepareForUpload } from './photo'
 
 type Limits = { text: number; title: number; images: number; photoBytes: number }
 
@@ -43,7 +43,7 @@ type Draft = {
   postType: string
   /** 二重投稿を防ぐキー（この下書きを送るたびに同じものを使う） */
   key: string
-  /** このキーで最初に送った内容（送り直しで「すでに投稿済み」と返ったとき、直したかどうかを見分ける） */
+  /** このキーで最初に送った内容（本文・タイトル・種類・写真の指紋）。送り直しで「すでに投稿済み」と返ったとき、直したかどうかを見分ける */
   sent?: string
 }
 
@@ -374,9 +374,11 @@ export default function QuickPostApp() {
     const queue = [...photos]
     try {
       const ids: number[] = []
+      const prints: string[] = []
       for (let i = 0; i < queue.length; i++) {
         const photo = queue[i]
         setSending({ step: 'photos', done: i, total: queue.length })
+        prints.push(await photoPrint(photo.file))
         if (photo.mediaId) {
           ids.push(photo.mediaId)
           continue
@@ -406,9 +408,9 @@ export default function QuickPostApp() {
         images: ids,
         key: draft.key,
       }
-      // このキーで最初に送る文面を覚えておく（応答が届かなかったあとに直して送り直したかを見分けるため）。
-      // 写真は読み込み直すと選び直しになって ID が変わるので比べない
-      const signature = JSON.stringify([body.text, body.title ?? '', body.postType])
+      // このキーで最初に送る内容を覚えておく（応答が届かなかったあとに直して送り直したかを見分けるため）。
+      // 写真は ID ではなく中身の指紋で比べる（読み込み直すと選び直しになって ID は変わるが、同じ写真なら指紋は同じ）
+      const signature = JSON.stringify([body.text, body.title ?? '', body.postType, prints])
       const sent = draft.sent ?? signature
       if (draft.sent === undefined) {
         const marked = { ...draft, sent }
