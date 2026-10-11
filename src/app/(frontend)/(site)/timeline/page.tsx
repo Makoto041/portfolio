@@ -1,12 +1,15 @@
 import type { Metadata } from 'next'
 import SodaPageHead from '@/components/soda/SodaPageHead'
 import SodaTimeline from '@/components/soda/SodaTimeline'
-import SodaToday from '@/components/soda/SodaToday'
+import SodaMemo from '@/components/soda/SodaMemo'
+import SodaContactSheet from '@/components/soda/SodaContactSheet'
 import AdminLinks from '@/components/admin/AdminLinks'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { TIMELINE_PAGE_SIZE } from '@/lib/timeline'
 import { getPayloadClient } from '@/lib/payloadClient'
 import { getTodayData } from '@/features/site/getTodayData'
+import { getRecentPhotos } from '@/features/site/getRecentPhotos'
+import { getTimelineMonths } from '@/features/site/getTimelineMonths'
 import type { TimelineDoc } from '@/lib/payloadTypes'
 
 export const revalidate = 60 // ISR: 更新時は各コレクションの afterChange で on-demand 再検証
@@ -44,8 +47,10 @@ export default async function TimelinePage() {
   // limit は page 2 以降とずれないよう TIMELINE_PAGE_SIZE を共有する
   let posts: TimelineDoc[] = []
   let total = 0
-  const [today] = await Promise.all([
+  const [today, photos, months] = await Promise.all([
     getTodayData(),
+    getRecentPhotos(),
+    getTimelineMonths(),
     (async () => {
       try {
         const payload = await getPayloadClient()
@@ -71,10 +76,13 @@ export default async function TimelinePage() {
           <h2 id="h-feed" className="sr-only">
             投稿
           </h2>
-          <SodaTimeline posts={posts} total={total} />
+          <SodaTimeline posts={posts} total={total} months={months} />
         </section>
-        {/* PC（1080px〜）のみ右列に表示（SP はホームで見せる）。隠れている間は時計・天気を動かさない */}
-        <SodaToday notices={today.notices} stats={today.stats} activeFrom="(min-width: 1080px)" />
+        {/* PC（1080px〜）のみ右列に表示（SP・タブレットはホームで見せる） */}
+        <aside className="s-side" aria-label="おしらせと写真">
+          <SodaMemo notices={today.notices} />
+          <SodaContactSheet photos={photos} total={today.stats.photos} />
+        </aside>
       </div>
     </div>
   )

@@ -1,34 +1,33 @@
 // src/components/soda/SodaMasthead.tsx
-// ホームの表紙。カバーライン（ロール / タグライン / 号数）+ 巨大ワードマーク「MAKOTO」。
-// ワードマークの下 26% は下のカバーストーリーに重なる（.s-wordmark の負マージン）。
-// id="soda-wordmark" はヘッダーが「最上部か」を判定するのに使う。
+// ホームの題字。左寄せの「MAKOTO」と、右の日付印（＋東京の時刻・天気）。
+// 日記帳の「きょうのページ」を開く入口で、下の投稿には重ねない。
+// id="soda-wordmark" はヘッダーが「最上部か」（小ロゴを隠すか）を判定するのに使う。
+import SodaTodayStamp from '@/components/soda/SodaTodayStamp'
+
 type Props = {
+  /** 欧文の肩書き（SiteSettings.hero.roleEn。例 `— tokyo`） */
   role: string
   tagline: string
-  /** 号数（＝タイムラインの投稿数） */
-  issue: number
-  /** 号の年月 `2026.10` */
-  month: string
+  /** 描画時刻（ISO）。日付印の初期表示に使う */
+  today: string
 }
 
 const WORD = 'MAKOTO'
 
-export default function SodaMasthead({ role, tagline, issue, month }: Props) {
+export default function SodaMasthead({ role, tagline, today }: Props) {
   return (
     <div className="s-mast">
-      <div className="s-coverline">
-        <span>Life log {role}</span>
-        <span className="s-tagline">{tagline}</span>
-        <span className="s-num">
-          No.{issue} · {month}
-        </span>
-      </div>
       <h1 className="sr-only">岩渕誠（いわぶちまこと）のライフログ</h1>
       <span id="soda-wordmark" className="s-wordmark" aria-hidden="true">
         {WORD.split('').map((c, i) => (
           <span key={i}>{c}</span>
         ))}
       </span>
+      <SodaTodayStamp today={today} />
+      <p className="s-mast-sub">
+        <span className="s-kick">Life log {role}</span>
+        <span className="s-tagline">{tagline}</span>
+      </p>
     </div>
   )
 }

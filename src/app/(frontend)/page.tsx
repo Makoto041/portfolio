@@ -1,32 +1,27 @@
 // src/app/(frontend)/page.tsx
-// ホーム（Soda Press）— 雑誌の表紙のような巨大ロゴ「MAKOTO」の下に、
-// いちばん新しい投稿をカバーストーリーとして置き、タイムライン（日記帳）が主役の3段組:
-//   PC: [写真の柱 | カバーストーリー＋タイムライン | TODAY]  SP: 1段（TODAY は表紙の直下）
-// その下にブログ・つくったもの・イベント・プロフィール。
+// ホーム（日記帳 × フィルムカメラ）— 左寄せの題字「MAKOTO」と赤インクの日付印で「きょうのページ」を開き、
+// いちばん新しい投稿（文章ならノート・写真つきならプリント）とタイムラインを主役に置く。
+//   PC: [日記（最新の投稿＋タイムライン） | 脇（メモ帳・ベタ焼き）] の2段組
+//   SP: 最新 → おしらせのピン留め → タイムライン → ベタ焼き → メモ帳 の1段
+// その下にブログ・つくったもの（ステッカー）・イベント（半券）・プロフィール。
 // データ取得・集計は src/features/home/getHomePageData.ts に分離し、ここはレイアウトに専念する。
 export const dynamic = 'force-static'
 export const revalidate = 60
 
 import { Analytics } from '@vercel/analytics/next'
 import SodaShell from '@/components/soda/SodaShell'
-import SodaTicker from '@/components/soda/SodaTicker'
 import SodaMasthead from '@/components/soda/SodaMasthead'
 import SodaLead from '@/components/soda/SodaLead'
-import SodaToday from '@/components/soda/SodaToday'
+import SodaPin from '@/components/soda/SodaPin'
+import SodaMemo from '@/components/soda/SodaMemo'
+import SodaContactSheet from '@/components/soda/SodaContactSheet'
 import SodaTimeline from '@/components/soda/SodaTimeline'
-import SodaPhotoColumn from '@/components/soda/SodaPhotoColumn'
 import SodaSectionHead from '@/components/soda/SodaSectionHead'
-import SodaRail from '@/components/soda/SodaRail'
-import SodaTabCard from '@/components/soda/SodaTabCard'
+import SodaSticker from '@/components/soda/SodaSticker'
+import SodaTicket from '@/components/soda/SodaTicket'
 import SodaBlogRow from '@/components/soda/SodaBlogRow'
 import SodaProfileBlock from '@/components/soda/SodaProfileBlock'
-import Phrase from '@/components/soda/Phrase'
-import {
-  getHomePageData,
-  emptyHomePageData,
-  issueMonth,
-  type HomePageData,
-} from '@/features/home/getHomePageData'
+import { getHomePageData, emptyHomePageData, type HomePageData } from '@/features/home/getHomePageData'
 import { getSiteChrome } from '@/features/site/getSiteChrome'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 
@@ -66,37 +61,37 @@ export default async function Home() {
     }),
     getSiteChrome(),
   ])
-  const { lead, feed, ticker, today, gallery, hero, profile, blog, events, products } = data
+  const { lead, feed, today, photos, hero, profile, blog, events, products, counts } = data
 
   return (
-    <SodaShell chrome={chrome} home before={<SodaTicker items={ticker} />}>
+    <SodaShell chrome={chrome} home>
       <Analytics />
       <div className="s-wrap">
-        <SodaMasthead
-          role={hero.role}
-          tagline={hero.tagline}
-          issue={today.stats.entries}
-          month={issueMonth()}
-        />
+        <SodaMasthead role={hero.role} tagline={hero.tagline} today={new Date().toISOString()} />
 
-        <div className="s-home-grid">
-          <SodaLead post={lead} />
-          <SodaToday notices={today.notices} stats={today.stats} />
-          <section className="s-feedsec" aria-labelledby="h-timeline">
-            <SodaSectionHead id="h-timeline" ja="タイムライン" en="Timeline" href="/timeline" />
-            {feed.length > 0 ? (
-              <SodaTimeline posts={feed} total={today.stats.entries} compact />
-            ) : (
-              <p className="s-empty">まだ投稿がありません</p>
-            )}
-          </section>
-          <SodaPhotoColumn photos={gallery} total={today.stats.photos} />
+        <div className="s-home">
+          <div className="s-home-main">
+            <SodaLead post={lead} />
+            <SodaPin notices={today.notices} />
+            <section aria-labelledby="h-timeline">
+              <SodaSectionHead id="h-timeline" title="タイムライン" count={today.stats.entries} href="/timeline" />
+              {feed.length > 0 ? (
+                <SodaTimeline posts={feed} total={today.stats.entries} compact />
+              ) : (
+                <p className="s-empty">まだ投稿がありません</p>
+              )}
+            </section>
+          </div>
+          <aside className="s-side" aria-label="おしらせと写真">
+            <SodaMemo notices={today.notices} />
+            <SodaContactSheet photos={photos} total={today.stats.photos} />
+          </aside>
         </div>
 
         <div className="s-sections">
           {blog.length > 0 && (
             <section aria-labelledby="h-blog">
-              <SodaSectionHead id="h-blog" ja="ブログ" en="Blog" href="/posts" />
+              <SodaSectionHead id="h-blog" title="ブログ" count={counts.blog} href="/posts" />
               <div className="s-blist">
                 {blog.map((b) => (
                   <SodaBlogRow key={b.id} {...b} />
@@ -107,28 +102,28 @@ export default async function Home() {
 
           {products.length > 0 && (
             <section aria-labelledby="h-products">
-              <SodaSectionHead id="h-products" ja="つくったもの" en="Products" href="/products" />
-              <SodaRail count={products.length} four>
+              <SodaSectionHead id="h-products" title="つくったもの" count={counts.products} href="/products" />
+              <div className="s-stickers">
                 {products.map((p) => (
-                  <SodaTabCard key={p.id} {...p} title={<Phrase text={p.label} />} />
+                  <SodaSticker key={p.id} {...p} />
                 ))}
-              </SodaRail>
+              </div>
             </section>
           )}
 
           {events.length > 0 && (
             <section aria-labelledby="h-events">
-              <SodaSectionHead id="h-events" ja="イベント" en="Events" href="/events" />
-              <SodaRail count={events.length} four={events.length >= 4}>
+              <SodaSectionHead id="h-events" title="イベント" count={counts.events} href="/events" />
+              <div className="s-tickets">
                 {events.map((e) => (
-                  <SodaTabCard key={e.id} {...e} title={<Phrase text={e.label} />} />
+                  <SodaTicket key={e.id} {...e} />
                 ))}
-              </SodaRail>
+              </div>
             </section>
           )}
 
           <section aria-labelledby="h-profile">
-            <SodaSectionHead id="h-profile" ja="プロフィール" en="Profile" href="/profile" more="くわしく" />
+            <SodaSectionHead id="h-profile" title="プロフィール" href="/profile" more="くわしく" />
             <SodaProfileBlock profile={profile} />
           </section>
         </div>

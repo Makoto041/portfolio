@@ -44,7 +44,7 @@ pnpm dev -H "$TS_IP"               # 既定 3000 番
 上記「開発フロー」に加え、環境を問わず守る規約。
 
 - **ライブ配信物に生成ツールの痕跡を残さない**: 公開サイトが配信する HTML/CSS/JS（第三者が DevTools/View Source で見える成果物）に、AI/ツール由来の文字列・メタ・可視コメント・attribution を残さない。本番ビルドは minify でコメント除去されるため通常は自然に満たされる。**GitHub のソース/コミット履歴は対象外**（判断基準は「通常のサイトから見えるか」だけ）。
-- **設計トークン体系（Soda Press）に沿う**: `src/app/(frontend)/soda.css` の `.soda` スコープに集約し、クラスは `s-` 接頭辞（Tailwind ユーティリティと衝突させない）。地色は「今月の色」パレット `--s-bg / --s-logo / --s-card`（`:root[data-palette]`。キーと固定/月替わりの切替は `src/lib/palette.ts`）。文字・線は `--s-ink / --s-sub / --s-faint`、面は `--s-paper`、赤は `--s-hot`（いいね・LIVE のみ）。タイポは `--s-fs-cap/meta/ui/body/post/h3`（display は各要素の `clamp`）、角丸は `--s-r-xl/l/m/s`、余白は 4px 系、ガターは `--s-gut`。書体はロゴ/英字見出し Bagel Fat One・欧文 DM Sans・和文 Zen Kaku Gothic New（`src/lib/sodaFonts.ts`）。本文テキストはどのパレットの地・カード・紙面上でも AA(4.5:1) 以上を維持。新規実装もゼロから色/寸法を足さずトークン経由で。大きな和文見出しは `<Phrase>`（語の切れ目で改行）を使う。
+- **設計トークン体系（Soda Press）に沿う**: `src/app/(frontend)/soda.css` の `.soda` スコープに集約し、クラスは `s-` 接頭辞（Tailwind ユーティリティと衝突させない）。意匠は「日記帳 × フィルムカメラ」（日付印・罫線のノート・プリントと日付の写し込み・メモ帳・ベタ焼き・インデックスタブ・ステッカー・チケット。詳細は `docs/README.md`）。地色は「今月の色」パレット `--s-bg / --s-logo / --s-card`（`:root[data-palette]`。キーと固定/月替わりの切替は `src/lib/palette.ts`）。文字・線は `--s-ink / --s-sub / --s-faint`、面は `--s-paper`（紙面）と `--s-print`（プリントの白）、赤は `--s-hot`（いいね・LIVE のみ）と `--s-stamp`（日付印・日曜の朱）、`--s-film`（日付の写し込み・コマ番号のみ）。タイポは `--s-fs-cap/meta/ui/body/post/h3`（display は各要素の `clamp`）、角丸は `--s-r-xl/l/m/s`、余白は 4px 系、ガターは `--s-gut`。書体はロゴ Bagel Fat One・欧文 DM Sans・和文 Zen Kaku Gothic New・手書き Klee One・写し込み Doto（`src/lib/sodaFonts.ts`）。本文テキストはどのパレットの地・カード・紙面上でも AA(4.5:1) 以上を維持。新規実装もゼロから色/寸法を足さずトークン経由で。大きな和文見出しは `<Phrase>`（語の切れ目で改行）を使う。
 - **Fable 5 レビューを必須ゲートに**: 非自明な実装は Agent ツール（`model: fable`）でサブエージェント指名し設計/コードレビュー → Blocking/Should-fix を修正・再確認してから PR。
 
 ## 技術スタック
@@ -225,7 +225,8 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
-- デザインを Mist Terminal から Soda Press に全面刷新（タイムライン主役の表紙・SP ドック・写真ビューアの前後移動）
+- Soda Press を「日記帳 × フィルムカメラ」に改訂（雑誌の表紙の文法をやめ、日付印・ノート/プリント・メモ帳・ベタ焼き・月の目次）
+- デザインを Mist Terminal から Soda Press に全面刷新（タイムライン主役・SP ドック・写真ビューアの前後移動）
 - いいねボタンAPIエンドポイントパスを修正
 - いいね機能の楽観的UI更新を実装
 - Xスタイルのハートアニメーションを追加

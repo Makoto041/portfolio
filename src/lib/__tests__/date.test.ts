@@ -4,8 +4,10 @@ import {
   dayParts,
   fmtDateBadge,
   fmtDateJa,
+  fmtFilmDate,
   fmtMonthDay,
   fmtTime,
+  relativeDayLabel,
   toDayKey,
 } from '../date'
 
@@ -120,3 +122,49 @@ describe('fmtMonthDay', () => {
     expect(fmtMonthDay('2026-07-05T07:39:57.365Z')).toBe('7.5')
   })
 })
+
+describe('fmtFilmDate', () => {
+  it("フィルムの写し込み風 'YY M D（JST）", () => {
+    expect(fmtFilmDate('2025-10-12T05:14:50Z')).toBe("'25 10 12")
+    // UTC では前日でも JST の日付
+    expect(fmtFilmDate('2025-12-05T20:00:00Z')).toBe("'25 12 6")
+  })
+
+  it('不正値は空文字', () => {
+    expect(fmtFilmDate('not-a-date')).toBe('')
+  })
+})
+
+describe('relativeDayLabel', () => {
+  // JST 2026-10-10 12:00
+  const now = Date.parse('2026-10-10T12:00:00+09:00')
+  it('同じ暦日は「きょう」、前日は「きのう」（JST の日付境界で数える）', () => {
+    expect(relativeDayLabel('2026-10-10T00:30:00+09:00', now)).toBe('きょう')
+    expect(relativeDayLabel('2026-10-09T23:59:00+09:00', now)).toBe('きのう')
+    // UTC では同日でも JST では前日
+    expect(relativeDayLabel('2026-10-09T14:00:00Z', now)).toBe('きのう')
+  })
+
+  it('日・か月・年の単位', () => {
+    expect(relativeDayLabel('2026-10-03T10:00:00+09:00', now)).toBe('7日前')
+    expect(relativeDayLabel('2026-07-05T10:00:00+09:00', now)).toBe('3か月前')
+    expect(relativeDayLabel('2025-07-31T10:00:00+09:00', now)).toBe('1年前')
+    expect(relativeDayLabel('2023-10-10T10:00:00+09:00', now)).toBe('3年前')
+  })
+
+  it('か月・年は暦で数える（その日付がまだ来ていない月は数えない）', () => {
+    // 9/11 → 10/10 は 29 日（1 か月に満たない）
+    expect(relativeDayLabel('2026-09-11T10:00:00+09:00', now)).toBe('29日前')
+    // 9/10 → 10/10 でちょうど 1 か月
+    expect(relativeDayLabel('2026-09-10T10:00:00+09:00', now)).toBe('1か月前')
+    // 10/11 → 翌年 10/10 は 11 か月（「12か月前」とは出さない）
+    expect(relativeDayLabel('2025-10-11T10:00:00+09:00', now)).toBe('11か月前')
+    expect(relativeDayLabel('2025-10-10T10:00:00+09:00', now)).toBe('1年前')
+  })
+
+  it('未来の日付・不正値', () => {
+    expect(relativeDayLabel('2026-10-11T10:00:00+09:00', now)).toBe('きょう')
+    expect(relativeDayLabel('not-a-date', now)).toBe('')
+  })
+})
+

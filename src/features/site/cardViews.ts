@@ -1,14 +1,15 @@
 // ───────────────────────────────────────────
 // src/features/site/cardViews.ts
-// コレクションのドキュメント → カード/行の表示モデルへの変換（純関数）。
+// コレクションのドキュメント → 半券・ステッカー・行の表示モデルへの変換（純関数）。
 // ホームと各一覧ページで共用する。
 // ───────────────────────────────────────────
-import { fmtDateJa } from '@/lib/date'
+import { dayParts, fmtDateJa } from '@/lib/date'
 import { lexicalFirstImageUrl, lexicalToPlainText } from '@/lib/richtext'
 import { clip } from '@/lib/text'
 import { safeHref } from '@/lib/safeHref'
 import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
-import type { TabCardView } from '@/components/soda/SodaTabCard'
+import type { TicketView } from '@/components/soda/SodaTicket'
+import type { StickerView } from '@/components/soda/SodaSticker'
 import type { BlogRowView } from '@/components/soda/SodaBlogRow'
 import type { BlogPost as BlogPostDoc } from '@/payload-types'
 
@@ -50,7 +51,7 @@ export const PLATFORM_LABELS: Record<string, string> = {
   other: 'イベント',
 }
 
-/** 本文の最初の空でない1行（ティッカー・抜粋用） */
+/** 本文の最初の空でない1行（抜粋用） */
 export function firstLine(text: string, max: number): string {
   const line = text.split('\n').find((l) => l.trim()) ?? ''
   return clip(line, max)
@@ -63,40 +64,38 @@ export function isLiveNow(start: string, end?: string | null, now: number = Date
   return Number.isFinite(s) && now >= s && now <= e
 }
 
-/** イベント → タブカード */
-export function eventCard(e: EventLike, short = true): TabCardView {
+/** イベント → 半券（withNote: 一覧ページでは概要も添える） */
+export function eventTicket(e: EventLike, withNote = false): TicketView {
   const { time } = formatEventDateWithExtendedHour(e.startDate, e.endDate)
-  const thumb = uploadUrl(e.thumbnail)
-  // カードでは開始時刻まで（「〜」以降の終了時刻は一覧ページの補足に回す）
-  const when = short ? `${fmtDateJa(e.startDate)} ${time.split('〜')[0]}〜` : `${fmtDateJa(e.startDate)} ${time}`
+  const day = dayParts(e.startDate)
   const url = safeHref(e.externalUrl)
   return {
     id: String(e.id),
     href: url ?? '/events',
     external: Boolean(url),
-    imageUrl: thumb ?? null,
-    cover: PLATFORM_LABELS[e.platform ?? 'other'] ?? 'Event',
-    attr: PLATFORM_LABELS[e.platform ?? 'other'] ?? 'イベント',
     title: e.title,
-    label: e.title,
-    desc: when,
+    platform: PLATFORM_LABELS[e.platform ?? 'other'] ?? 'イベント',
+    year: day?.year,
+    month: day?.month,
+    day: day?.day,
+    weekday: day?.weekday,
+    time,
     live: isLiveNow(e.startDate, e.endDate),
+    note: withNote ? e.summary : null,
   }
 }
 
-/** つくったもの → タブカード */
-export function productCard(p: ProductLike): TabCardView {
-  const image = uploadUrl(p.image)
+/** つくったもの → ステッカー（withDesc: 一覧ページでは説明も添える） */
+export function productSticker(p: ProductLike, withDesc = false): StickerView {
   const url = safeHref(p.url)
   return {
     id: String(p.id),
     href: url ?? '/products',
     external: Boolean(url),
-    imageUrl: image ?? null,
-    cover: p.name,
-    attr: p.tags?.[0] || 'つくったもの',
-    title: p.name,
-    label: p.name,
+    imageUrl: uploadUrl(p.image),
+    name: p.name,
+    tag: p.tags?.[0] || 'つくったもの',
+    desc: withDesc ? p.description : null,
   }
 }
 

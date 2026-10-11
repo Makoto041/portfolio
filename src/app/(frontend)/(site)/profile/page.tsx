@@ -158,11 +158,9 @@ export default async function ProfilePage() {
           {/* Spotify（SiteSettings.spotify.playlistUrl 設定時のみ） */}
           {spotifyEmbed && (
             <section className="s-spotify" aria-labelledby="h-spotify">
-              <div className="s-sh">
-                <h2 id="h-spotify">
-                  いま聴いてる<span className="s-en">Spotify</span>
-                </h2>
-              </div>
+              <h2 id="h-spotify" className="s-spotify-h">
+                いま聴いてる <span>Spotify</span>
+              </h2>
               <iframe
                 src={spotifyEmbed}
                 height={352}
