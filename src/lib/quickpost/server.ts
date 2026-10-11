@@ -12,6 +12,7 @@ import {
   createLocalReq,
   initTransaction,
   killTransaction,
+  NotFound,
   ValidationError,
   type Payload,
   type PayloadRequest,
@@ -360,7 +361,8 @@ export async function createSession(
 /**
  * 1台ごとの回数制限を1回分使う。使えたら true。
  * 読んでから書く方式だと同時に送られた分を数え漏らすため、1回の UPDATE で
- * 「時間枠が過ぎていれば数え直し、上限未満なら 1 足す」を行い、更新できた行があるかで判定する
+ * 「時間枠が過ぎていれば数え直し、上限未満なら 1 足す」を行い、更新できた行があるかで判定する。
+ * SQL を直接流すので withTransaction の中では呼ばない（そのトランザクションが持つ行ロックを待ち続ける）
  */
 export async function consumeRate(
   payload: Payload,
@@ -383,7 +385,10 @@ export async function consumeRate(
   return (result.rows?.length ?? 0) > 0
 }
 
-/** 投稿したことを記録する。投稿数は同時に送られても数え漏らさないよう、読まずに SQL で 1 足す */
+/**
+ * 投稿したことを記録する。投稿数は同時に送られても数え漏らさないよう、読まずに SQL で 1 足す。
+ * consumeRate と同じく withTransaction の中では呼ばない
+ */
 export async function recordPost(payload: Payload, sessionId: ID, at: string): Promise<void> {
   await payload.db.drizzle.execute(sql`
     UPDATE post_sessions SET
@@ -436,7 +441,9 @@ export async function claimPostReceipt(payload: Payload, key: string): Promise<R
       // 途中で落ちた受付票は取り直す（同時に取り直した相手が先に消していても、そのまま作り直しへ）
       await payload
         .delete({ collection: 'quickpost-nonces', id: receipt.id, overrideAccess: true })
-        .catch(() => {})
+        .catch((e) => {
+          if (!(e instanceof NotFound)) console.error('quickpost: failed to drop stale receipt', e)
+        })
     }
   }
   return { status: 'busy' }

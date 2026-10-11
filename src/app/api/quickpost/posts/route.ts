@@ -130,7 +130,10 @@ export async function POST(req: NextRequest) {
         await releasePostReceipt(payload, receiptId)
       } else {
         // 投稿はできている。受付票に結果を残せていなければもう一度試す（再送で二重にしない）
-        await completePostReceipt(payload, receiptId, postId).catch(() => {})
+        await completePostReceipt(payload, receiptId, postId).catch((e) =>
+          // ここも失敗すると、2分後の再送で同じ投稿がもう1件できうる
+          console.error(`quickpost: post ${postId} created but its receipt was not completed`, e),
+        )
       }
       throw e
     }
