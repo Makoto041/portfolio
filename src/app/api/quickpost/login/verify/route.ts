@@ -75,7 +75,13 @@ export async function POST(req: NextRequest) {
 
     const userId = relId(passkey.user)
     const user = userId
-      ? await payload.findByID({ collection: 'users', id: userId, depth: 0, overrideAccess: true, disableErrors: true })
+      ? await payload.findByID({
+          collection: 'users',
+          id: userId,
+          depth: 0,
+          overrideAccess: true,
+          disableErrors: true,
+        })
       : null
     if (!user) return done(401, { error: 'verification_failed' })
 
@@ -83,7 +89,11 @@ export async function POST(req: NextRequest) {
     await payload.update({
       collection: 'passkeys',
       id: passkey.id,
-      data: { counter: newCounter, backedUp: credentialBackedUp, lastUsedAt: new Date().toISOString() },
+      data: {
+        counter: newCounter,
+        backedUp: credentialBackedUp,
+        lastUsedAt: new Date().toISOString(),
+      },
       depth: 0,
       overrideAccess: true,
     })

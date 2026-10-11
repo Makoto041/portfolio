@@ -9,8 +9,19 @@ import {
   shouldTouch,
   takeRate,
 } from '@/lib/quickpost/policy'
-import { isSessionTokenShape, newSessionToken, sha256Hex, signTicket, userHandle, verifyTicket } from '@/lib/quickpost/tokens'
-import { asAuthenticationResponse, asRegistrationResponse, parseTransports } from '@/lib/quickpost/webauthn'
+import {
+  isSessionTokenShape,
+  newSessionToken,
+  sha256Hex,
+  signTicket,
+  userHandle,
+  verifyTicket,
+} from '@/lib/quickpost/tokens'
+import {
+  asAuthenticationResponse,
+  asRegistrationResponse,
+  parseTransports,
+} from '@/lib/quickpost/webauthn'
 
 const SECRET = 'test-secret'
 const HOUR = 3_600_000
@@ -32,7 +43,9 @@ describe('ログイン Cookie の値', () => {
   })
 
   it('DB には SHA-256 だけを保存する', () => {
-    expect(sha256Hex('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad')
+    expect(sha256Hex('abc')).toBe(
+      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+    )
   })
 })
 
@@ -136,7 +149,11 @@ describe('1台ごとの回数制限', () => {
     expect(takeRate(full, 'posts', limits, t0 + HOUR - 1).ok).toBe(false)
     const fresh = takeRate(full, 'posts', limits, t0 + HOUR)
     expect(fresh.ok).toBe(true)
-    expect(fresh.next).toEqual({ rlWindowStart: new Date(t0 + HOUR).toISOString(), rlPosts: 1, rlPhotos: 0 })
+    expect(fresh.next).toEqual({
+      rlWindowStart: new Date(t0 + HOUR).toISOString(),
+      rlPosts: 1,
+      rlPhotos: 0,
+    })
   })
 
   it('IP ごとの制限は枠の中の回数を超えると断る', () => {
@@ -161,7 +178,9 @@ describe('送信元の確認（CSRF）', () => {
   it('Origin が無い・違う・同じサイトの別オリジン・ほかのサイトからは断る', () => {
     expect(isSameOriginRequest(h({}), origin)).toBe(false)
     expect(isSameOriginRequest(h({ origin: 'https://evil.example' }), origin)).toBe(false)
-    expect(isSameOriginRequest(h({ origin: 'https://iwabuchi-makoto.com.evil.example' }), origin)).toBe(false)
+    expect(
+      isSameOriginRequest(h({ origin: 'https://iwabuchi-makoto.com.evil.example' }), origin),
+    ).toBe(false)
     expect(isSameOriginRequest(h({ origin: 'http://iwabuchi-makoto.com' }), origin)).toBe(false)
     expect(isSameOriginRequest(h({ origin, 'sec-fetch-site': 'same-site' }), origin)).toBe(false)
     expect(isSameOriginRequest(h({ origin, 'sec-fetch-site': 'cross-site' }), origin)).toBe(false)
@@ -173,10 +192,21 @@ describe('投稿の入力チェック', () => {
   const key = '9b2c3f4e-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
 
   it('本文・種類・写真・キーを受け付け、正規化する', () => {
-    const r = parseQuickPost({ text: '  こんにちは\r\n2行目\u0000 ', postType: 'travel', images: [3, 3, 5], key: key.toUpperCase() })
+    const r = parseQuickPost({
+      text: '  こんにちは\r\n2行目\u0000 ',
+      postType: 'travel',
+      images: [3, 3, 5],
+      key: key.toUpperCase(),
+    })
     expect(r).toEqual({
       ok: true,
-      value: { text: 'こんにちは\n2行目', title: undefined, postType: 'travel', images: [3, 5], key },
+      value: {
+        text: 'こんにちは\n2行目',
+        title: undefined,
+        postType: 'travel',
+        images: [3, 5],
+        key,
+      },
     })
   })
 
@@ -215,10 +245,22 @@ describe('投稿の入力チェック', () => {
 
 describe('端末の名前', () => {
   it.each([
-    ['Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1', 'iPhone（Safari）'],
-    ['Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36', 'Mac（Chrome）'],
-    ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0', 'Windows（Edge）'],
-    ['Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36', 'Android（Chrome）'],
+    [
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+      'iPhone（Safari）',
+    ],
+    [
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+      'Mac（Chrome）',
+    ],
+    [
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0',
+      'Windows（Edge）',
+    ],
+    [
+      'Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36',
+      'Android（Chrome）',
+    ],
     ['', '端末'],
   ])('%s → %s', (ua, label) => {
     expect(deviceLabel(ua)).toBe(label)
@@ -230,7 +272,12 @@ describe('パスキーの応答の形', () => {
     id: 'Y3JlZA',
     rawId: 'Y3JlZA',
     type: 'public-key',
-    response: { clientDataJSON: 'e30', authenticatorData: 'YXV0aA', signature: 'c2ln', userHandle: 'dXNlcg' },
+    response: {
+      clientDataJSON: 'e30',
+      authenticatorData: 'YXV0aA',
+      signature: 'c2ln',
+      userHandle: 'dXNlcg',
+    },
     clientExtensionResults: { evil: true },
     authenticatorAttachment: 'platform',
     extra: 'dropped',
@@ -241,7 +288,12 @@ describe('パスキーの応答の形', () => {
       id: 'Y3JlZA',
       rawId: 'Y3JlZA',
       type: 'public-key',
-      response: { clientDataJSON: 'e30', authenticatorData: 'YXV0aA', signature: 'c2ln', userHandle: 'dXNlcg' },
+      response: {
+        clientDataJSON: 'e30',
+        authenticatorData: 'YXV0aA',
+        signature: 'c2ln',
+        userHandle: 'dXNlcg',
+      },
       clientExtensionResults: {},
       authenticatorAttachment: 'platform',
     })
@@ -251,7 +303,9 @@ describe('パスキーの応答の形', () => {
     expect(asAuthenticationResponse({ ...auth, type: 'password' })).toBeNull()
     expect(asAuthenticationResponse({ ...auth, id: 'not base64url!' })).toBeNull()
     expect(asAuthenticationResponse({ ...auth, id: { $ne: null } })).toBeNull()
-    expect(asAuthenticationResponse({ ...auth, response: { ...auth.response, signature: '' } })).toBeNull()
+    expect(
+      asAuthenticationResponse({ ...auth, response: { ...auth.response, signature: '' } }),
+    ).toBeNull()
     expect(asAuthenticationResponse('x')).toBeNull()
   })
 
@@ -260,10 +314,20 @@ describe('パスキーの応答の形', () => {
       id: 'Y3JlZA',
       rawId: 'Y3JlZA',
       type: 'public-key',
-      response: { clientDataJSON: 'e30', attestationObject: 'YXR0', transports: ['internal', 'hybrid', 'evil'] },
+      response: {
+        clientDataJSON: 'e30',
+        attestationObject: 'YXR0',
+        transports: ['internal', 'hybrid', 'evil'],
+      },
     })
-    expect(reg?.response).toEqual({ clientDataJSON: 'e30', attestationObject: 'YXR0', transports: ['internal', 'hybrid'] })
-    expect(asRegistrationResponse({ id: 'Y3JlZA', rawId: 'Y3JlZA', type: 'public-key', response: {} })).toBeNull()
+    expect(reg?.response).toEqual({
+      clientDataJSON: 'e30',
+      attestationObject: 'YXR0',
+      transports: ['internal', 'hybrid'],
+    })
+    expect(
+      asRegistrationResponse({ id: 'Y3JlZA', rawId: 'Y3JlZA', type: 'public-key', response: {} }),
+    ).toBeNull()
   })
 
   it('保存した通信手段の文字列を戻す', () => {

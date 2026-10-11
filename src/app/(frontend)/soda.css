@@ -146,14 +146,14 @@
 .soda .s-pill .s-ico { width: 18px; height: 18px; }
 /* 見た目は 40px のまま、タップ領域を 44px に */
 .soda .s-pill::after { content: ''; position: absolute; inset: -2px 0; }
-.soda .s-pill:active { background: var(--s-ink); color: var(--s-bg); }
+.soda .s-pill:not(:disabled):active { background: var(--s-ink); color: var(--s-bg); }
 @media (hover: hover) {
-  .soda .s-pill:hover { background: var(--s-ink); color: var(--s-bg); }
+  .soda .s-pill:not(:disabled):hover { background: var(--s-ink); color: var(--s-bg); }
 }
 .soda .s-pill.is-solid { background: var(--s-ink); color: var(--s-bg); }
-.soda .s-pill.is-solid:active { background: transparent; color: var(--s-ink); }
+.soda .s-pill.is-solid:not(:disabled):active { background: transparent; color: var(--s-ink); }
 @media (hover: hover) {
-  .soda .s-pill.is-solid:hover { background: transparent; color: var(--s-ink); }
+  .soda .s-pill.is-solid:not(:disabled):hover { background: transparent; color: var(--s-ink); }
 }
 .soda .s-pill:disabled { opacity: 0.5; cursor: default; }
 .soda .s-iconbtn {
@@ -272,8 +272,7 @@
 }
 .soda .s-hdr-nav a[aria-current='page'] { background: var(--s-ink); color: var(--s-bg); }
 .soda .s-hdr-right { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
-.soda .s-hdr-right .s-mailbtn,
-.soda .s-hdr-right .s-postbtn { display: none; }
+.soda .s-hdr-right .s-mailbtn { display: none; }
 /* ホーム最上部では題字が主役：小ロゴを隠し、帯を透明に */
 .soda .s-hdr.is-top { background: transparent; border-bottom-color: transparent; }
 .soda .s-hdr.is-top .s-logo-s { opacity: 0; transform: translateY(6px); pointer-events: none; }
@@ -286,8 +285,7 @@
   .soda .s-hdr-right .s-letterpill,
   .soda .s-hdr-right .s-postpill,
   .soda .s-hdr-right .s-menubtn { display: none; }
-  .soda .s-hdr-right .s-mailbtn,
-  .soda .s-hdr-right .s-postbtn { display: inline-grid; }
+  .soda .s-hdr-right .s-mailbtn { display: inline-grid; }
   /* ホームは帯の高さ分だけ題字を持ち上げ、最上部の透明な帯にカバーラインを差し込む
      （is-top の切替に依らず常に持ち上げるので、スクロール中にレイアウトがずれない） */
   .soda .s-hdr.is-home { margin-bottom: calc(-1 * var(--s-header-h)); }
@@ -332,8 +330,6 @@
   /* 1行目を帯の中央に置き、右端はお便りアイコンを避ける */
   .soda .s-main.is-home .s-mast { padding-top: 16px; }
   .soda .s-main.is-home .s-coverline > :last-child { padding-right: 48px; }
-  /* 最上部の透明な帯はカバーラインが使うので、投稿ボタンは帯に切り替わってから出す（号数と重ねない） */
-  .soda .s-hdr.is-home.is-top .s-postbtn { display: none; }
 }
 @media (min-width: 761px) {
   .soda .s-mast {
@@ -1013,7 +1009,8 @@
 }
 
 /* ══════════════ SP ドック（親指で届くナビ） ══════════════ */
-.soda .s-dock { display: none; }
+.soda .s-dock,
+.soda .s-postfab { display: none; }
 @media (max-width: 760px) {
   .soda .s-dock {
     position: fixed;
@@ -1052,6 +1049,23 @@
     transition: background 0.2s, color 0.2s;
   }
   .soda .s-dock .s-ico { width: 23px; height: 23px; }
+  /* さっと投稿にログインした端末だけ: 親指で届く右下（ドックの上）に丸い「投稿」ボタン。
+     地色の縁取りで、下を流れる本文と切り離す */
+  .soda .s-postfab {
+    position: fixed;
+    z-index: 25;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: calc(12px + 64px + 12px + env(safe-area-inset-bottom, 0px));
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--s-ink);
+    color: var(--s-bg);
+    box-shadow: 0 0 0 3px var(--s-bg);
+  }
+  .soda .s-postfab .s-ico { width: 24px; height: 24px; }
   .soda .s-dock [aria-current='page'] { background: var(--s-ink); color: var(--s-bg); }
 }
 
@@ -1465,6 +1479,8 @@
   border-bottom: 1px solid var(--s-ink);
   background: var(--s-bg);
 }
+/* 帯の中身は本文の1段と同じ幅にそろえる（PC で両端に離れないように） */
+.soda .s-qp-bar-in { display: flex; align-items: center; gap: 10px; width: 100%; max-width: var(--s-qp-w); margin-inline: auto; }
 .soda .s-qp-logo { font-family: var(--s-font-logo); font-size: 24px; line-height: 1; text-decoration: none; }
 .soda .s-qp-ttl { font-size: var(--s-fs-ui); font-weight: 700; letter-spacing: 0.08em; }
 .soda .s-qp-state {
@@ -1483,13 +1499,14 @@
   cursor: pointer;
 }
 .soda .s-qp-state .s-ico { width: 16px; height: 16px; }
-.soda .s-qp-state[aria-pressed='true'] { border-color: var(--s-ink); color: var(--s-ink); }
+.soda .s-qp-state.is-on { border-color: var(--s-ink); color: var(--s-ink); }
 .soda .s-qp-main {
   flex: 1;
   width: 100%;
   max-width: calc(var(--s-qp-w) + 2 * var(--s-gut));
   margin-inline: auto;
-  padding: 20px max(var(--s-gut), env(safe-area-inset-right, 0px)) 28px max(var(--s-gut), env(safe-area-inset-left, 0px));
+  padding: 20px max(var(--s-gut), env(safe-area-inset-right, 0px)) calc(28px + env(safe-area-inset-bottom, 0px))
+    max(var(--s-gut), env(safe-area-inset-left, 0px));
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1571,7 +1588,8 @@
 .soda .s-qp-text:focus-visible { outline-offset: 1px; }
 .soda .s-qp-form .s-qp-wide { margin-top: 12px; }
 /* 投稿 */
-.soda .s-qp-compose { display: flex; flex-direction: column; gap: 14px; }
+/* 中身が短くても投稿ボタンは画面の下に置く（.s-qp-main が画面の高さを埋める） */
+.soda .s-qp-compose { flex: 1; display: flex; flex-direction: column; gap: 14px; }
 .soda .s-qp-text {
   width: 100%;
   min-height: 168px;
@@ -1584,6 +1602,9 @@
   font: inherit;
   font-size: var(--s-fs-post);
   line-height: 1.8;
+  /* 対応ブラウザでは書いた分だけ伸ばす */
+  field-sizing: content;
+  max-height: 60dvh;
 }
 .soda .s-qp-meta { display: flex; justify-content: space-between; gap: 8px; margin: -6px 0 0; font-size: var(--s-fs-cap); color: var(--s-faint); }
 .soda .s-qp-meta .is-over { color: var(--s-ink); font-weight: 700; }
@@ -1646,8 +1667,8 @@
   position: sticky;
   bottom: 0;
   display: grid;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 8px;
+  margin-top: auto;
   padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--s-ink);
   background: var(--s-bg);
@@ -1672,9 +1693,8 @@
   border-radius: 50%;
   background: var(--s-ink);
   color: var(--s-card);
-  font-size: 26px;
-  line-height: 1;
 }
+.soda .s-qp-check .s-ico { width: 28px; height: 28px; stroke-width: 2.2; }
 /* ログイン状態 */
 .soda .s-qp-account { display: grid; gap: 10px; }
 .soda .s-qp-sect { margin: 10px 0 0; font-size: var(--s-fs-cap); font-weight: 700; letter-spacing: 0.1em; color: var(--s-sub); }

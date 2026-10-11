@@ -67,7 +67,13 @@ export const Passkeys: CollectionConfig = {
       access: { update: never },
       admin: { hidden: true },
     },
-    { name: 'counter', type: 'number', defaultValue: 0, access: { update: never }, admin: { hidden: true } },
+    {
+      name: 'counter',
+      type: 'number',
+      defaultValue: 0,
+      access: { update: never },
+      admin: { hidden: true },
+    },
     { name: 'transports', type: 'text', access: { update: never }, admin: { hidden: true } },
     {
       name: 'backedUp',

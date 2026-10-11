@@ -12,7 +12,12 @@ import { PALETTES, currentPalette } from '@/lib/palette'
 export const metadata: Metadata = {
   title: '投稿 | MAKOTO',
   // 自分専用の画面なので検索に出さない
-  robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: { index: false, follow: false },
+  },
   // ホーム画面に追加したとき /post から開く
   manifest: '/post.webmanifest',
   icons: { icon: '/myicon.png', apple: '/myicon.png' },

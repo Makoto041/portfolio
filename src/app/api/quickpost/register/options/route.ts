@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
   const body = (await readJson(req, 4096)) as { email?: unknown; password?: unknown } | undefined
   const email = typeof body?.email === 'string' ? body.email.trim() : ''
   const password = typeof body?.password === 'string' ? body.password : ''
-  if (!email || !password || email.length > 254 || password.length > 1024) return fail(400, 'invalid_body')
+  if (!email || !password || email.length > 254 || password.length > 1024)
+    return fail(400, 'invalid_body')
 
   try {
     const payload = await getPayloadClient()

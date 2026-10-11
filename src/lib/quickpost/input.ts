@@ -49,7 +49,8 @@ export function normalizeText(raw: string): string {
 }
 
 export function parseQuickPost(body: unknown): ParseResult {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return { ok: false, error: 'invalid_body' }
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    return { ok: false, error: 'invalid_body' }
   const b = body as Record<string, unknown>
 
   if (typeof b.text !== 'string') return { ok: false, error: 'text_required' }
@@ -72,7 +73,8 @@ export function parseQuickPost(body: unknown): ParseResult {
   }
 
   const rawImages = b.images === undefined ? [] : b.images
-  if (!Array.isArray(rawImages) || rawImages.length > LIMITS.images) return { ok: false, error: 'invalid_images' }
+  if (!Array.isArray(rawImages) || rawImages.length > LIMITS.images)
+    return { ok: false, error: 'invalid_images' }
   if (!rawImages.every((id) => typeof id === 'number' && Number.isSafeInteger(id) && id > 0)) {
     return { ok: false, error: 'invalid_images' }
   }
@@ -80,7 +82,16 @@ export function parseQuickPost(body: unknown): ParseResult {
 
   if (typeof b.key !== 'string' || !UUID_V4.test(b.key)) return { ok: false, error: 'invalid_key' }
 
-  return { ok: true, value: { text, title, postType: postType as TimelinePostType, images, key: b.key.toLowerCase() } }
+  return {
+    ok: true,
+    value: {
+      text,
+      title,
+      postType: postType as TimelinePostType,
+      images,
+      key: b.key.toLowerCase(),
+    },
+  }
 }
 
 /** 端末の名前（ログイン中の端末の一覧に出す）。User-Agent から大まかに判定する */

@@ -8,7 +8,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { browserSupportsWebAuthn, startAuthentication, startRegistration } from '@simplewebauthn/browser'
+import {
+  browserSupportsWebAuthn,
+  startAuthentication,
+  startRegistration,
+} from '@simplewebauthn/browser'
 import SodaIcon from '@/components/soda/SodaIcon'
 import { LIMITS, POST_TYPES } from '@/lib/quickpost/input'
 import { TYPE_LABELS } from '@/lib/timeline'
@@ -18,7 +22,13 @@ type Limits = { text: number; title: number; images: number; photoBytes: number 
 
 type SessionInfo = {
   loggedIn: true
-  device: { name: string; createdAt: string; lastUsedAt: string; idleUntil: string; expiresAt: string }
+  device: {
+    name: string
+    createdAt: string
+    lastUsedAt: string
+    idleUntil: string
+    expiresAt: string
+  }
   others: { name: string; lastUsedAt: string }[]
   passkeys: { name: string; createdAt: string; lastUsedAt: string | null; backedUp: boolean }[]
   limits: Limits
@@ -54,7 +64,9 @@ function loadDraft(): Draft | null {
       text: d.text,
       title: typeof d.title === 'string' ? d.title : '',
       showTitle: Boolean(d.showTitle),
-      postType: (POST_TYPES as readonly string[]).includes(d.postType ?? '') ? (d.postType as string) : 'diary',
+      postType: (POST_TYPES as readonly string[]).includes(d.postType ?? '')
+        ? (d.postType as string)
+        : 'diary',
       key: d.key,
     }
   } catch {
@@ -103,8 +115,20 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
 
 const chars = (s: string) => Array.from(s).length
 
-const fmtDay = (iso: string) =>
-  new Intl.DateTimeFormat('ja-JP', { month: 'long', day: 'numeric', timeZone: 'Asia/Tokyo' }).format(new Date(iso))
+const tokyoYear = (d: Date) =>
+  new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: 'Asia/Tokyo' }).format(d)
+
+/** 「11月10日」。今年でなければ「2027年1月9日」 */
+function fmtDay(iso: string): string {
+  const d = new Date(iso)
+  const withYear = tokyoYear(d) !== tokyoYear(new Date())
+  return new Intl.DateTimeFormat('ja-JP', {
+    ...(withYear ? { year: 'numeric' } : {}),
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'Asia/Tokyo',
+  }).format(d)
+}
 
 function fmtAgo(iso: string): string {
   const days = Math.floor((Date.now() - Date.parse(iso)) / 86_400_000)
@@ -150,7 +174,7 @@ function passkeyMessage(e: unknown, mode: 'login' | 'register'): string {
   if (name === 'NotAllowedError' || name === 'AbortError') {
     return mode === 'login'
       ? 'ログインできませんでした。キャンセルしたか、この端末にパスキーがありません。初めての端末なら「この端末を登録」から始めてください。'
-      : '登録をキャンセルしました。'
+      : '登録をキャンセルしました。パスワードをもう一度入れて「確認して登録する」を押してください。'
   }
   if (e instanceof ApiError) {
     if (e.status === 401 && mode === 'register') {
@@ -160,9 +184,12 @@ function passkeyMessage(e: unknown, mode: 'login' | 'register'): string {
       return 'このパスキーは使えなくなっています（管理画面で削除されています）。「この端末を登録」からもう一度登録してください。'
     }
     if (e.code === 'challenge_expired') return '時間が経ちすぎました。もう一度押してください。'
-    if (e.status === 429) return '短い時間に試しすぎています。少し待ってからもう一度お試しください。'
+    if (e.status === 429)
+      return '短い時間に試しすぎています。少し待ってからもう一度お試しください。'
   }
-  return mode === 'login' ? 'ログインできませんでした。もう一度お試しください。' : '登録できませんでした。もう一度お試しください。'
+  return mode === 'login'
+    ? 'ログインできませんでした。もう一度お試しください。'
+    : '登録できませんでした。もう一度お試しください。'
 }
 
 export default function QuickPostApp() {
@@ -179,6 +206,7 @@ export default function QuickPostApp() {
   const [webauthn, setWebauthn] = useState(true)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLInputElement>(null)
   const photosRef = useRef<Photo[]>([])
   photosRef.current = photos
 
@@ -320,6 +348,10 @@ export default function QuickPostApp() {
       setError('本文を書いてください。')
       return
     }
+    if (chars(text) > limits.text) {
+      setError(`本文は${limits.text}文字までです。`)
+      return
+    }
     setError('')
     const queue = [...photos]
     try {
@@ -378,6 +410,11 @@ export default function QuickPostApp() {
 
   const loggedIn = Boolean(info)
   const textCount = draft ? chars(draft.text) : 0
+  const sendingText = sending
+    ? sending.step === 'photos'
+      ? `写真を送っています（${sending.done + 1} / ${sending.total}）`
+      : '投稿しています…'
+    : ''
 
   const errorBox = error ? (
     <p className="s-qp-error" role="alert">
@@ -399,7 +436,7 @@ export default function QuickPostApp() {
         <h1 id="qp-h" ref={headingRef} tabIndex={-1} className="s-qp-h">
           つながりませんでした
         </h1>
-        <p className="s-qp-note">電波のよい所で、もう一度開いてください。</p>
+        <p className="s-qp-note">電波のよい所で、もう一度読み込んでください。</p>
         <button type="button" className="s-pill is-solid s-qp-wide" onClick={() => void refresh()}>
           もう一度読み込む
         </button>
@@ -411,20 +448,27 @@ export default function QuickPostApp() {
         <section className="s-qp-card s-qp-center" aria-labelledby="qp-h">
           <SodaIcon name="face" className="s-qp-bigico" />
           <h1 id="qp-h" ref={headingRef} tabIndex={-1} className="s-qp-h">
-            Face ID でログイン
+            パスキーでログイン
           </h1>
           <p className="s-qp-note">
-            登録したパスキーで確認します。
+            Face ID・Touch ID で確認します。
             <br />
             パスワードは使いません。
           </p>
           {webauthn ? (
-            <button type="button" className="s-pill is-solid s-qp-wide" onClick={() => void login()} disabled={busy}>
+            <button
+              type="button"
+              className="s-pill is-solid s-qp-wide"
+              onClick={() => void login()}
+              disabled={busy}
+            >
               <SodaIcon name="face" />
               {busy ? '確認しています…' : 'ログインする'}
             </button>
           ) : (
-            <p className="s-qp-note">このブラウザはパスキーに対応していません。Safari か Chrome で開いてください。</p>
+            <p className="s-qp-note">
+              このブラウザはパスキーに対応していません。Safari か Chrome で開いてください。
+            </p>
           )}
           {errorBox}
         </section>
@@ -441,10 +485,11 @@ export default function QuickPostApp() {
           <h1 id="qp-h" ref={headingRef} tabIndex={-1} className="s-qp-h s-qp-center">
             この端末を登録
           </h1>
-          <ol className="s-qp-steps">
+          {/* list-style を消すと Safari が一覧として読まないため role を付ける */}
+          <ol className="s-qp-steps" role="list">
             <li>管理画面のメールアドレスとパスワードを入れる</li>
             <li>「確認して登録する」を押す</li>
-            <li>Face ID で確認したら完了</li>
+            <li>Face ID・Touch ID で確認したら完了</li>
           </ol>
           <form className="s-qp-form" onSubmit={(ev) => void register(ev)}>
             <label className="s-qp-label" htmlFor="qp-email">
@@ -472,7 +517,11 @@ export default function QuickPostApp() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <button type="submit" className="s-pill is-solid s-qp-wide" disabled={busy || !webauthn}>
+            <button
+              type="submit"
+              className="s-pill is-solid s-qp-wide"
+              disabled={busy || !webauthn}
+            >
               <SodaIcon name="face" />
               {busy ? '確認しています…' : '確認して登録する'}
             </button>
@@ -480,7 +529,8 @@ export default function QuickPostApp() {
           {errorBox}
         </section>
         <p className="s-qp-note">
-          パスキーは iCloud キーチェーンに入り、このサイトでしか使えません。同じ Apple ID の Mac でもそのまま使えます。
+          パスキーは iCloud キーチェーンに入り、このサイトでしか使えません。同じ Apple ID の Mac
+          でもそのまま使えます。
           サーバーには公開鍵しか届かないので、サーバーから漏れてもログインには使えません。
         </p>
         <button type="button" className="s-qp-link" onClick={() => go('login')}>
@@ -575,7 +625,12 @@ export default function QuickPostApp() {
           className="s-qp-link"
           aria-expanded={draft.showTitle}
           aria-controls="qp-title"
-          onClick={() => setDraft({ ...draft, showTitle: !draft.showTitle })}
+          onClick={() => {
+            const open = !draft.showTitle
+            setDraft({ ...draft, showTitle: open })
+            // 開いたら入力欄へ（タップの流れの中で呼ぶので iOS でもキーボードが開く）
+            if (open) window.setTimeout(() => titleRef.current?.focus(), 0)
+          }}
         >
           {draft.showTitle ? '－ タイトルを閉じる' : '＋ タイトルを付ける'}
         </button>
@@ -585,36 +640,47 @@ export default function QuickPostApp() {
           </label>
           <input
             id="qp-title-input"
+            ref={titleRef}
             className="s-qp-input"
             type="text"
             placeholder="タイトル（なくても投稿できます）"
             maxLength={limits.title}
+            enterKeyHint="done"
             value={draft.title}
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+            // タイトル欄の Enter で投稿まで送らない
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                e.currentTarget.blur()
+              }
+            }}
           />
         </div>
 
-        {sending && (
-          <div className="s-qp-paper" role="status">
-            <p className="s-qp-strong">
-              {sending.step === 'photos'
-                ? `写真を送っています（${sending.done + 1} / ${sending.total}）`
-                : '投稿しています…'}
-            </p>
-            <div className="s-qp-track" aria-hidden="true">
-              <i
-                style={{
-                  width:
-                    sending.step === 'photos' ? `${Math.round((sending.done / (sending.total + 1)) * 100)}%` : '92%',
-                }}
-              />
-            </div>
-            <p className="s-qp-note">サーバーで写真を作り直し、位置情報などの撮影データを消してから保存します。</p>
-          </div>
-        )}
-        {errorBox}
-
+        {/* 送信中の様子とエラーは、押したボタンのすぐ上（画面の下）に出す */}
         <div className="s-qp-dock">
+          {sending && (
+            <div className="s-qp-paper">
+              <p className="s-qp-strong" aria-hidden="true">
+                {sendingText}
+              </p>
+              <div className="s-qp-track" aria-hidden="true">
+                <i
+                  style={{
+                    width:
+                      sending.step === 'photos'
+                        ? `${Math.round((sending.done / (sending.total + 1)) * 100)}%`
+                        : '92%',
+                  }}
+                />
+              </div>
+              <p className="s-qp-note">
+                サーバーで写真を作り直し、位置情報などの撮影データを消してから保存します。
+              </p>
+            </div>
+          )}
+          {errorBox}
           <button type="submit" className="s-pill is-solid s-qp-wide" disabled={Boolean(sending)}>
             <SodaIcon name="pencil" />
             {sending ? '送っています…' : '投稿する'}
@@ -627,13 +693,16 @@ export default function QuickPostApp() {
     body = (
       <section className="s-qp-done" aria-labelledby="qp-h">
         <span className="s-qp-check" aria-hidden="true">
-          ✓
+          <SodaIcon name="check" />
         </span>
         <h1 id="qp-h" ref={headingRef} tabIndex={-1} className="s-qp-h">
           投稿しました
         </h1>
         <p className="s-qp-note">数秒でタイムラインに出ます。</p>
-        <a className="s-pill is-solid s-qp-wide" href={doneId ? `/timeline#post-${doneId}` : '/timeline'}>
+        <a
+          className="s-pill is-solid s-qp-wide"
+          href={doneId ? `/timeline#post-${doneId}` : '/timeline'}
+        >
           タイムラインで見る
         </a>
         <button type="button" className="s-pill s-qp-wide" onClick={() => go('compose')}>
@@ -654,7 +723,8 @@ export default function QuickPostApp() {
           </p>
           <p>ログイン: {fmtDay(info.device.createdAt)}</p>
           <p>
-            使わなければ {fmtDay(info.device.idleUntil)} に自動ログアウト（最長 {fmtDay(info.device.expiresAt)}）
+            使わなければ {fmtDay(info.device.idleUntil)} に自動ログアウト（最長{' '}
+            {fmtDay(info.device.expiresAt)}）
           </p>
         </div>
         {info.others.length > 0 && (
@@ -683,10 +753,20 @@ export default function QuickPostApp() {
           ))}
         </ul>
         <div className="s-qp-actions">
-          <button type="button" className="s-pill s-qp-wide" onClick={() => void logout('this')} disabled={busy}>
+          <button
+            type="button"
+            className="s-pill s-qp-wide"
+            onClick={() => void logout('this')}
+            disabled={busy}
+          >
             この端末からログアウト
           </button>
-          <button type="button" className="s-pill s-qp-wide" onClick={() => void logout('all')} disabled={busy}>
+          <button
+            type="button"
+            className="s-pill s-qp-wide"
+            onClick={() => void logout('all')}
+            disabled={busy}
+          >
             すべての端末からログアウト
           </button>
         </div>
@@ -705,29 +785,40 @@ export default function QuickPostApp() {
   return (
     <div className="soda s-qp">
       <header className="s-qp-bar">
-        {loggedIn ? (
-          <Link href="/" className="s-iconbtn" aria-label="サイトに戻る">
-            <SodaIcon name="arrow-left" />
-          </Link>
-        ) : (
-          <Link href="/" className="s-qp-logo" aria-label="いわぶちまこと ホームへ">
-            MAKOTO
-          </Link>
-        )}
-        <span className="s-qp-ttl">投稿</span>
-        {loggedIn && (
-          <button
-            type="button"
-            className="s-qp-state"
-            onClick={() => go(view === 'account' ? 'compose' : 'account')}
-            aria-pressed={view === 'account'}
-          >
-            <SodaIcon name="lock" />
-            ログイン中
-          </button>
-        )}
+        <div className="s-qp-bar-in">
+          {loggedIn ? (
+            <Link href="/" className="s-iconbtn" aria-label="サイトに戻る">
+              <SodaIcon name="arrow-left" />
+            </Link>
+          ) : (
+            <Link href="/" className="s-qp-logo" aria-label="いわぶちまこと ホームへ">
+              MAKOTO
+            </Link>
+          )}
+          <span className="s-qp-ttl">投稿</span>
+          {loggedIn && (
+            <button
+              type="button"
+              className={`s-qp-state${view === 'account' ? ' is-on' : ''}`}
+              onClick={() => go(view === 'account' ? 'compose' : 'account')}
+            >
+              <SodaIcon name="lock" />
+              ログイン中
+              <span className="sr-only">
+                {view === 'account' ? '（投稿に戻る）' : '（ログイン状態を見る）'}
+              </span>
+            </button>
+          )}
+        </div>
       </header>
-      <main id="main" className={`s-qp-main${view === 'login' || view === 'offline' ? ' is-center' : ''}`}>
+      <main
+        id="main"
+        className={`s-qp-main${view === 'login' || view === 'offline' ? ' is-center' : ''}`}
+      >
+        {/* 送信の進み具合を読み上げる（領域は常に置いておく） */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {sendingText}
+        </p>
         {body}
       </main>
     </div>

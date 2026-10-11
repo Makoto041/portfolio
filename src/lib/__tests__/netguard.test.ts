@@ -20,9 +20,12 @@ describe('isPublicIp', () => {
     expect(isPublicIp(ip)).toBe(false)
   })
 
-  it.each(['8.8.8.8', '1.1.1.1', '172.32.0.1', '100.128.0.1', '203.0.114.1'])('IPv4 %s は公開', (ip) => {
-    expect(isPublicIp(ip)).toBe(true)
-  })
+  it.each(['8.8.8.8', '1.1.1.1', '172.32.0.1', '100.128.0.1', '203.0.114.1'])(
+    'IPv4 %s は公開',
+    (ip) => {
+      expect(isPublicIp(ip)).toBe(true)
+    },
+  )
 
   it.each([
     '::',
@@ -46,12 +49,15 @@ describe('isPublicIp', () => {
     expect(isPublicIp(ip)).toBe(false)
   })
 
-  it.each(['2606:4700:4700::1111', '2001:4860:4860::8888', '::ffff:8.8.8.8', '64:ff9b::808:808', '2002:808:808::1'])(
-    'IPv6 %s は公開',
-    (ip) => {
-      expect(isPublicIp(ip)).toBe(true)
-    },
-  )
+  it.each([
+    '2606:4700:4700::1111',
+    '2001:4860:4860::8888',
+    '::ffff:8.8.8.8',
+    '64:ff9b::808:808',
+    '2002:808:808::1',
+  ])('IPv6 %s は公開', (ip) => {
+    expect(isPublicIp(ip)).toBe(true)
+  })
 
   it('IP でない文字列は false', () => {
     expect(isPublicIp('localhost')).toBe(false)
@@ -66,7 +72,10 @@ describe('checkPublicHttpUrl', () => {
       (map[host] ?? []).map((address) => ({ address, family: address.includes(':') ? 6 : 4 }))
 
   it('公開アドレスに解決されるホストは通し、接続先を返す', async () => {
-    const t = await checkPublicHttpUrl('https://example.com/a?b=1', lookup({ 'example.com': ['93.184.216.34'] }))
+    const t = await checkPublicHttpUrl(
+      'https://example.com/a?b=1',
+      lookup({ 'example.com': ['93.184.216.34'] }),
+    )
     expect(t.address).toBe('93.184.216.34')
     expect(t.url.hostname).toBe('example.com')
   })
@@ -89,11 +98,16 @@ describe('checkPublicHttpUrl', () => {
 
   it('解決結果に1つでも内部向けが混じれば断る（DNS の差し替え対策）', async () => {
     await expect(
-      checkPublicHttpUrl('https://rebind.example/', lookup({ 'rebind.example': ['93.184.216.34', '10.0.0.5'] })),
+      checkPublicHttpUrl(
+        'https://rebind.example/',
+        lookup({ 'rebind.example': ['93.184.216.34', '10.0.0.5'] }),
+      ),
     ).rejects.toThrow(BlockedUrlError)
   })
 
   it('解決できないホストは断る', async () => {
-    await expect(checkPublicHttpUrl('https://nowhere.example/', lookup({}))).rejects.toThrow(BlockedUrlError)
+    await expect(checkPublicHttpUrl('https://nowhere.example/', lookup({}))).rejects.toThrow(
+      BlockedUrlError,
+    )
   })
 })

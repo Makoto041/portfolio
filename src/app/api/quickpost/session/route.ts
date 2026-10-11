@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
     if (!active) {
       const res = json({ loggedIn: false })
       // 切れた Cookie と「＋ 投稿」ボタンの目印を片付ける
-      if (req.cookies.has(QP.sessionCookie) || req.cookies.has(QP.hintCookie)) clearSessionCookies(res)
+      if (req.cookies.has(QP.sessionCookie) || req.cookies.has(QP.hintCookie))
+        clearSessionCookies(res)
       return res
     }
 
@@ -66,7 +67,12 @@ export async function GET(req: NextRequest) {
         lastUsedAt: p.lastUsedAt ?? null,
         backedUp: Boolean(p.backedUp),
       })),
-      limits: { text: LIMITS.text, title: LIMITS.title, images: LIMITS.images, photoBytes: QP.maxPhotoBytes },
+      limits: {
+        text: LIMITS.text,
+        title: LIMITS.title,
+        images: LIMITS.images,
+        photoBytes: QP.maxPhotoBytes,
+      },
     })
     refreshSessionCookies(req, res, session)
     return res

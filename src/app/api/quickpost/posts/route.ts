@@ -10,7 +10,14 @@ import { textToLexical } from '@/lib/richtext'
 import { QP } from '@/lib/quickpost/config'
 import { parseQuickPost } from '@/lib/quickpost/input'
 import { takeRate } from '@/lib/quickpost/policy'
-import { fail, getSession, json, readJson, refreshSessionCookies, rejectCrossSite } from '@/lib/quickpost/server'
+import {
+  fail,
+  getSession,
+  json,
+  readJson,
+  refreshSessionCookies,
+  rejectCrossSite,
+} from '@/lib/quickpost/server'
 import { firstLine } from '@/features/site/cardViews'
 
 export const dynamic = 'force-dynamic'
@@ -48,12 +55,24 @@ export async function POST(req: NextRequest) {
 
     const rate = takeRate(session, 'posts', QP.rate)
     if (!rate.ok) return fail(429, 'rate_limited')
-    await payload.update({ collection: 'post-sessions', id: session.id, data: rate.next, depth: 0, overrideAccess: true })
+    await payload.update({
+      collection: 'post-sessions',
+      id: session.id,
+      data: rate.next,
+      depth: 0,
+      overrideAccess: true,
+    })
 
     // 写真がすべて存在するか（消された写真を指していないか）
     const media: MediaRow[] = []
     for (const id of input.images) {
-      const doc = await payload.findByID({ collection: 'media', id, depth: 0, overrideAccess: true, disableErrors: true })
+      const doc = await payload.findByID({
+        collection: 'media',
+        id,
+        depth: 0,
+        overrideAccess: true,
+        disableErrors: true,
+      })
       if (!doc) return fail(400, 'invalid_images')
       media.push(doc as unknown as MediaRow)
     }
@@ -88,7 +107,14 @@ export async function POST(req: NextRequest) {
         .filter((m) => !m.alt)
         .map((m) =>
           payload
-            .update({ collection: 'media', id: m.id, data: { alt }, user, overrideAccess: false, depth: 0 })
+            .update({
+              collection: 'media',
+              id: m.id,
+              data: { alt },
+              user,
+              overrideAccess: false,
+              depth: 0,
+            })
             .catch((e) => console.error('quickpost: failed to set alt text', e)),
         ),
     )

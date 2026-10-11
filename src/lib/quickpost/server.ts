@@ -98,13 +98,28 @@ export function qpSecret(): string {
 /** ログイン Cookie（HttpOnly・SameSite=Strict）と、ボタン表示用の目印 Cookie を置く */
 export function setSessionCookies(res: NextResponse, token: string, deadline: number) {
   const maxAge = maxAgeSeconds(deadline)
-  res.cookies.set(QP.sessionCookie, token, { ...COOKIE_BASE, httpOnly: true, sameSite: 'strict', maxAge })
+  res.cookies.set(QP.sessionCookie, token, {
+    ...COOKIE_BASE,
+    httpOnly: true,
+    sameSite: 'strict',
+    maxAge,
+  })
   res.cookies.set(QP.hintCookie, '1', { ...COOKIE_BASE, httpOnly: false, sameSite: 'lax', maxAge })
 }
 
 export function clearSessionCookies(res: NextResponse) {
-  res.cookies.set(QP.sessionCookie, '', { ...COOKIE_BASE, httpOnly: true, sameSite: 'strict', maxAge: 0 })
-  res.cookies.set(QP.hintCookie, '', { ...COOKIE_BASE, httpOnly: false, sameSite: 'lax', maxAge: 0 })
+  res.cookies.set(QP.sessionCookie, '', {
+    ...COOKIE_BASE,
+    httpOnly: true,
+    sameSite: 'strict',
+    maxAge: 0,
+  })
+  res.cookies.set(QP.hintCookie, '', {
+    ...COOKIE_BASE,
+    httpOnly: false,
+    sameSite: 'lax',
+    maxAge: 0,
+  })
 }
 
 export function setChallengeCookie(res: NextResponse, ticket: Omit<ChallengeTicket, 'e'>) {
@@ -123,7 +138,12 @@ export function readChallenge(req: NextRequest, purpose: ChallengePurpose): Chal
 }
 
 export function clearChallengeCookie(res: NextResponse) {
-  res.cookies.set(QP.challengeCookie, '', { ...COOKIE_BASE, httpOnly: true, sameSite: 'strict', maxAge: 0 })
+  res.cookies.set(QP.challengeCookie, '', {
+    ...COOKIE_BASE,
+    httpOnly: true,
+    sameSite: 'strict',
+    maxAge: 0,
+  })
 }
 
 // ── 端末ごとのログイン ──
@@ -161,14 +181,26 @@ export async function getSession(req: NextRequest): Promise<ActiveSession | null
 
   const userId = relId(session.user)
   const user = userId
-    ? await payload.findByID({ collection: 'users', id: userId, depth: 0, overrideAccess: true, disableErrors: true })
+    ? await payload.findByID({
+        collection: 'users',
+        id: userId,
+        depth: 0,
+        overrideAccess: true,
+        disableErrors: true,
+      })
     : null
   if (!user) return drop()
 
   // ログインは必ずパスキーから発行する。パスキーが消えている（参照が空・存在しない）ログインは無効
   const passkeyId = relId(session.passkey)
   const passkey = passkeyId
-    ? await payload.findByID({ collection: 'passkeys', id: passkeyId, depth: 0, overrideAccess: true, disableErrors: true })
+    ? await payload.findByID({
+        collection: 'passkeys',
+        id: passkeyId,
+        depth: 0,
+        overrideAccess: true,
+        disableErrors: true,
+      })
     : null
   if (!passkey) return drop()
 

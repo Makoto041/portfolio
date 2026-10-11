@@ -82,7 +82,8 @@ function isPublicV6(address: string): boolean {
   if (allZero(g)) return false
   if (allZero(g.slice(0, 7)) && g[7] === 1) return false
   // IPv4 射影（::ffff:a.b.c.d）・IPv4 互換（::a.b.c.d）は中の IPv4 で判定
-  if (allZero(g.slice(0, 5)) && (g[5] === 0xffff || g[5] === 0)) return isPublicV4(v4FromGroups(g[6], g[7]))
+  if (allZero(g.slice(0, 5)) && (g[5] === 0xffff || g[5] === 0))
+    return isPublicV4(v4FromGroups(g[6], g[7]))
   // NAT64（64:ff9b::/96）も中の IPv4 で判定。ローカル用 NAT64（64:ff9b:1::/48）は不可
   if (g[0] === 0x64 && g[1] === 0xff9b) {
     if (allZero(g.slice(2, 6))) return isPublicV4(v4FromGroups(g[6], g[7]))
@@ -108,7 +109,8 @@ export function isPublicIp(address: string): boolean {
 
 export type LookupAll = (hostname: string) => Promise<Array<{ address: string; family: number }>>
 
-const lookupAll: LookupAll = (hostname) => dns.promises.lookup(hostname, { all: true, verbatim: true })
+const lookupAll: LookupAll = (hostname) =>
+  dns.promises.lookup(hostname, { all: true, verbatim: true })
 
 /** 内部向けとみなすホスト名（DNS を引く前に断る） */
 function isInternalHostname(host: string): boolean {
@@ -125,7 +127,10 @@ function isInternalHostname(host: string): boolean {
 export type CheckedTarget = { url: URL; address: string; family: number }
 
 /** 取りに行ってよい URL か検査し、接続に使うアドレスを返す。だめなら BlockedUrlError */
-export async function checkPublicHttpUrl(raw: string, lookup: LookupAll = lookupAll): Promise<CheckedTarget> {
+export async function checkPublicHttpUrl(
+  raw: string,
+  lookup: LookupAll = lookupAll,
+): Promise<CheckedTarget> {
   let url: URL
   try {
     url = new URL(raw)
@@ -184,7 +189,12 @@ export async function fetchPublicHtml(raw: string, opts: FetchOptions): Promise<
       current = new URL(res.location, target.url).toString()
       continue
     }
-    return { url: target.url.toString(), status: res.status, contentType: res.contentType, body: res.body }
+    return {
+      url: target.url.toString(),
+      status: res.status,
+      contentType: res.contentType,
+      body: res.body,
+    }
   }
   throw new BlockedUrlError('too many redirects')
 }

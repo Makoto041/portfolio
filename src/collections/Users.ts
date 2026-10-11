@@ -3,8 +3,18 @@ import { adminOnly } from '@/lib/access'
 
 /** ユーザーを消すときは、そのユーザーのパスキーと投稿ページのログインも消す（参照が残らないように） */
 const removeQuickPostAccess: CollectionBeforeDeleteHook = async ({ req, id }) => {
-  await req.payload.delete({ collection: 'post-sessions', where: { user: { equals: id } }, overrideAccess: true, req })
-  await req.payload.delete({ collection: 'passkeys', where: { user: { equals: id } }, overrideAccess: true, req })
+  await req.payload.delete({
+    collection: 'post-sessions',
+    where: { user: { equals: id } },
+    overrideAccess: true,
+    req,
+  })
+  await req.payload.delete({
+    collection: 'passkeys',
+    where: { user: { equals: id } },
+    overrideAccess: true,
+    req,
+  })
 }
 
 export const Users: CollectionConfig = {

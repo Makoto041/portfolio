@@ -2,7 +2,13 @@
 // この端末（scope: 'this'）か、すべての端末（scope: 'all'）からログアウトする。
 // サーバーの記録を消すので、Cookie が残っていても二度と使えない。
 import type { NextRequest } from 'next/server'
-import { clearSessionCookies, getSession, json, readJson, rejectCrossSite } from '@/lib/quickpost/server'
+import {
+  clearSessionCookies,
+  getSession,
+  json,
+  readJson,
+  rejectCrossSite,
+} from '@/lib/quickpost/server'
 
 export const dynamic = 'force-dynamic'
 

@@ -5,7 +5,12 @@
 import { generateAuthenticationOptions } from '@simplewebauthn/server'
 import type { NextRequest } from 'next/server'
 import { QP } from '@/lib/quickpost/config'
-import { json, rejectCrossSite, rejectTooManyFromIp, setChallengeCookie } from '@/lib/quickpost/server'
+import {
+  json,
+  rejectCrossSite,
+  rejectTooManyFromIp,
+  setChallengeCookie,
+} from '@/lib/quickpost/server'
 
 export const dynamic = 'force-dynamic'
 

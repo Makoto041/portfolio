@@ -81,10 +81,28 @@ export const PostSessions: CollectionConfig = {
       label: '最後に投稿した日時',
       admin: { readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
     },
-    { name: 'postCount', type: 'number', label: '投稿数', defaultValue: 0, admin: { readOnly: true } },
+    {
+      name: 'postCount',
+      type: 'number',
+      label: '投稿数',
+      defaultValue: 0,
+      admin: { readOnly: true },
+    },
     // 回数制限（1時間ごとの枠）
     { name: 'rlWindowStart', type: 'date', access: { read: never }, admin: { hidden: true } },
-    { name: 'rlPosts', type: 'number', defaultValue: 0, access: { read: never }, admin: { hidden: true } },
-    { name: 'rlPhotos', type: 'number', defaultValue: 0, access: { read: never }, admin: { hidden: true } },
+    {
+      name: 'rlPosts',
+      type: 'number',
+      defaultValue: 0,
+      access: { read: never },
+      admin: { hidden: true },
+    },
+    {
+      name: 'rlPhotos',
+      type: 'number',
+      defaultValue: 0,
+      access: { read: never },
+      admin: { hidden: true },
+    },
   ],
 }

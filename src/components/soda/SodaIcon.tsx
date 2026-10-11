@@ -28,6 +28,7 @@ export type SodaIconName =
   | 'face'
   | 'lock'
   | 'key'
+  | 'check'
 
 const PATHS: Record<SodaIconName, React.ReactNode> = {
   home: (
@@ -142,6 +143,7 @@ const PATHS: Record<SodaIconName, React.ReactNode> = {
       <path d="M12 12h9M18 12v3M21 12v2" />
     </>
   ),
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
 }
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'name'> & { name: SodaIconName }

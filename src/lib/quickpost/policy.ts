@@ -21,7 +21,11 @@ export function isSessionAlive(s: SessionTimes, idleMs: number, now: number = Da
 }
 
 /** 「最後に使った日時」を更新する頃か（毎回は書き込まない） */
-export function shouldTouch(lastUsedAt: string, everyMs: number, now: number = Date.now()): boolean {
+export function shouldTouch(
+  lastUsedAt: string,
+  everyMs: number,
+  now: number = Date.now(),
+): boolean {
   const last = Date.parse(lastUsedAt)
   return Number.isNaN(last) || now - last >= everyMs
 }
