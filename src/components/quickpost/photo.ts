@@ -2,6 +2,7 @@
 // 送る前にスマホで写真を縮小する（Vercel の送信上限 4.5MB に収め、通信量を減らす）。
 // canvas に描き直すので、この時点で位置情報などの撮影データは落ちる（サーバーでも必ず作り直す）。
 // 向きは <img> の EXIF 反映（image-orientation: from-image が既定）に任せる。
+// あわせて、送り直しで写真を差し替えたかを見分けるための指紋（photoPrint）もここに置く。
 import { canSendPhotoAsIs, photoTypeOf } from '@/lib/quickpost/input'
 
 /** 縮小の段階（長辺 px, JPEG 品質）。上限に収まるまで順に試す */

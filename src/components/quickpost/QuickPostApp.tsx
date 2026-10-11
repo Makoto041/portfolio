@@ -47,7 +47,15 @@ type Draft = {
   sent?: string
 }
 
-type Photo = { id: string; file: File; url: string; mediaId?: number; noPreview?: boolean }
+type Photo = {
+  id: string
+  file: File
+  url: string
+  mediaId?: number
+  /** 写真の中身の指紋（最初に送るときに1回だけ取る） */
+  print?: string
+  noPreview?: boolean
+}
 
 type Sending = { step: 'photos'; done: number; total: number } | { step: 'post' }
 
@@ -378,7 +386,13 @@ export default function QuickPostApp() {
       for (let i = 0; i < queue.length; i++) {
         const photo = queue[i]
         setSending({ step: 'photos', done: i, total: queue.length })
-        prints.push(await photoPrint(photo.file))
+        // 指紋は1回だけ取って覚えておく（送り直しでファイルを読み直さない。iOS では時間が経つと読めなくなることがある）
+        const print = photo.print ?? (await photoPrint(photo.file))
+        prints.push(print)
+        if (!photo.print) {
+          queue[i] = { ...photo, print }
+          setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, print } : p)))
+        }
         if (photo.mediaId) {
           ids.push(photo.mediaId)
           continue
@@ -395,7 +409,7 @@ export default function QuickPostApp() {
         if (!res.ok || typeof data?.id !== 'number') throw new ApiError(res.status, data?.error)
         const mediaId = data.id
         // 送れた写真は覚えておき、送り直しのときにもう一度送らない
-        queue[i] = { ...photo, mediaId }
+        queue[i] = { ...queue[i], mediaId }
         setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, mediaId } : p)))
         ids.push(mediaId)
       }
@@ -409,7 +423,8 @@ export default function QuickPostApp() {
         key: draft.key,
       }
       // このキーで最初に送る内容を覚えておく（応答が届かなかったあとに直して送り直したかを見分けるため）。
-      // 写真は ID ではなく中身の指紋で比べる（読み込み直すと選び直しになって ID は変わるが、同じ写真なら指紋は同じ）
+      // 写真は ID ではなく中身の指紋で比べる（読み込み直すと選び直しになって ID は変わるが、同じファイルなら指紋は同じ。
+      // 端末が選び直しのたびに写真を変換し直して中身が変わる場合は、直したとみなして下書きを残す側に倒れる）
       const signature = JSON.stringify([body.text, body.title ?? '', body.postType, prints])
       const sent = draft.sent ?? signature
       if (draft.sent === undefined) {

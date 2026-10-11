@@ -375,4 +375,14 @@ describe('photoPrint', () => {
   it('中身が違えば違う指紋（差し替えを見分ける）', async () => {
     expect(await photoPrint(file([1, 2, 3]))).not.toBe(await photoPrint(file([1, 2, 4])))
   })
+
+  it('読み直せないときは名前・大きさ・更新日時で代える', async () => {
+    const unreadable = {
+      name: 'a.jpg',
+      size: 3,
+      lastModified: 123,
+      arrayBuffer: () => Promise.reject(new Error('NotReadableError')),
+    } as unknown as File
+    expect(await photoPrint(unreadable)).toBe('a.jpg:3:123')
+  })
 })
