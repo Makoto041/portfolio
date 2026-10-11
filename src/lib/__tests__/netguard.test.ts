@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { BlockedUrlError, checkPublicHttpUrl, isPublicIp, type LookupAll } from '@/lib/netguard'
+import {
+  BlockedUrlError,
+  checkPublicHttpUrl,
+  fetchPublicHtml,
+  isPublicIp,
+  type LookupAll,
+} from '@/lib/netguard'
 
 describe('isPublicIp', () => {
   it.each([
@@ -109,5 +115,20 @@ describe('checkPublicHttpUrl', () => {
     await expect(checkPublicHttpUrl('https://nowhere.example/', lookup({}))).rejects.toThrow(
       BlockedUrlError,
     )
+  })
+})
+
+describe('fetchPublicHtml', () => {
+  it('名前解決も制限時間に含めて打ち切る', async () => {
+    const neverResolves = () => new Promise<never>(() => {})
+    const started = Date.now()
+    await expect(
+      fetchPublicHtml('https://slow-dns.example/', {
+        userAgent: 'test',
+        timeoutMs: 50,
+        lookup: neverResolves,
+      }),
+    ).rejects.toThrow('timeout')
+    expect(Date.now() - started).toBeLessThan(1000)
   })
 })

@@ -70,6 +70,17 @@ describe('reencodePhoto', () => {
     await expect(reencodePhoto(gif, opts)).rejects.toThrow(UnsupportedImageError)
   })
 
+  it('透明な部分は黒ではなく白にする', async () => {
+    const input = await sharp({
+      create: { width: 8, height: 8, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    })
+      .png()
+      .toBuffer()
+    const out = await reencodePhoto(input, opts)
+    const { data } = await sharp(out).raw().toBuffer({ resolveWithObject: true })
+    expect(Math.min(data[0], data[1], data[2])).toBeGreaterThan(240)
+  })
+
   it('画素数が上限を超える画像は読み込まない', async () => {
     const input = await sharp({
       create: { width: 3000, height: 3000, channels: 3, background: '#000' },

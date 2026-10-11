@@ -36,7 +36,16 @@ type SessionInfo = {
 
 type View = 'loading' | 'login' | 'register' | 'compose' | 'done' | 'account' | 'offline'
 
-type Draft = { text: string; title: string; showTitle: boolean; postType: string; key: string }
+type Draft = {
+  text: string
+  title: string
+  showTitle: boolean
+  postType: string
+  /** 二重投稿を防ぐキー（この下書きを送るたびに同じものを使う） */
+  key: string
+  /** このキーで最初に送った内容（送り直しで「すでに投稿済み」と返ったとき、直したかどうかを見分ける） */
+  sent?: string
+}
 
 type Photo = { id: string; file: File; url: string; mediaId?: number; noPreview?: boolean }
 
@@ -68,6 +77,7 @@ function loadDraft(): Draft | null {
         ? (d.postType as string)
         : 'diary',
       key: d.key,
+      sent: typeof d.sent === 'string' ? d.sent : undefined,
     }
   } catch {
     return null
@@ -386,22 +396,42 @@ export default function QuickPostApp() {
       }
 
       setSending({ step: 'post' })
-      const body = {
+      const content = {
         text,
         title: draft.showTitle ? draft.title : undefined,
         postType: draft.postType,
         images: ids,
-        key: draft.key,
+      }
+      const body = { ...content, key: draft.key }
+      // このキーで最初に送る内容を覚えておく（応答が届かなかったあとに直して送り直したかを見分けるため）
+      const signature = JSON.stringify(content)
+      const sent = draft.sent ?? signature
+      if (draft.sent === undefined) {
+        const marked = { ...draft, sent }
+        setDraft(marked)
+        saveDraft(marked)
       }
       // 同じ下書きをまだ送っている途中（409）なら、少し待って送り直す（2回目以降は最初の投稿が返る）
-      let created: { id: number } | null = null
+      let created: { id: number; duplicate?: boolean } | null = null
       for (let attempt = 0; !created; attempt++) {
         try {
-          created = await call<{ id: number }>('/api/quickpost/posts', body)
+          created = await call<{ id: number; duplicate?: boolean }>('/api/quickpost/posts', body)
         } catch (e) {
           if (!(e instanceof ApiError && e.status === 409) || attempt >= 4) throw e
           await new Promise((r) => window.setTimeout(r, 1500))
         }
+      }
+
+      if (created.duplicate && signature !== sent) {
+        // 前に送った内容はすでに投稿されていた（応答だけが届かなかった）。直した内容は消さずに残し、
+        // 別の投稿として送れるようキーを新しくする
+        const next = { ...draft, key: crypto.randomUUID(), sent: undefined }
+        setDraft(next)
+        saveDraft(next)
+        setError(
+          '前に送った内容はすでに投稿されていました。直した内容も投稿するなら、もう一度「投稿する」を押してください。',
+        )
+        return
       }
 
       queue.forEach((p) => URL.revokeObjectURL(p.url))
@@ -576,6 +606,8 @@ export default function QuickPostApp() {
           placeholder="いまどうしてる？"
           value={draft.text}
           onChange={(e) => setDraft({ ...draft, text: e.target.value })}
+          // 送っている間は書き換えない（送った内容と下書きを食い違わせない）
+          readOnly={Boolean(sending)}
           rows={6}
         />
         <p className="s-qp-meta">
@@ -630,7 +662,7 @@ export default function QuickPostApp() {
           )}
         </div>
 
-        <fieldset className="s-qp-chips">
+        <fieldset className="s-qp-chips" disabled={Boolean(sending)}>
           <legend className="sr-only">種類</legend>
           {POST_TYPES.map((t) => (
             <label key={t} className="s-qp-chip">
@@ -651,6 +683,7 @@ export default function QuickPostApp() {
           className="s-qp-link"
           aria-expanded={draft.showTitle}
           aria-controls="qp-title"
+          disabled={Boolean(sending)}
           onClick={() => {
             const open = !draft.showTitle
             setDraft({ ...draft, showTitle: open })
@@ -674,6 +707,7 @@ export default function QuickPostApp() {
             enterKeyHint="done"
             value={draft.title}
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+            readOnly={Boolean(sending)}
             // タイトル欄の Enter で投稿まで送らない
             onKeyDown={(e) => {
               if (e.key === 'Enter') {

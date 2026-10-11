@@ -183,7 +183,8 @@ export async function fetchPublicHtml(raw: string, opts: FetchOptions): Promise<
   const deadline = Date.now() + timeoutMs
   let current = raw
   for (let hop = 0; hop <= maxRedirects; hop++) {
-    const target = await checkPublicHttpUrl(current, lookup)
+    // 名前解決も全体の制限時間に含める（DNS の応答が遅くても timeoutMs で打ち切る）
+    const target = await beforeDeadline(checkPublicHttpUrl(current, lookup), deadline)
     const res = await requestOnce(target, { userAgent: opts.userAgent, deadline, maxBytes })
     if (REDIRECTS.has(res.status) && res.location) {
       current = new URL(res.location, target.url).toString()
@@ -197,6 +198,17 @@ export async function fetchPublicHtml(raw: string, opts: FetchOptions): Promise<
     }
   }
   throw new BlockedUrlError('too many redirects')
+}
+
+/** 期限までに終わらなければ timeout で打ち切る（名前解決そのものは止められないので、結果を待たずに先へ進む） */
+function beforeDeadline<T>(work: Promise<T>, deadline: number): Promise<T> {
+  const remaining = deadline - Date.now()
+  if (remaining <= 0) return Promise.reject(new Error('timeout'))
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('timeout')), remaining)
+  })
+  return Promise.race([work, timeout]).finally(() => clearTimeout(timer))
 }
 
 type OnceResult = { status: number; location?: string; contentType: string; body: string }

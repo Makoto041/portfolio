@@ -1543,6 +1543,7 @@
   text-underline-offset: 3px;
   cursor: pointer;
 }
+.soda .s-qp-link:disabled { opacity: 0.5; cursor: default; }
 .soda .s-qp-error {
   margin: 0;
   padding: 12px 14px;
@@ -1671,6 +1672,7 @@
   border-radius: 999px;
   font-size: 13px;
 }
+.soda .s-qp-chip input:disabled { cursor: default; }
 .soda .s-qp-chip input:checked + span { background: var(--s-ink); color: var(--s-bg); }
 .soda .s-qp-chip input:focus-visible + span { outline: 2px solid var(--s-ink); outline-offset: 3px; }
 .soda .s-qp-paper { display: grid; gap: 10px; padding: 16px; border-radius: var(--s-r-l); background: var(--s-paper); }

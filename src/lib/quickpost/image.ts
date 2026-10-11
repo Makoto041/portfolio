@@ -4,6 +4,7 @@
 // - 向き（EXIF）を画素に反映してから、位置情報（GPS）を含む撮影データをすべて落として JPEG に書き出す
 //   （sharp は withMetadata を呼ばない限りメタデータを残さず、色は sRGB に揃える）
 // - 長辺を上限に縮め、巨大な画素数の画像は読み込まない
+// - 透明な部分（PNG・WebP のスクリーンショットなど）は白にする
 import sharp from 'sharp'
 
 const FORMATS = new Set(['jpeg', 'png', 'webp', 'heif', 'avif'])
@@ -29,6 +30,8 @@ export async function reencodePhoto(
   try {
     return await sharp(input, { limitInputPixels: maxInputPixels })
       .rotate()
+      // JPEG は透明を持てないので、透明な部分は白にする（指定しないと黒になる）
+      .flatten({ background: '#ffffff' })
       .resize({ width: maxEdge, height: maxEdge, fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85, mozjpeg: true })
       .toBuffer()
