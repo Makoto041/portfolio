@@ -18,7 +18,7 @@ Payload CMS 駆動の Next.js サイトです。
 - 地色は「今月の色」パレット（`src/lib/palette.ts`。固定 or 月替わりを1行で切替）
 - トークンは `src/app/(frontend)/soda.css` の `.soda` スコープに集約（文字・線 `--s-*`・
   タイポ `--s-fs-*`・角丸 `--s-r-*`・4px 系余白）。本文テキストはどのパレットでも AA (4.5:1) 以上
-- `prefers-reduced-motion` 対応（ロゴの弾み・アニメーションを停止）
+- `prefers-reduced-motion` 対応（ティッカー・ロゴの弾み・アニメーションを停止）
 
 ## 技術スタック
 
@@ -78,7 +78,7 @@ src/
 | `media` | 写真（ギャラリー / タイムライン専用フラグ付き） |
 | `events` | 配信・イベント記録（プラットフォーム・期間・LIVE 判定） |
 | `products` | 制作物カタログ |
-| `notices` | おしらせ（TODAY カード） |
+| `notices` | おしらせ（ティッカー・TODAY カード） |
 | `letters` | 問い合わせフォーム送信 |
 | `users` | 管理者認証 |
 | グローバル `site-settings` | プロフィール・ヒーロー文言・Spotify プレイリスト |

@@ -332,7 +332,7 @@ export interface Letter {
 export interface Notice {
   id: number;
   /**
-   * TODAY カードに「12.06」形式で表示されます（SP のホームは最新の1件）
+   * ホームのティッカーと TODAY カードに「12.06」形式で表示されます（ティッカーは最新の3件、SP の TODAY は最新の1件）
    */
   date: string;
   /**
