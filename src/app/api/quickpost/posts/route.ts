@@ -9,8 +9,11 @@
 import type { NextRequest } from 'next/server'
 import type { Timeline } from '@/payload-types'
 import { textToLexical } from '@/lib/richtext'
+import { TIMELINE_PAGES } from '@/collections/TimelinePosts'
 import { parseQuickPost } from '@/lib/quickpost/input'
+import { revalidate } from '@/lib/revalidate'
 import {
+  assertInTransaction,
   claimPostReceipt,
   completePostReceipt,
   consumeRate,
@@ -93,6 +96,8 @@ export async function POST(req: NextRequest) {
           depth: 0,
           req: txReq,
         })
+        // フックの中の失敗で投稿ごと取り消されていたら、受付票に書かずに失敗として返す
+        assertInTransaction(txReq)
         await completePostReceipt(payload, receiptId, created.id, txReq)
         return created
       })
@@ -103,6 +108,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ここから先は投稿ができたあとの後始末。失敗しても投稿は成功として返す
+
+    // 保存のフックでも再検証しているが、それは確定の前。間に作り直されたページに投稿が欠けないよう、確定後にもう一度
+    await revalidate(TIMELINE_PAGES)
 
     // 写真の代替テキストが空なら、投稿の見出しか本文の1行目を入れる（読み上げ用）
     const alt = firstLine(input.title || input.text, 60)

@@ -12,7 +12,6 @@ import {
   createLocalReq,
   initTransaction,
   killTransaction,
-  NotFound,
   ValidationError,
   type Payload,
   type PayloadRequest,
@@ -262,6 +261,7 @@ export async function withTransaction<T>(
   const own = await initTransaction(req)
   try {
     const result = await fn(req)
+    if (own) assertInTransaction(req)
     if (own) await commitTransaction(req)
     return result
   } catch (e) {
@@ -278,6 +278,14 @@ export function isUniqueViolation(e: unknown, field: string): boolean {
   if (!(e instanceof ValidationError)) return false
   const errors = (e.data as { errors?: { path?: unknown }[] } | null)?.errors
   return Array.isArray(errors) && errors.some((x) => x?.path === field)
+}
+
+/**
+ * トランザクションがまだ生きているか確かめる。Payload は失敗した操作のトランザクションを取り消して
+ * transactionID を消すので、どこかのフックがその失敗を握りつぶしていても、ここで成功として扱わない
+ */
+export function assertInTransaction(req: PayloadRequest): void {
+  if (!req.transactionID) throw new Error('quickpost: the transaction was rolled back')
 }
 
 export class ReplayedChallengeError extends Error {
@@ -439,11 +447,14 @@ export async function claimPostReceipt(payload: Payload, key: string): Promise<R
       if (typeof receipt.postId === 'number') return { status: 'done', postId: receipt.postId }
       if (Date.now() - Date.parse(receipt.createdAt) < RECEIPT_STALE_MS) return { status: 'busy' }
       // 途中で落ちた受付票は取り直す（同時に取り直した相手が先に消していても、そのまま作り直しへ）
+      // 投稿の ID が入った受付票は消さない（待っている間に確定した受付票を消すと二重投稿になる）
       await payload
-        .delete({ collection: 'quickpost-nonces', id: receipt.id, overrideAccess: true })
-        .catch((e) => {
-          if (!(e instanceof NotFound)) console.error('quickpost: failed to drop stale receipt', e)
+        .delete({
+          collection: 'quickpost-nonces',
+          where: { and: [{ id: { equals: receipt.id } }, { postId: { exists: false } }] },
+          overrideAccess: true,
         })
+        .catch((e) => console.error('quickpost: failed to drop stale receipt', e))
     }
   }
   return { status: 'busy' }

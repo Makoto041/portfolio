@@ -164,6 +164,8 @@ function messageFor(e: unknown, limits: Limits): string {
         return '写真が大きすぎます。別の写真を選んでください。'
       case 415:
         return 'この写真は読み込めませんでした。別の写真を選んでください。'
+      case 409:
+        return 'まだ前の送信を受け付けている途中です。少し待ってから、もう一度「投稿する」を押してください。書いた内容は残っています。'
       case 429:
         return '短い時間に送りすぎています。少し待ってから送ってください。'
       case 400:
@@ -397,15 +399,16 @@ export default function QuickPostApp() {
       }
 
       setSending({ step: 'post' })
-      const content = {
+      const body = {
         text,
         title: draft.showTitle ? draft.title : undefined,
         postType: draft.postType,
         images: ids,
+        key: draft.key,
       }
-      const body = { ...content, key: draft.key }
-      // このキーで最初に送る内容を覚えておく（応答が届かなかったあとに直して送り直したかを見分けるため）
-      const signature = JSON.stringify(content)
+      // このキーで最初に送る文面を覚えておく（応答が届かなかったあとに直して送り直したかを見分けるため）。
+      // 写真は読み込み直すと選び直しになって ID が変わるので比べない
+      const signature = JSON.stringify([body.text, body.title ?? '', body.postType])
       const sent = draft.sent ?? signature
       if (draft.sent === undefined) {
         const marked = { ...draft, sent }
