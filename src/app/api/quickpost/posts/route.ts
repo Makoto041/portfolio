@@ -18,6 +18,7 @@ import {
   json,
   pruneNonces,
   readJson,
+  recordPost,
   refreshSessionCookies,
   rejectCrossSite,
   releasePostReceipt,
@@ -89,6 +90,8 @@ export async function POST(req: NextRequest) {
       postId = post.id
       await completePostReceipt(payload, receiptId, post.id)
 
+      // ここから先は投稿ができたあとの後始末。失敗しても投稿は成功として返す
+
       // 写真の代替テキストが空なら、投稿の見出しか本文の1行目を入れる（読み上げ用）
       const alt = firstLine(input.title || input.text, 60)
       await Promise.all(
@@ -109,14 +112,12 @@ export async function POST(req: NextRequest) {
       )
 
       const now = new Date().toISOString()
-      await payload.update({
-        collection: 'post-sessions',
-        id: session.id,
-        data: { lastPostAt: now, lastUsedAt: now, postCount: (session.postCount ?? 0) + 1 },
-        depth: 0,
-        overrideAccess: true,
-      })
-      session.lastUsedAt = now
+      await recordPost(payload, session.id, now).then(
+        () => {
+          session.lastUsedAt = now
+        },
+        (e) => console.error('quickpost: failed to record post', e),
+      )
       await pruneNonces(payload)
 
       // 投稿したので「最後に使った日時」も更新済み。Cookie の期限も延ばす

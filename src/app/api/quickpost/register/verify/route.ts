@@ -10,6 +10,7 @@ import { deviceLabel } from '@/lib/quickpost/input'
 import {
   clearChallengeCookie,
   createSession,
+  isUniqueViolation,
   json,
   markChallengeUsed,
   ReplayedChallengeError,
@@ -97,9 +98,10 @@ export async function POST(req: NextRequest) {
             req: txReq,
           })
           passkeyId = passkey.id
-        } catch {
-          // 同じ鍵の二重登録（credentialId の一意制約）
-          throw new AlreadyRegisteredError()
+        } catch (e) {
+          // 同じ鍵の二重登録（credentialId の一意制約）。それ以外の失敗は 500 に回す
+          if (isUniqueViolation(e, 'credentialId')) throw new AlreadyRegisteredError()
+          throw e
         }
         return createSession(payload, { userId: user.id, passkeyId, name }, txReq)
       })

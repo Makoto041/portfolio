@@ -1,6 +1,6 @@
 // src/app/api/quickpost/login/verify/route.ts
 // パスキーの署名を確かめて、この端末のログインを発行する。
-// 確認値 Cookie は成否にかかわらず消す（1回きり）。同じ確認値での2回目は post-sessions の一意制約で弾く。
+// 確認値 Cookie は成否にかかわらず消す（1回きり）。同じ確認値での2回目は、使用済みの記録（quickpost-nonces の一意制約）で弾く。
 import { verifyAuthenticationResponse } from '@simplewebauthn/server'
 import { isoBase64URL } from '@simplewebauthn/server/helpers'
 import type { NextRequest } from 'next/server'

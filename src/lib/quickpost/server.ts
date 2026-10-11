@@ -12,6 +12,7 @@ import {
   createLocalReq,
   initTransaction,
   killTransaction,
+  ValidationError,
   type Payload,
   type PayloadRequest,
 } from 'payload'
@@ -268,6 +269,16 @@ export async function withTransaction<T>(
   }
 }
 
+/**
+ * 一意制約（unique）で断られた書き込みか。Postgres の一意制約違反は、Payload が項目名つきの
+ * ValidationError に変えて投げる。DB の障害などはこれに当たらないので、呼び出し側でそのまま 500 にする
+ */
+export function isUniqueViolation(e: unknown, field: string): boolean {
+  if (!(e instanceof ValidationError)) return false
+  const errors = (e.data as { errors?: { path?: unknown }[] } | null)?.errors
+  return Array.isArray(errors) && errors.some((x) => x?.path === field)
+}
+
 export class ReplayedChallengeError extends Error {
   constructor() {
     super('challenge already used')
@@ -296,8 +307,9 @@ export async function markChallengeUsed(
       overrideAccess: true,
       req,
     })
-  } catch {
-    throw new ReplayedChallengeError()
+  } catch (e) {
+    if (isUniqueViolation(e, 'key')) throw new ReplayedChallengeError()
+    throw e
   }
 }
 
@@ -371,6 +383,17 @@ export async function consumeRate(
   return (result.rows?.length ?? 0) > 0
 }
 
+/** 投稿したことを記録する。投稿数は同時に送られても数え漏らさないよう、読まずに SQL で 1 足す */
+export async function recordPost(payload: Payload, sessionId: ID, at: string): Promise<void> {
+  await payload.db.drizzle.execute(sql`
+    UPDATE post_sessions SET
+      post_count = COALESCE(post_count, 0) + 1,
+      last_post_at = ${at},
+      last_used_at = ${at},
+      updated_at = ${at}
+    WHERE id = ${sessionId}`)
+}
+
 // ── 投稿の受付票（二重投稿の防止） ──
 
 /** 作りかけの受付票を「途中で落ちた」とみなすまでの時間（投稿は数秒で終わる） */
@@ -396,7 +419,8 @@ export async function claimPostReceipt(payload: Payload, key: string): Promise<R
         overrideAccess: true,
       })
       return { status: 'new', receiptId: doc.id }
-    } catch {
+    } catch (e) {
+      if (!isUniqueViolation(e, 'key')) throw e
       const found = await payload.find({
         collection: 'quickpost-nonces',
         where: { key: { equals: receiptKey } },
@@ -409,8 +433,10 @@ export async function claimPostReceipt(payload: Payload, key: string): Promise<R
       if (!receipt) continue
       if (typeof receipt.postId === 'number') return { status: 'done', postId: receipt.postId }
       if (Date.now() - Date.parse(receipt.createdAt) < RECEIPT_STALE_MS) return { status: 'busy' }
-      // 途中で落ちた受付票は取り直す
-      await payload.delete({ collection: 'quickpost-nonces', id: receipt.id, overrideAccess: true })
+      // 途中で落ちた受付票は取り直す（同時に取り直した相手が先に消していても、そのまま作り直しへ）
+      await payload
+        .delete({ collection: 'quickpost-nonces', id: receipt.id, overrideAccess: true })
+        .catch(() => {})
     }
   }
   return { status: 'busy' }

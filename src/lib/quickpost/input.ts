@@ -37,7 +37,6 @@ export type ParseResult = { ok: true; value: QuickPostInput } | { ok: false; err
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 // 改行・タブ以外の制御文字（見えない文字で表示を崩させない）
-// eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
 
 /** 文字数（絵文字などのサロゲートペアを1文字と数える） */
