@@ -129,8 +129,15 @@ pnpm generate:types  # Payload スキーマ → TypeScript 型生成
 pnpm payload migrate:create <name>   # 生成してコミットするだけ
 ```
 
-適用（`pnpm payload migrate`）はデプロイ側に委ねる（ローカルの `.env` は本番 Neon を
-指すため、手元から本番へは適用しない）。
+適用は本番デプロイのビルドで自動で行う（`vercel.json` の buildCommand が
+`pnpm run migrate:deploy && pnpm run build`。中身は `scripts/migrate-on-deploy.ts`）。
+
+- Vercel の Production のビルドだけで動く。Preview・ローカルのビルドでは何もしない
+- dev mode でスキーマを直接書き換えた記録（`payload_migrations` の batch -1）があれば、適用せずにビルドを止める
+- 適用は1件ずつトランザクション。失敗したり未適用が残ったりしたらビルドを止める（そのデプロイは公開されず、今の本番が動き続ける）
+- 新しいコードの公開より先に適用されるので、マイグレーションは今の本番のコードとも両立する形（表や空でよい列の追加など）にする
+
+ローカルの `.env` は本番 Neon を指すため、手元から本番へは手で適用しない。
 
 ## さっと投稿（/post）
 

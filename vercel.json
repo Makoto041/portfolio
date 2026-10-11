@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm run build",
+  "buildCommand": "pnpm run migrate:deploy && pnpm run build",
   "headers": [
     {
       "source": "/",
