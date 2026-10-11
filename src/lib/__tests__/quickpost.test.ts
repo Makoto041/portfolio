@@ -24,6 +24,7 @@ import {
   userHandle,
   verifyTicket,
 } from '@/lib/quickpost/tokens'
+import { contentDigest } from '@/components/quickpost/digest'
 import { photoPrint } from '@/components/quickpost/photo'
 import {
   asAuthenticationResponse,
@@ -187,6 +188,14 @@ describe('投稿の入力チェック', () => {
     })
   })
 
+  it('送った内容の指紋（SHA-256 の16進）を受け付ける。無くてもよい', () => {
+    const digest = 'a'.repeat(64)
+    const r = parseQuickPost({ text: 'a', key, digest })
+    expect(r.ok && r.value.digest).toBe(digest)
+    const none = parseQuickPost({ text: 'a', key })
+    expect(none.ok && none.value.digest).toBeUndefined()
+  })
+
   it('種類が無ければ日記にする。タイトルは1行にまとめる', () => {
     const r = parseQuickPost({ text: 'a', title: ' 見出し\n2行目 ', key })
     expect(r.ok && r.value.postType).toBe('diary')
@@ -205,6 +214,9 @@ describe('投稿の入力チェック', () => {
     [{ text: 'a', images: [1.5], key }, 'invalid_images'],
     [{ text: 'a' }, 'invalid_key'],
     [{ text: 'a', key: 'abc' }, 'invalid_key'],
+    [{ text: 'a', key, digest: 'abc' }, 'invalid_digest'],
+    [{ text: 'a', key, digest: 'A'.repeat(64) }, 'invalid_digest'],
+    [{ text: 'a', key, digest: 1 }, 'invalid_digest'],
     [null, 'invalid_body'],
     [[], 'invalid_body'],
   ])('%j は断る（%s）', (body, error) => {
@@ -389,5 +401,14 @@ describe('photoPrint', () => {
     expect(first).toMatch(/^unreadable:/)
     expect(await photoPrint(a)).toBe(first)
     expect(await photoPrint(unreadable())).not.toBe(first)
+  })
+})
+
+describe('contentDigest', () => {
+  it('同じ内容なら同じ、違えば違う指紋（SHA-256 の16進 64 文字）', async () => {
+    const a = await contentDigest(JSON.stringify(['本文', '', 'diary', []]))
+    expect(a).toMatch(/^[0-9a-f]{64}$/)
+    expect(await contentDigest(JSON.stringify(['本文', '', 'diary', []]))).toBe(a)
+    expect(await contentDigest(JSON.stringify(['本文を直した', '', 'diary', []]))).not.toBe(a)
   })
 })

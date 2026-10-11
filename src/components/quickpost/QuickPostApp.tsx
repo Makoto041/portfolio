@@ -16,6 +16,7 @@ import {
 import SodaIcon from '@/components/soda/SodaIcon'
 import { LIMITS, photoTypeOf, POST_TYPES } from '@/lib/quickpost/input'
 import { TYPE_LABELS } from '@/lib/timeline'
+import { contentDigest } from './digest'
 import { PhotoError, photoPrint, prepareForUpload } from './photo'
 
 type Limits = { text: number; title: number; images: number; photoBytes: number }
@@ -103,43 +104,6 @@ function clearDraft() {
   } catch {
     // 同上
   }
-}
-
-const SENT_KEY = 'mk_post_sent_v1'
-/** 覚えておく下書きのキーの数（古いものから捨てる） */
-const SENT_LIMIT = 20
-/** localStorage が使えないときの控え（このタブの中だけ） */
-const sentInTab = new Map<string, string>()
-
-/**
- * この下書きのキーで最初に送った内容（本文・タイトル・種類・写真の指紋）を返す。まだ無ければ今の内容を記録する。
- * 送り直しで「すでに投稿済み」と返ったとき、直したかどうかを見分けるのに使う。下書きとは別に持つので、
- * 投稿が済んで下書きを消したあとも残り、同じ下書きを開いたほかのタブとも共有される（あとから送ったタブが上書きしない）
- */
-function firstSent(key: string, signature: string): string {
-  let map: Record<string, unknown> = {}
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(SENT_KEY) ?? '{}')
-    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      map = parsed as Record<string, unknown>
-    }
-  } catch {
-    // 読めないときはこのタブの控えだけで見分ける
-  }
-  const stored = map[key]
-  const first = typeof stored === 'string' ? stored : (sentInTab.get(key) ?? signature)
-  sentInTab.set(key, first)
-  if (stored !== first) {
-    map[key] = first
-    const keys = Object.keys(map)
-    for (const old of keys.slice(0, Math.max(0, keys.length - SENT_LIMIT))) delete map[old]
-    try {
-      localStorage.setItem(SENT_KEY, JSON.stringify(map))
-    } catch {
-      // 保存できないときはこのタブの控えだけで見分ける
-    }
-  }
-  return first
 }
 
 class ApiError extends Error {
@@ -449,34 +413,32 @@ export default function QuickPostApp() {
       }
 
       setSending({ step: 'post' })
-      const body = {
-        text,
-        title: draft.showTitle ? draft.title : undefined,
-        postType: draft.postType,
-        images: ids,
-        key: draft.key,
-      }
-      // このキーで最初に送る内容を覚えておく（応答が届かなかったあとに直して送り直したかを見分けるため）。
+      const title = draft.showTitle ? draft.title : undefined
+      // 送る内容の指紋。サーバーの受付票に残り、同じキーの送り直しで「すでに投稿済み」と返るときに一緒に返ってくる。
+      // それと比べて、応答が届かなかったあとに直して送り直したか（別のタブで違う内容を送ったか）を見分ける。
       // 写真は ID ではなく中身の指紋で比べる（読み込み直すと選び直しになって ID は変わるが、同じファイルなら指紋は同じ。
       // 端末が選び直しのたびに写真を変換し直して中身が変わる場合は、直したとみなして下書きを残す側に倒れる）
-      const signature = JSON.stringify([body.text, body.title ?? '', body.postType, prints])
-      const sent = firstSent(draft.key, signature)
+      const digest = await contentDigest(
+        JSON.stringify([text, title ?? '', draft.postType, prints]),
+      )
+      const body = { text, title, postType: draft.postType, images: ids, key: draft.key, digest }
       // 送る前に下書きをすぐ保存する（自動保存を待たない）。応答が届かないまま読み込み直しても、同じキーで送り直せるように
       saveDraft(draft)
       // 同じ下書きをまだ送っている途中（409）なら、少し待って送り直す（2回目以降は最初の投稿が返る）
-      let created: { id: number; duplicate?: boolean } | null = null
+      type Created = { id: number; duplicate?: boolean; digest?: string | null }
+      let created: Created | null = null
       for (let attempt = 0; !created; attempt++) {
         try {
-          created = await call<{ id: number; duplicate?: boolean }>('/api/quickpost/posts', body)
+          created = await call<Created>('/api/quickpost/posts', body)
         } catch (e) {
           if (!(e instanceof ApiError && e.status === 409) || attempt >= 4) throw e
           await new Promise((r) => window.setTimeout(r, 1500))
         }
       }
 
-      if (created.duplicate && signature !== sent) {
-        // 前に送った内容はすでに投稿されていた（応答だけが届かなかった）。直した内容は消さずに残し、
-        // 別の投稿として送れるようキーを新しくする
+      if (created.duplicate && created.digest !== digest) {
+        // このキーではすでに別の内容が投稿されていた（応答だけが届かずに直して送り直した、または別のタブが先に送った）。
+        // 今の内容は消さずに残し、別の投稿として送れるようキーを新しくする
         const next = { ...draft, key: crypto.randomUUID() }
         setDraft(next)
         saveDraft(next)

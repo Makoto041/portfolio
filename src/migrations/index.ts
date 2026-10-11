@@ -5,6 +5,7 @@ import * as migration_20260703_155139_add_timeline_lifelog_fields from './202607
 import * as migration_20260705_021042_notices_and_hero from './20260705_021042_notices_and_hero';
 import * as migration_20260705_031719_spotify_playlist from './20260705_031719_spotify_playlist';
 import * as migration_20261011_091225_quickpost from './20261011_091225_quickpost';
+import * as migration_20261011_234215_quickpost_receipt_digest from './20261011_234215_quickpost_receipt_digest';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20261011_091225_quickpost.up,
     down: migration_20261011_091225_quickpost.down,
-    name: '20261011_091225_quickpost'
+    name: '20261011_091225_quickpost',
+  },
+  {
+    up: migration_20261011_234215_quickpost_receipt_digest.up,
+    down: migration_20261011_234215_quickpost_receipt_digest.down,
+    name: '20261011_234215_quickpost_receipt_digest'
   },
 ];

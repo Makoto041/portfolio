@@ -398,6 +398,7 @@ export interface QuickpostNonce {
   id: number;
   key: string;
   postId?: number | null;
+  digest?: string | null;
   expiresAt: string;
   updatedAt: string;
   createdAt: string;
@@ -698,6 +699,7 @@ export interface PostSessionsSelect<T extends boolean = true> {
 export interface QuickpostNoncesSelect<T extends boolean = true> {
   key?: T;
   postId?: T;
+  digest?: T;
   expiresAt?: T;
   updatedAt?: T;
   createdAt?: T;

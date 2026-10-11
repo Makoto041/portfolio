@@ -62,11 +62,17 @@ export type QuickPostInput = {
   images: number[]
   /** 二重投稿を防ぐための、下書きごとの ID（UUID v4） */
   key: string
+  /**
+   * 送った内容の指紋（画面で計算した SHA-256 の16進 64 文字）。受付票に残し、同じキーの送り直しで
+   * 「すでに投稿済み」と返すときに一緒に返す（画面が、直して送り直したかを見分ける）
+   */
+  digest?: string
 }
 
 export type ParseResult = { ok: true; value: QuickPostInput } | { ok: false; error: string }
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const SHA256_HEX = /^[0-9a-f]{64}$/
 
 // 改行・タブ以外の制御文字（見えない文字で表示を崩させない）
 const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g
@@ -113,6 +119,14 @@ export function parseQuickPost(body: unknown): ParseResult {
 
   if (typeof b.key !== 'string' || !UUID_V4.test(b.key)) return { ok: false, error: 'invalid_key' }
 
+  let digest: string | undefined
+  if (b.digest !== undefined && b.digest !== null) {
+    if (typeof b.digest !== 'string' || !SHA256_HEX.test(b.digest)) {
+      return { ok: false, error: 'invalid_digest' }
+    }
+    digest = b.digest
+  }
+
   return {
     ok: true,
     value: {
@@ -121,6 +135,7 @@ export function parseQuickPost(body: unknown): ParseResult {
       postType: postType as TimelinePostType,
       images,
       key: b.key.toLowerCase(),
+      digest,
     },
   }
 }

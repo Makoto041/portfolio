@@ -432,20 +432,28 @@ const RECEIPT_STALE_MS = 2 * 60 * 1000
 
 export type ReceiptClaim =
   | { status: 'new'; receiptId: ID }
-  | { status: 'done'; postId: number }
+  | { status: 'done'; postId: number; digest: string | null }
   | { status: 'busy' }
 
 /**
- * 下書きのキーで受付票を取る。最初の1回だけ new、すでに投稿できていれば done（その投稿を返す）、
- * 同じ下書きをいま送っている途中なら busy
+ * 下書きのキーで受付票を取る。最初の1回だけ new、すでに投稿できていれば done（その投稿と、最初に送った内容の指紋を返す）、
+ * 同じ下書きをいま送っている途中なら busy。指紋は最初に受付票を取った送信のものだけが残る（一意制約で1つに決まる）
  */
-export async function claimPostReceipt(payload: Payload, key: string): Promise<ReceiptClaim> {
+export async function claimPostReceipt(
+  payload: Payload,
+  key: string,
+  digest?: string,
+): Promise<ReceiptClaim> {
   const receiptKey = `post:${key}`
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const doc = await payload.create({
         collection: 'quickpost-nonces',
-        data: { key: receiptKey, expiresAt: new Date(Date.now() + 30 * DAY).toISOString() },
+        data: {
+          key: receiptKey,
+          digest: digest ?? null,
+          expiresAt: new Date(Date.now() + 30 * DAY).toISOString(),
+        },
         depth: 0,
         overrideAccess: true,
       })
@@ -462,7 +470,9 @@ export async function claimPostReceipt(payload: Payload, key: string): Promise<R
       })
       const receipt = found.docs[0]
       if (!receipt) continue
-      if (typeof receipt.postId === 'number') return { status: 'done', postId: receipt.postId }
+      if (typeof receipt.postId === 'number') {
+        return { status: 'done', postId: receipt.postId, digest: receipt.digest ?? null }
+      }
       if (Date.now() - Date.parse(receipt.createdAt) < RECEIPT_STALE_MS) return { status: 'busy' }
       // 途中で落ちた受付票は取り直す（同時に取り直した相手が先に消していても、そのまま作り直しへ）
       await deleteOpenReceipt(payload, receipt.id).catch((e) =>
