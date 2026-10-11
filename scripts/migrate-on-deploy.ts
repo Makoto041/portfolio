@@ -27,18 +27,27 @@ async function main(): Promise<number> {
 
   // 開発モードの自動 push（スキーマの直接書き換え）を止める（payload migrate と同じ）
   process.env.PAYLOAD_MIGRATING = 'true'
-  const [{ default: payload }, { default: config }, { migrations }] = await Promise.all([
+  const [{ default: payload }, { default: config }, { migrations }, { sql }] = await Promise.all([
     import('payload'),
     import('../src/payload.config'),
     import('../src/migrations'),
+    import('@payloadcms/db-vercel-postgres'),
   ])
   // ログは同期で書く（失敗するとすぐ終了するので、非同期だと原因がビルドログに残らないことがある）
   const sanitized = await config
   await payload.init({ config: { ...sanitized, logger: 'sync' }, disableOnInit: true })
 
-  const recorded = async () =>
-    (await payload.find({ collection: 'payload-migrations', limit: 0, pagination: false, depth: 0 }))
-      .docs
+  // 記録の表（payload_migrations）がまだ無い DB（初めてのデプロイ）では、記録を空として扱う。
+  // 表は最初のマイグレーションが作る（Payload の migrate も同じように、表の有無を見てから記録を読む）
+  const recorded = async () => {
+    const table = await payload.db.drizzle.execute(
+      sql`SELECT to_regclass('payload_migrations') IS NOT NULL AS present`,
+    )
+    if (!table.rows[0]?.present) return []
+    return (
+      await payload.find({ collection: 'payload-migrations', limit: 0, pagination: false, depth: 0 })
+    ).docs
+  }
   const names = migrations.map((m) => m.name)
 
   const before = await recorded()
