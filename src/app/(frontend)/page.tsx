@@ -1,15 +1,15 @@
 // src/app/(frontend)/page.tsx
-// ホーム（Soda Press）— 雑誌の表紙のような巨大ロゴ「MAKOTO」の下に、
-// いちばん新しい投稿をカバーストーリーとして置き、タイムライン（日記帳）が主役の3段組:
-//   PC: [写真の柱 | カバーストーリー＋タイムライン | TODAY]  SP: 1段（TODAY は表紙の直下）
-// その下にブログ・つくったもの・イベント・プロフィール。
+// ホーム（Soda Press）— 大きな丸いロゴ「MAKOTO」の題字の下に、いちばん新しい投稿と
+// タイムライン（日記帳）を主役に置く。題字は下の投稿に重ねない。
+//   PC・タブレット: [最新の投稿＋タイムライン | TODAY] の2段組
+//   SP: 1段（最新の投稿 → TODAY → タイムライン）
+// その下に写真（横長）・ブログ・つくったもの・イベント・プロフィール。
 // データ取得・集計は src/features/home/getHomePageData.ts に分離し、ここはレイアウトに専念する。
 export const dynamic = 'force-static'
 export const revalidate = 60
 
 import { Analytics } from '@vercel/analytics/next'
 import SodaShell from '@/components/soda/SodaShell'
-import SodaTicker from '@/components/soda/SodaTicker'
 import SodaMasthead from '@/components/soda/SodaMasthead'
 import SodaLead from '@/components/soda/SodaLead'
 import SodaToday from '@/components/soda/SodaToday'
@@ -17,7 +17,7 @@ import SodaTimeline from '@/components/soda/SodaTimeline'
 import SodaPhotoColumn from '@/components/soda/SodaPhotoColumn'
 import SodaSectionHead from '@/components/soda/SodaSectionHead'
 import SodaRail from '@/components/soda/SodaRail'
-import SodaTabCard from '@/components/soda/SodaTabCard'
+import SodaCard from '@/components/soda/SodaCard'
 import SodaBlogRow from '@/components/soda/SodaBlogRow'
 import SodaProfileBlock from '@/components/soda/SodaProfileBlock'
 import Phrase from '@/components/soda/Phrase'
@@ -29,6 +29,9 @@ import {
 } from '@/features/home/getHomePageData'
 import { getSiteChrome } from '@/features/site/getSiteChrome'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
+
+/** 4件のレール（タブレットは 2×2・PC は4列）のカード画像の表示幅 */
+const FOUR_RAIL_SIZES = '(max-width: 760px) 76vw, (max-width: 1079px) 46vw, 300px'
 
 export const metadata = {
   title: '岩渕誠（いわぶちまこと） | ライフログ',
@@ -66,10 +69,10 @@ export default async function Home() {
     }),
     getSiteChrome(),
   ])
-  const { lead, feed, ticker, today, gallery, hero, profile, blog, events, products } = data
+  const { lead, feed, today, gallery, hero, profile, blog, events, products } = data
 
   return (
-    <SodaShell chrome={chrome} home before={<SodaTicker items={ticker} />}>
+    <SodaShell chrome={chrome} home>
       <Analytics />
       <div className="s-wrap">
         <SodaMasthead
@@ -90,10 +93,11 @@ export default async function Home() {
               <p className="s-empty">まだ投稿がありません</p>
             )}
           </section>
-          <SodaPhotoColumn photos={gallery} total={today.stats.photos} />
         </div>
 
         <div className="s-sections">
+          <SodaPhotoColumn photos={gallery} total={today.stats.photos} />
+
           {blog.length > 0 && (
             <section aria-labelledby="h-blog">
               <SodaSectionHead id="h-blog" ja="ブログ" en="Blog" href="/posts" />
@@ -110,7 +114,7 @@ export default async function Home() {
               <SodaSectionHead id="h-products" ja="つくったもの" en="Products" href="/products" />
               <SodaRail count={products.length} four>
                 {products.map((p) => (
-                  <SodaTabCard key={p.id} {...p} title={<Phrase text={p.label} />} />
+                  <SodaCard key={p.id} {...p} title={<Phrase text={p.label} />} sizes={FOUR_RAIL_SIZES} />
                 ))}
               </SodaRail>
             </section>
@@ -121,7 +125,12 @@ export default async function Home() {
               <SodaSectionHead id="h-events" ja="イベント" en="Events" href="/events" />
               <SodaRail count={events.length} four={events.length >= 4}>
                 {events.map((e) => (
-                  <SodaTabCard key={e.id} {...e} title={<Phrase text={e.label} />} />
+                  <SodaCard
+                    key={e.id}
+                    {...e}
+                    title={<Phrase text={e.label} />}
+                    sizes={events.length >= 4 ? FOUR_RAIL_SIZES : undefined}
+                  />
                 ))}
               </SodaRail>
             </section>

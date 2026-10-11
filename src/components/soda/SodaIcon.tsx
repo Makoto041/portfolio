@@ -23,8 +23,6 @@ export type SodaIconName =
   | 'linkedin'
   | 'globe'
   | 'pencil'
-  | 'pause'
-  | 'play'
 
 const PATHS: Record<SodaIconName, React.ReactNode> = {
   home: (
@@ -118,8 +116,6 @@ const PATHS: Record<SodaIconName, React.ReactNode> = {
       <path d="M13.5 7l3 3" />
     </>
   ),
-  pause: <path d="M9 6v12M15 6v12" strokeWidth={2} />,
-  play: <path d="M8.5 6.5v11l9-5.5z" />,
 }
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'name'> & { name: SodaIconName }

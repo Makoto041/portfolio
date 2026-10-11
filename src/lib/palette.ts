@@ -8,6 +8,7 @@
 // ───────────────────────────────────────────
 
 export const PALETTES = {
+  creamsoda: { label: 'クリームソーダ', bg: '#e6f1de', logo: '#74b088' },
   gunjo: { label: '群青ソーダ', bg: '#e3e8f8', logo: '#95a1da' },
   ramune: { label: 'ラムネ', bg: '#dbecf8', logo: '#8aaecd' },
   melon: { label: 'メロン', bg: '#e0f0e1', logo: '#7fb38a' },
@@ -22,7 +23,7 @@ export type PaletteKey = keyof typeof PALETTES
  * サイトの地色。'monthly' にすると下の MONTHLY の割当で月替わりになる。
  * 変更はこの1行だけでよい（DB スキーマ変更なし）。
  */
-export const SITE_PALETTE: PaletteKey | 'monthly' = 'gunjo'
+export const SITE_PALETTE: PaletteKey | 'monthly' = 'creamsoda'
 
 /** 月替わり時の割当（1月→12月）。季節感で並べている */
 const MONTHLY: readonly PaletteKey[] = [
@@ -52,5 +53,5 @@ export function currentPalette(
   now: Date = new Date(),
 ): PaletteKey {
   if (setting !== 'monthly') return setting
-  return MONTHLY[tokyoMonth(now) - 1] ?? 'gunjo'
+  return MONTHLY[tokyoMonth(now) - 1] ?? 'creamsoda'
 }

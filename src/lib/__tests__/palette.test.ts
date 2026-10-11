@@ -25,7 +25,8 @@ describe('PALETTES と soda.css の色値', () => {
   // theme-color / OGP 用に TS 側にも持っている bg・logo が、CSS の実際の色とずれていないこと
   const css = readFileSync(join(__dirname, '../../app/(frontend)/soda.css'), 'utf8')
   const block = (key: PaletteKey) => {
-    const re = key === 'gunjo' ? /:root \{([^}]*)\}/ : new RegExp(`:root\\[data-palette='${key}'\\] \\{([^}]*)\\}`)
+    // 既定（:root）はクリームソーダ。ほかは :root[data-palette='…']
+    const re = key === 'creamsoda' ? /:root \{([^}]*)\}/ : new RegExp(`:root\\[data-palette='${key}'\\] \\{([^}]*)\\}`)
     return css.match(re)?.[1] ?? ''
   }
   const value = (decls: string, name: string) => decls.match(new RegExp(`--s-${name}:\\s*(#[0-9a-f]{6})`, 'i'))?.[1]

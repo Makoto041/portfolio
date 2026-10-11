@@ -3,7 +3,7 @@
 // 各ページの openGraph.images / twitter.images から明示参照することで、
 // Next のメタデータ openGraph キーのシャロー置換によって og:image が消えるのを防ぐ。
 // デザイン変更時は版（?v=）を上げて SNS 側のキャッシュを確実に更新させる
-export const OG_IMAGE_URL = '/og?v=soda'
+export const OG_IMAGE_URL = '/og?v=soda2'
 
 export const OG_IMAGE = {
   url: OG_IMAGE_URL,

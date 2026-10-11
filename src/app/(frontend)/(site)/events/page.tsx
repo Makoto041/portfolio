@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import SodaPageHead from '@/components/soda/SodaPageHead'
-import SodaTabCard from '@/components/soda/SodaTabCard'
+import SodaCard from '@/components/soda/SodaCard'
 import Phrase from '@/components/soda/Phrase'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { fetchInEvent } from '@/lib/fetchInEvent'
@@ -50,7 +50,7 @@ export default async function EventsPage() {
               const card = eventCard(e, false)
               return (
                 <div key={card.id}>
-                  <SodaTabCard
+                  <SodaCard
                     {...card}
                     title={<Phrase text={card.label} />}
                     sizes="(max-width: 600px) 92vw, (max-width: 1080px) 46vw, 400px"

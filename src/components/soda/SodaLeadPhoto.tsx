@@ -1,5 +1,5 @@
 // src/components/soda/SodaLeadPhoto.tsx
-// カバーストーリーの写真（表紙いっぱい・LCP 候補なので priority）。タップで写真ビューア。
+// 最新の投稿の写真（大きく・LCP 候補なので priority）。文字は重ねない。タップで写真ビューア。
 'use client'
 
 import Image from 'next/image'
@@ -26,10 +26,15 @@ export default function SodaLeadPhoto({ photos, alt }: { photos: GridPhoto[]; al
           alt={first.alt || alt}
           fill
           priority
-          sizes="(max-width: 760px) 100vw, (max-width: 1080px) 66vw, 760px"
+          sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1079px) calc(100vw - 376px), min(calc(100vw - 456px), 904px)"
           quality={80}
           className="object-cover"
         />
+        {photos.length > 1 && (
+          <span className="s-lead-count s-num" aria-hidden="true">
+            1 / {photos.length}
+          </span>
+        )}
       </button>
       <ImageModal {...modalProps} />
     </>

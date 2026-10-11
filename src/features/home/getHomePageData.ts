@@ -5,12 +5,9 @@
 // 別コレクションの取得失敗はセクション単位で握りつぶし、ホーム全体を巻き込まない。
 // ───────────────────────────────────────────
 import { getPayloadClient } from '@/lib/payloadClient'
-import { fmtMonthDay } from '@/lib/date'
-import { lexicalToPlainText } from '@/lib/richtext'
 import { GALLERY_WHERE, getTodayData, EMPTY_TODAY, type TodayData } from '@/features/site/getTodayData'
-import { blogRow, eventCard, firstLine, productCard } from '@/features/site/cardViews'
-import type { TickerItem } from '@/components/soda/SodaTicker'
-import type { TabCardView } from '@/components/soda/SodaTabCard'
+import { blogRow, eventCard, productCard } from '@/features/site/cardViews'
+import type { CardView } from '@/components/soda/SodaCard'
 import type { BlogRowView } from '@/components/soda/SodaBlogRow'
 import type { ColumnPhoto } from '@/components/soda/SodaPhotoColumn'
 import type { TimelineDoc, MediaDoc, Event, Product } from '@/lib/payloadTypes'
@@ -18,18 +15,17 @@ import type { BlogPost as BlogPostDoc } from '@/payload-types'
 import type { ProfileData } from '@/lib/social'
 
 export type HomePageData = {
-  /** 最新の投稿（カバーストーリー） */
+  /** 最新の投稿 */
   lead?: TimelineDoc
-  /** カバーストーリーに続く投稿 */
+  /** 最新の投稿に続く投稿 */
   feed: TimelineDoc[]
-  ticker: TickerItem[]
   today: TodayData
   gallery: ColumnPhoto[]
   hero: { tagline: string; role: string }
   profile: ProfileData
   blog: BlogRowView[]
-  events: TabCardView[]
-  products: TabCardView[]
+  events: CardView[]
+  products: CardView[]
 }
 
 const HERO_DEFAULTS = {
@@ -41,7 +37,6 @@ const HERO_DEFAULTS = {
 export function emptyHomePageData(): HomePageData {
   return {
     feed: [],
-    ticker: [],
     today: EMPTY_TODAY,
     gallery: [],
     hero: { ...HERO_DEFAULTS },
@@ -52,7 +47,7 @@ export function emptyHomePageData(): HomePageData {
   }
 }
 
-/** ホームに載せる投稿数（カバーストーリー1 + タイムライン6） */
+/** ホームに載せる投稿数（最新1 + タイムライン6） */
 const HOME_POSTS = 7
 
 export async function getHomePageData(): Promise<HomePageData> {
@@ -62,7 +57,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   const [postsRes, galleryRes, settings, blogRes, eventsRes, productsRes, today] = await Promise.all([
     payload.find({ collection: 'timeline', limit: HOME_POSTS, sort: '-publishedAt', depth: 2 }),
     payload
-      // PC の写真の柱は 10 枚（SP・タブレットは CSS で 6 枚に絞る）
+      // 写真は PC で 5列×2段の 10 枚（SP・タブレットは CSS で 6 枚に絞る）
       .find({ collection: 'media', limit: 10, sort: '-createdAt', where: GALLERY_WHERE, depth: 0 })
       .catch((e) => {
         console.error('Gallery fetch failed (section hidden):', e)
@@ -99,23 +94,6 @@ export async function getHomePageData(): Promise<HomePageData> {
   const posts = postsRes.docs as unknown as TimelineDoc[]
   const [lead, ...feed] = posts
 
-  // ── ティッカー: おしらせ → 最新の投稿（4件） ──
-  const ticker: TickerItem[] = [
-    ...today.notices.map((n) => ({
-      key: `n-${n.key}`,
-      kind: 'notice' as const,
-      date: n.badge,
-      text: n.text,
-    })),
-    ...posts.slice(0, 4).map((p) => ({
-      key: `p-${p.id}`,
-      kind: 'post' as const,
-      date: fmtMonthDay(p.publishedAt ?? p.createdAt),
-      text: firstLine(p.title || lexicalToPlainText(p.text), 40),
-      href: `/timeline#post-${p.id}`,
-    })),
-  ].filter((t) => t.text)
-
   const gallery: ColumnPhoto[] = (galleryRes.docs as unknown as MediaDoc[])
     .filter((m) => m.url)
     .map((m) => ({ key: String(m.id), url: m.url as string, alt: m.alt }))
@@ -140,7 +118,6 @@ export async function getHomePageData(): Promise<HomePageData> {
   return {
     lead,
     feed,
-    ticker,
     today,
     gallery,
     hero,
@@ -151,7 +128,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   }
 }
 
-/** 表紙の号の年月 `2026.10`（Asia/Tokyo） */
+/** カバーラインの号の年月 `2026.10`（Asia/Tokyo） */
 export function issueMonth(now: Date = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit' })
     .formatToParts(now)

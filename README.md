@@ -8,17 +8,17 @@ Payload CMS 駆動の Next.js サイトです。
 
 ## デザイン — Soda Press
 
-雑誌の表紙のような大きな丸いロゴと、パステルの地 × 黒い1本線で組んだ独自デザインシステム。
+大きな丸いロゴと、パステルの地 × 黒い1本線で組んだ独自デザインシステム。
 タイムライン（日記帳）が主役。詳細は `docs/README.md`。
 
-- 表紙: 巨大ワードマーク「MAKOTO」の下に、いちばん新しい投稿をカバーストーリーとして置く
+- 題字「MAKOTO」の下に、いちばん新しい投稿を大きく置く（ロゴは投稿に重ねない・PC は左寄せ）
 - タイムラインは日付ごとの日記帳（曜日の丸 + M.D）。写真・リンクプレビュー・いいね
-- 写真に重ねる罫線タブ（ラベル / タイトル / 補足）でカードを統一
+- 文字は写真に重ねず、写真の下に置く（最新の投稿・つくったもの・イベントのカード）
 - SP は画面下のドック（ホーム / 写真 / ブログ / プロフィール / メニュー）で親指で移動
 - 地色は「今月の色」パレット（`src/lib/palette.ts`。固定 or 月替わりを1行で切替）
 - トークンは `src/app/(frontend)/soda.css` の `.soda` スコープに集約（文字・線 `--s-*`・
   タイポ `--s-fs-*`・角丸 `--s-r-*`・4px 系余白）。本文テキストはどのパレットでも AA (4.5:1) 以上
-- `prefers-reduced-motion` 対応（ティッカー・ロゴの弾み・アニメーションを停止）
+- `prefers-reduced-motion` 対応（ロゴの弾み・アニメーションを停止）
 
 ## 技術スタック
 
@@ -40,7 +40,7 @@ src/
 ├── app/
 │   ├── (frontend)/            # 公開ページ
 │   │   ├── layout.tsx         # <html>（フォント・地色パレット・JSON-LD）
-│   │   ├── page.tsx           # ホーム: 表紙 + カバーストーリー + タイムライン + TODAY + 写真
+│   │   ├── page.tsx           # ホーム: 題字 + 最新の投稿 + タイムライン + TODAY + 写真
 │   │   ├── soda.css           # Soda Press デザイントークン + 全スタイル
 │   │   ├── og/                # OGP 画像（1200×630 を動的生成）
 │   │   └── (site)/            # サブページ共通シェル（SodaShell）
@@ -52,7 +52,7 @@ src/
 │   └── api/                   # カスタム API（weather / letter / like / LINE webhook）
 ├── collections/               # Payload コレクション定義
 ├── features/                  # ページのデータ取得・集計・表示モデル（home / site）
-├── components/soda/           # Soda Press コンポーネント群（シェル・表紙・タイムライン・カード）
+├── components/soda/           # Soda Press コンポーネント群（シェル・題字・タイムライン・カード）
 ├── components/gallery/        # 写真ビューア（<dialog>）とギャラリー
 └── lib/                       # date / palette / phrase / richtext / social / cfUrl などの純関数
 ```
@@ -78,7 +78,7 @@ src/
 | `media` | 写真（ギャラリー / タイムライン専用フラグ付き） |
 | `events` | 配信・イベント記録（プラットフォーム・期間・LIVE 判定） |
 | `products` | 制作物カタログ |
-| `notices` | おしらせ（ティッカー・TODAY カード） |
+| `notices` | おしらせ（TODAY カード） |
 | `letters` | 問い合わせフォーム送信 |
 | `users` | 管理者認証 |
 | グローバル `site-settings` | プロフィール・ヒーロー文言・Spotify プレイリスト |

@@ -108,7 +108,7 @@ export function fmtDateJa(dateStr?: string | null): string {
   return `${p.year}年${p.month}月${p.day}日（${p.weekday}）`
 }
 
-/** ティッカー用の短い日付 `7.5` */
+/** 短い日付 `7.5`（最終更新日など） */
 export function fmtMonthDay(dateStr: string): string {
   const p = dayParts(dateStr)
   return p ? `${p.month}.${p.day}` : ''

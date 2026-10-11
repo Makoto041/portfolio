@@ -8,7 +8,7 @@ import { lexicalFirstImageUrl, lexicalToPlainText } from '@/lib/richtext'
 import { clip } from '@/lib/text'
 import { safeHref } from '@/lib/safeHref'
 import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
-import type { TabCardView } from '@/components/soda/SodaTabCard'
+import type { CardView } from '@/components/soda/SodaCard'
 import type { BlogRowView } from '@/components/soda/SodaBlogRow'
 import type { BlogPost as BlogPostDoc } from '@/payload-types'
 
@@ -50,7 +50,7 @@ export const PLATFORM_LABELS: Record<string, string> = {
   other: 'イベント',
 }
 
-/** 本文の最初の空でない1行（ティッカー・抜粋用） */
+/** 本文の最初の空でない1行（抜粋用） */
 export function firstLine(text: string, max: number): string {
   const line = text.split('\n').find((l) => l.trim()) ?? ''
   return clip(line, max)
@@ -63,8 +63,8 @@ export function isLiveNow(start: string, end?: string | null, now: number = Date
   return Number.isFinite(s) && now >= s && now <= e
 }
 
-/** イベント → タブカード */
-export function eventCard(e: EventLike, short = true): TabCardView {
+/** イベント → カード */
+export function eventCard(e: EventLike, short = true): CardView {
   const { time } = formatEventDateWithExtendedHour(e.startDate, e.endDate)
   const thumb = uploadUrl(e.thumbnail)
   // カードでは開始時刻まで（「〜」以降の終了時刻は一覧ページの補足に回す）
@@ -84,8 +84,8 @@ export function eventCard(e: EventLike, short = true): TabCardView {
   }
 }
 
-/** つくったもの → タブカード */
-export function productCard(p: ProductLike): TabCardView {
+/** つくったもの → カード */
+export function productCard(p: ProductLike): CardView {
   const image = uploadUrl(p.image)
   const url = safeHref(p.url)
   return {
