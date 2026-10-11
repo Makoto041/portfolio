@@ -16,7 +16,7 @@ export type CardView = {
   cover?: string
   attr?: string
   title: ReactNode
-  /** アクセシブルネーム用のプレーンなタイトル */
+  /** プレーンなタイトル（key・代替テキスト用） */
   label: string
   desc?: string
   live?: boolean
@@ -31,7 +31,6 @@ export default function SodaCard({
   cover,
   attr,
   title,
-  label,
   desc,
   live = false,
   sizes = '(max-width: 760px) 76vw, (max-width: 1080px) 31vw, 300px',
@@ -65,25 +64,20 @@ export default function SodaCard({
         {attr && <span className="s-card-attr">{attr}</span>}
         <h3 className="s-card-title">{title}</h3>
         {desc && <span className="s-card-desc">{desc}</span>}
+        {external && <span className="sr-only">（新しいタブで開く）</span>}
       </div>
     </>
   )
 
   if (external) {
     return (
-      <a
-        className="s-card"
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`${label}（新しいタブで開く）`}
-      >
+      <a className="s-card" href={href} target="_blank" rel="noopener noreferrer">
         {inner}
       </a>
     )
   }
   return (
-    <Link className="s-card" href={href} aria-label={label}>
+    <Link className="s-card" href={href}>
       {inner}
     </Link>
   )

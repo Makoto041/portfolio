@@ -57,7 +57,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   const [postsRes, galleryRes, settings, blogRes, eventsRes, productsRes, today] = await Promise.all([
     payload.find({ collection: 'timeline', limit: HOME_POSTS, sort: '-publishedAt', depth: 2 }),
     payload
-      // PC の写真は 5列×2段の 10 枚（SP・タブレットは CSS で 6 枚に絞る）
+      // 写真は PC で 5列×2段の 10 枚（SP・タブレットは CSS で 6 枚に絞る）
       .find({ collection: 'media', limit: 10, sort: '-createdAt', where: GALLERY_WHERE, depth: 0 })
       .catch((e) => {
         console.error('Gallery fetch failed (section hidden):', e)
@@ -128,7 +128,7 @@ export async function getHomePageData(): Promise<HomePageData> {
   }
 }
 
-/** 表紙の号の年月 `2026.10`（Asia/Tokyo） */
+/** カバーラインの号の年月 `2026.10`（Asia/Tokyo） */
 export function issueMonth(now: Date = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit' })
     .formatToParts(now)

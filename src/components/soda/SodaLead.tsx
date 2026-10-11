@@ -92,10 +92,12 @@ export default function SodaLead({ post }: { post?: TimelineDoc }) {
         </div>
         <div className="s-lead-after">
           <Eyebrow />
-          {headline && (
+          {headline ? (
             <h2 className="s-lead-title">
               <Phrase text={headline} />
             </h2>
+          ) : (
+            <h2 className="sr-only">最新の投稿</h2>
           )}
           {body && <p className={`s-lead-body${bodyFolded ? ' is-folded' : ''}`}>{body}</p>}
           {preview}

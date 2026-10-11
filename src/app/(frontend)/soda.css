@@ -212,7 +212,7 @@
 .soda .s-hdr-nav a[aria-current='page'] { background: var(--s-ink); color: var(--s-bg); }
 .soda .s-hdr-right { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
 .soda .s-hdr-right .s-mailbtn { display: none; }
-/* ホーム最上部では表紙ロゴが主役：小ロゴを隠し、帯を透明に */
+/* ホーム最上部では題字が主役：小ロゴを隠し、帯を透明に */
 .soda .s-hdr.is-top { background: transparent; border-bottom-color: transparent; }
 .soda .s-hdr.is-top .s-logo-s { opacity: 0; transform: translateY(6px); pointer-events: none; }
 @media (max-width: 1079px) {
@@ -224,7 +224,7 @@
   .soda .s-hdr-right .s-letterpill,
   .soda .s-hdr-right .s-menubtn { display: none; }
   .soda .s-hdr-right .s-mailbtn { display: inline-grid; }
-  /* ホームは帯の高さ分だけ表紙を持ち上げ、最上部の透明な帯にカバーラインを差し込む
+  /* ホームは帯の高さ分だけ題字を持ち上げ、最上部の透明な帯にカバーラインを差し込む
      （is-top の切替に依らず常に持ち上げるので、スクロール中にレイアウトがずれない） */
   .soda .s-hdr.is-home { margin-bottom: calc(-1 * var(--s-header-h)); }
 }
@@ -232,7 +232,7 @@
 /* ══════════════ 題字（巨大ワードマーク + カバーライン） ══════════════
    SP: カバーライン → 全幅の題字。PC（761px〜）: 題字を左に寄せ、カバーラインを右に縦に並べる。
    題字は下の投稿に重ねない */
-.soda .s-mast { position: relative; z-index: 3; padding-block: 8px 22px; text-align: center; pointer-events: none; }
+.soda .s-mast { padding-block: 8px 22px; text-align: center; }
 .soda .s-coverline {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -242,7 +242,6 @@
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  pointer-events: auto;
 }
 .soda .s-coverline > :first-child { text-align: left; }
 .soda .s-coverline > :last-child { text-align: right; }
@@ -296,32 +295,29 @@
     padding-bottom: 4px;
     text-align: right;
   }
+  .soda .s-coverline > :first-child { text-align: right; }
   .soda .s-coverline .s-tagline { max-width: 24em; font-size: var(--s-fs-ui); letter-spacing: 0.04em; text-wrap: balance; }
 }
 
-/* ══════════════ ホーム（PC・タブレット: 最新＋タイムライン | TODAY、写真は下に横長） ══════════════ */
+/* ══════════════ ホーム（PC・タブレット: 最新＋タイムライン | TODAY。写真は下段の先頭に横長） ══════════════ */
 .soda .s-home-grid {
-  position: relative;
-  z-index: 1;
   display: grid;
   gap: 20px;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: 'lead' 'today' 'feed' 'photos';
+  grid-template-areas: 'lead' 'today' 'feed';
 }
 .soda .s-home-grid > .s-lead { grid-area: lead; }
 .soda .s-home-grid > .s-today { grid-area: today; }
 .soda .s-home-grid > .s-feedsec { grid-area: feed; }
-.soda .s-home-grid > .s-photocol { grid-area: photos; }
 @media (min-width: 761px) {
   .soda .s-home-grid {
     grid-template-columns: minmax(0, 1fr) 280px;
     /* 最新の行は中身の高さに保ち、TODAY との長さの差はタイムラインの行が引き受ける */
-    grid-template-rows: auto 1fr auto;
-    grid-template-areas: 'lead today' 'feed today' 'photos photos';
+    grid-template-rows: auto 1fr;
+    grid-template-areas: 'lead today' 'feed today';
     gap: 32px;
   }
   .soda .s-home-grid > .s-today { align-self: start; position: sticky; top: calc(var(--s-header-h) + 24px); }
-  .soda .s-home-grid > .s-photocol { margin-top: 24px; }
 }
 @media (min-width: 1080px) {
   .soda .s-home-grid { grid-template-columns: minmax(0, 1fr) 320px; gap: 36px 48px; }
@@ -367,11 +363,15 @@
 .soda .s-lead-more { align-self: flex-start; }
 /* 下の行: 種類・日時（左）といいね（右） */
 .soda .s-lead-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 12px; }
+/* 折り返してもいいねは右端に */
+.soda .s-lead-foot .s-like { margin-left: auto; }
 .soda .s-lead-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: var(--s-fs-meta); color: var(--s-sub); }
 .soda .s-lead-meta time { letter-spacing: 0.04em; }
 /* 写真つき: 写真を大きく見せ、文字は下の紙面に続ける */
 .soda .s-lead-cover { position: relative; aspect-ratio: 16 / 10; }
 .soda .s-lead-cover > .s-lead-img { position: absolute; inset: 0; padding: 0; border: 0; background: var(--s-card); cursor: zoom-in; }
+/* 角丸の枠（overflow: hidden）に切られないよう、フォーカス枠は写真の内側に描く */
+.soda .s-lead-img:focus-visible { outline-offset: -4px; }
 .soda .s-lead-count {
   position: absolute;
   top: 14px;
@@ -682,7 +682,7 @@
   .soda .s-today-bottom { display: none; }
 }
 
-/* ── 写真（PC 5列×2段 / タブレット 6列 / SP 3列×2段。タイムラインの下に横長に並べる） ── */
+/* ── 写真（PC 5列×2段 / タブレット 6列 / SP 3列×2段。下段の先頭に横長に並べる） ── */
 .soda .s-phs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .soda .s-phs a { position: relative; display: block; overflow: hidden; aspect-ratio: 1; border-radius: var(--s-r-l); background: var(--s-card); }
 .soda .s-phs img { transition: transform 0.6s; }
@@ -756,7 +756,8 @@
 }
 
 /* 写真の下に文字を置くカード（文字は写真に重ねない） */
-.soda .s-card { display: grid; align-content: start; gap: 12px; text-decoration: none; }
+/* position: relative で読み上げ用の補足（.sr-only）を横スワイプの枠の中に閉じ込める（はみ出すと SP で画面幅が広がる） */
+.soda .s-card { position: relative; display: grid; align-content: start; gap: 12px; text-decoration: none; }
 .soda .s-card-ph {
   position: relative;
   display: block;
@@ -1228,7 +1229,6 @@
 }
 .soda .s-cgrid .s-card-ph { aspect-ratio: 4 / 3; }
 .soda .s-cnote { margin-top: 10px; font-size: var(--s-fs-ui); line-height: 1.8; color: var(--s-sub); white-space: pre-line; }
-.soda .s-cmeta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; font-size: var(--s-fs-meta); color: var(--s-sub); }
 
 /* 記事 */
 .soda .s-article { max-width: 700px; margin-inline: auto; }

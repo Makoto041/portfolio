@@ -12,6 +12,8 @@ const PALETTE = PALETTES[SITE_PALETTE === 'monthly' ? 'creamsoda' : SITE_PALETTE
 const BG = PALETTE.bg
 const LOGO = PALETTE.logo
 const INK = '#141414'
+/** 補助の文字色（soda.css の --s-sub） */
+const SUB = '#42444b'
 const WORD = 'MAKOTO'
 
 /** Google Fonts から必要な文字だけの TTF を取得（Satori は woff2 非対応のため TTF を要求） */
@@ -93,7 +95,7 @@ export async function GET() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', fontSize: 46, letterSpacing: 2 }}>岩渕誠（いわぶちまこと）</div>
-            <div style={{ display: 'flex', fontSize: 26, letterSpacing: 2, color: '#42444b' }}>
+            <div style={{ display: 'flex', fontSize: 26, letterSpacing: 2, color: SUB }}>
               日々の記録、ときどき写真。
             </div>
           </div>

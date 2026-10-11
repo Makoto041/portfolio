@@ -21,7 +21,7 @@ export default function SodaPhotoColumn({ photos, total }: { photos: ColumnPhoto
               src={toCFUrl(p.url)}
               alt={p.alt ?? ''}
               fill
-              sizes="(max-width: 760px) 31vw, (max-width: 1080px) 16vw, 172px"
+              sizes="(max-width: 760px) 31vw, (max-width: 1079px) 16vw, min(calc(20vw - 30px), 245px)"
               quality={72}
               className="object-cover"
               loading="lazy"

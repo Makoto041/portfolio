@@ -1,8 +1,8 @@
 // src/components/soda/SodaHeader.tsx
 // 全ページ共通の sticky ヘッダー。
-// ホームでは最上部で表紙ロゴ（#soda-wordmark）が見えている間だけ帯を透明にして小ロゴを隠し、
+// ホームでは最上部で題字（#soda-wordmark）が見えている間だけ帯を透明にして小ロゴを隠し、
 // ロゴがヘッダーの下に隠れたら小ロゴ付きの帯に切り替える。
-// SP のホームは帯の高さ分だけ表紙を持ち上げ、空いた帯にカバーラインを差し込む（.is-home）。
+// SP のホームは帯の高さ分だけ題字を持ち上げ、空いた帯にカバーラインを差し込む（.is-home）。
 'use client'
 
 import { useEffect, useState } from 'react'

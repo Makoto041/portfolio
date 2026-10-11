@@ -121,7 +121,7 @@ export const SiteSettings: GlobalConfig = {
           label: 'タグライン',
           defaultValue: '日々の記録、ときどき写真。つぶやきくらいの気軽さで。',
           admin: {
-            description: 'ホームの表紙（ロゴ「MAKOTO」の上のカバーライン）とメニューに表示される日本語コピー',
+            description: 'ホームの題字のカバーライン（ロゴ「MAKOTO」の上、PC は右）とメニューに表示される日本語コピー',
           },
         },
         {

@@ -26,7 +26,7 @@ export default function SodaLeadPhoto({ photos, alt }: { photos: GridPhoto[]; al
           alt={first.alt || alt}
           fill
           priority
-          sizes="(max-width: 760px) 100vw, (max-width: 1080px) 66vw, 760px"
+          sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1079px) calc(100vw - 376px), min(calc(100vw - 456px), 904px)"
           quality={80}
           className="object-cover"
         />

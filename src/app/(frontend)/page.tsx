@@ -1,9 +1,9 @@
 // src/app/(frontend)/page.tsx
 // ホーム（Soda Press）— 大きな丸いロゴ「MAKOTO」の題字の下に、いちばん新しい投稿と
 // タイムライン（日記帳）を主役に置く。題字は下の投稿に重ねない。
-//   PC・タブレット: [最新の投稿＋タイムライン | TODAY] の2段組、写真はその下に横長に並べる
-//   SP: 1段（最新の投稿 → TODAY → タイムライン → 写真）
-// その下にブログ・つくったもの・イベント・プロフィール。
+//   PC・タブレット: [最新の投稿＋タイムライン | TODAY] の2段組
+//   SP: 1段（最新の投稿 → TODAY → タイムライン）
+// その下に写真（横長）・ブログ・つくったもの・イベント・プロフィール。
 // データ取得・集計は src/features/home/getHomePageData.ts に分離し、ここはレイアウトに専念する。
 export const dynamic = 'force-static'
 export const revalidate = 60
@@ -90,10 +90,11 @@ export default async function Home() {
               <p className="s-empty">まだ投稿がありません</p>
             )}
           </section>
-          <SodaPhotoColumn photos={gallery} total={today.stats.photos} />
         </div>
 
         <div className="s-sections">
+          <SodaPhotoColumn photos={gallery} total={today.stats.photos} />
+
           {blog.length > 0 && (
             <section aria-labelledby="h-blog">
               <SodaSectionHead id="h-blog" ja="ブログ" en="Blog" href="/posts" />
