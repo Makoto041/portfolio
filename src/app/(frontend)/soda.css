@@ -204,8 +204,9 @@
   /* 1項目あたり 8 秒（項目数が変わっても流れる速さをほぼ一定に保つ） */
   animation: s-tick calc(var(--s-tk-n, 6) * 8s) linear infinite;
 }
-.soda .s-ticker:hover .s-ticker-track,
-.soda .s-ticker:focus-within .s-ticker-track { animation-play-state: paused; }
+/* 文字の上にポインター/フォーカスがある間だけ止める（一時停止ボタンは含めない。押して再生した直後から流す） */
+.soda .s-ticker-view:hover .s-ticker-track,
+.soda .s-ticker-view:focus-within .s-ticker-track { animation-play-state: paused; }
 .soda .s-ticker .s-tk-item { text-decoration: none; font-weight: 500; letter-spacing: 0.06em; }
 @media (hover: hover) {
   .soda .s-ticker a:hover { text-decoration: underline; text-underline-offset: 3px; }

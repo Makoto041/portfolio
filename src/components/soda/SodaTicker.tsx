@@ -4,9 +4,10 @@
 // ホバー/フォーカスで一時停止、右端のボタンでも停止できる（WCAG 2.2.2）。
 // 流れる時間は項目数に比例させる（--s-tk-n）。
 // prefers-reduced-motion では流さず、1セットだけを横スクロールで読めるようにする（CSS）。
+// そのときは横スクロールの枠をフォーカスできるようにし、リンクでないおしらせも矢印キーで送れるようにする。
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
 import SodaIcon from '@/components/soda/SodaIcon'
 
@@ -22,6 +23,15 @@ export type TickerItem = {
 
 export default function SodaTicker({ items }: { items: TickerItem[] }) {
   const [paused, setPaused] = useState(false)
+  // 動きを減らす設定（サーバーでは分からないので、マウント後に反映する）
+  const [still, setStill] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setStill(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
   if (items.length === 0) return null
 
   const render = (dup: boolean) =>
@@ -54,7 +64,12 @@ export default function SodaTicker({ items }: { items: TickerItem[] }) {
       aria-label="おしらせと最新の投稿"
       style={{ '--s-tk-n': items.length } as CSSProperties}
     >
-      <div className="s-ticker-view">
+      <div
+        className="s-ticker-view"
+        tabIndex={still ? 0 : undefined}
+        role={still ? 'group' : undefined}
+        aria-label={still ? 'おしらせと最新の投稿（左右にスクロールして読めます）' : undefined}
+      >
         <div className="s-ticker-track">
           {render(false)}
           {render(true)}
