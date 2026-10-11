@@ -30,6 +30,9 @@ import {
 import { getSiteChrome } from '@/features/site/getSiteChrome'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 
+/** 4件のレール（タブレットは 2×2・PC は4列）のカード画像の表示幅 */
+const FOUR_RAIL_SIZES = '(max-width: 760px) 76vw, (max-width: 1079px) 46vw, 300px'
+
 export const metadata = {
   title: '岩渕誠（いわぶちまこと） | ライフログ',
   description:
@@ -111,7 +114,7 @@ export default async function Home() {
               <SodaSectionHead id="h-products" ja="つくったもの" en="Products" href="/products" />
               <SodaRail count={products.length} four>
                 {products.map((p) => (
-                  <SodaCard key={p.id} {...p} title={<Phrase text={p.label} />} />
+                  <SodaCard key={p.id} {...p} title={<Phrase text={p.label} />} sizes={FOUR_RAIL_SIZES} />
                 ))}
               </SodaRail>
             </section>
@@ -122,7 +125,12 @@ export default async function Home() {
               <SodaSectionHead id="h-events" ja="イベント" en="Events" href="/events" />
               <SodaRail count={events.length} four={events.length >= 4}>
                 {events.map((e) => (
-                  <SodaCard key={e.id} {...e} title={<Phrase text={e.label} />} />
+                  <SodaCard
+                    key={e.id}
+                    {...e}
+                    title={<Phrase text={e.label} />}
+                    sizes={events.length >= 4 ? FOUR_RAIL_SIZES : undefined}
+                  />
                 ))}
               </SodaRail>
             </section>
