@@ -5,32 +5,27 @@
 // 別コレクションの取得失敗はセクション単位で握りつぶし、ホーム全体を巻き込まない。
 // ───────────────────────────────────────────
 import { getPayloadClient } from '@/lib/payloadClient'
-import { getTodayData, EMPTY_TODAY, type TodayData } from '@/features/site/getTodayData'
-import { getRecentPhotos } from '@/features/site/getRecentPhotos'
-import { blogRow, eventTicket, productSticker } from '@/features/site/cardViews'
-import type { TicketView } from '@/components/soda/SodaTicket'
-import type { StickerView } from '@/components/soda/SodaSticker'
+import { GALLERY_WHERE, getTodayData, EMPTY_TODAY, type TodayData } from '@/features/site/getTodayData'
+import { blogRow, eventCard, productCard } from '@/features/site/cardViews'
+import type { CardView } from '@/components/soda/SodaCard'
 import type { BlogRowView } from '@/components/soda/SodaBlogRow'
-import type { ColumnPhoto } from '@/components/soda/SodaContactSheet'
-import type { TimelineDoc, Event, Product } from '@/lib/payloadTypes'
+import type { ColumnPhoto } from '@/components/soda/SodaPhotoColumn'
+import type { TimelineDoc, MediaDoc, Event, Product } from '@/lib/payloadTypes'
 import type { BlogPost as BlogPostDoc } from '@/payload-types'
 import type { ProfileData } from '@/lib/social'
 
 export type HomePageData = {
-  /** 最新の投稿（ノート / プリント） */
+  /** 最新の投稿 */
   lead?: TimelineDoc
   /** 最新の投稿に続く投稿 */
   feed: TimelineDoc[]
   today: TodayData
-  /** ベタ焼き（最近の写真） */
-  photos: ColumnPhoto[]
+  gallery: ColumnPhoto[]
   hero: { tagline: string; role: string }
   profile: ProfileData
   blog: BlogRowView[]
-  events: TicketView[]
-  products: StickerView[]
-  /** 見出しの耳に出す件数（ホームに載せた分ではなく全件） */
-  counts: { blog: number; events: number; products: number }
+  events: CardView[]
+  products: CardView[]
 }
 
 const HERO_DEFAULTS = {
@@ -43,13 +38,12 @@ export function emptyHomePageData(): HomePageData {
   return {
     feed: [],
     today: EMPTY_TODAY,
-    photos: [],
+    gallery: [],
     hero: { ...HERO_DEFAULTS },
     profile: {},
     blog: [],
     events: [],
     products: [],
-    counts: { blog: 0, events: 0, products: 0 },
   }
 }
 
@@ -60,9 +54,15 @@ export async function getHomePageData(): Promise<HomePageData> {
   const payload = await getPayloadClient()
   const emptyDocs = { docs: [] as unknown[], totalDocs: 0 }
 
-  const [postsRes, photos, settings, blogRes, eventsRes, productsRes, today] = await Promise.all([
+  const [postsRes, galleryRes, settings, blogRes, eventsRes, productsRes, today] = await Promise.all([
     payload.find({ collection: 'timeline', limit: HOME_POSTS, sort: '-publishedAt', depth: 2 }),
-    getRecentPhotos(),
+    payload
+      // PC の写真は 5列×2段の 10 枚（SP・タブレットは CSS で 6 枚に絞る）
+      .find({ collection: 'media', limit: 10, sort: '-createdAt', where: GALLERY_WHERE, depth: 0 })
+      .catch((e) => {
+        console.error('Gallery fetch failed (section hidden):', e)
+        return emptyDocs
+      }),
     // 設定はスキーマ変更（新カラム）未適用でもホーム全体を巻き込まないよう既定値へ縮退
     payload.findGlobal({ slug: 'site-settings', depth: 1 }).catch((e) => {
       console.error('site-settings fetch failed (using defaults):', e)
@@ -75,9 +75,9 @@ export async function getHomePageData(): Promise<HomePageData> {
     payload
       .find({
         collection: 'events',
-        limit: 3,
+        limit: 4,
         sort: '-startDate',
-        depth: 0,
+        depth: 1,
         where: { isPublic: { equals: true } },
       })
       .catch((e) => {
@@ -93,6 +93,10 @@ export async function getHomePageData(): Promise<HomePageData> {
 
   const posts = postsRes.docs as unknown as TimelineDoc[]
   const [lead, ...feed] = posts
+
+  const gallery: ColumnPhoto[] = (galleryRes.docs as unknown as MediaDoc[])
+    .filter((m) => m.url)
+    .map((m) => ({ key: String(m.id), url: m.url as string, alt: m.alt }))
 
   const heroData = settings?.hero
   const hero = {
@@ -115,12 +119,19 @@ export async function getHomePageData(): Promise<HomePageData> {
     lead,
     feed,
     today,
-    photos,
+    gallery,
     hero,
     profile,
     blog: (blogRes.docs as unknown as BlogPostDoc[]).map(blogRow),
-    events: (eventsRes.docs as unknown as Event[]).map((e) => eventTicket(e)),
-    products: (productsRes.docs as unknown as Product[]).map((p) => productSticker(p)),
-    counts: { blog: blogRes.totalDocs, events: eventsRes.totalDocs, products: productsRes.totalDocs },
+    events: (eventsRes.docs as unknown as Event[]).map((e) => eventCard(e)),
+    products: (productsRes.docs as unknown as Product[]).map(productCard),
   }
+}
+
+/** 表紙の号の年月 `2026.10`（Asia/Tokyo） */
+export function issueMonth(now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit' })
+    .formatToParts(now)
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? ''
+  return `${get('year')}.${get('month')}`
 }

@@ -11,8 +11,8 @@ export const Media: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
-  // 画像追加/削除でホーム・/timeline のベタ焼き（最近の写真）とギャラリー一覧を再検証
-  hooks: makeRevalidate(['/', '/gallery', '/timeline']),
+  // 画像追加/削除で Home（Gallery/ストリーム）とギャラリー一覧を再検証
+  hooks: makeRevalidate(['/', '/gallery']),
   upload: true, // ← S3 保存の紐付けは payload.config.ts 側のプラグイン設定で行うので、ここには不要です
   fields: [
     {

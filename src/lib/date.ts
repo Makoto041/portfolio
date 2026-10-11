@@ -113,38 +113,3 @@ export function fmtMonthDay(dateStr: string): string {
   const p = dayParts(dateStr)
   return p ? `${p.month}.${p.day}` : ''
 }
-
-/** フィルムカメラの日付写し込み `'25 10 12`（Asia/Tokyo） */
-export function fmtFilmDate(dateStr: string): string {
-  const p = dayParts(dateStr)
-  return p ? `'${String(p.year).slice(2)} ${p.month} ${p.day}` : ''
-}
-
-const DAY_MS = 24 * 60 * 60 * 1000
-
-/** Asia/Tokyo の暦日どうしの差（日数）。b が a より後なら正 */
-function dayDiff(a: DayParts, b: DayParts): number {
-  return Math.round((Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / DAY_MS)
-}
-
-/** 暦の上で何か月たったか（日付がまだ来ていない月は数えない。例: 10/12 → 翌年 10/11 は 11 か月） */
-function monthDiff(a: DayParts, b: DayParts): number {
-  return (b.year - a.year) * 12 + (b.month - a.month) - (b.day < a.day ? 1 : 0)
-}
-
-/**
- * 投稿日の「きょう / きのう / ○日前 / ○か月前 / ○年前」（Asia/Tokyo の暦で数える）。
- * 表示時刻に依存するので、静的生成された HTML ではなくクライアントで計算して出す。
- */
-export function relativeDayLabel(dateStr: string, now: number = Date.now()): string {
-  const day = dayParts(dateStr)
-  const today = dayParts(new Date(now).toISOString())
-  if (!day || !today) return ''
-  const n = dayDiff(day, today)
-  if (n <= 0) return 'きょう'
-  if (n === 1) return 'きのう'
-  const months = monthDiff(day, today)
-  if (months < 1) return `${n}日前`
-  if (months < 12) return `${months}か月前`
-  return `${Math.floor(months / 12)}年前`
-}

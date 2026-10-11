@@ -332,7 +332,7 @@ export interface Letter {
 export interface Notice {
   id: number;
   /**
-   * ホームのメモ帳（おしらせ）と SP のピン留めに「12.06」形式で表示されます
+   * TODAY カードに「12.06」形式で表示されます（SP のホームは最新の1件）
    */
   date: string;
   /**

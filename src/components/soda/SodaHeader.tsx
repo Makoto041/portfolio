@@ -1,7 +1,8 @@
 // src/components/soda/SodaHeader.tsx
-// 全ページ共通の sticky ヘッダー（PC はナビ・現在地に下線、SP はお便りアイコン）。
-// ホームでは題字（#soda-wordmark）が見えている間だけ小ロゴを隠し、
-// 題字がヘッダーの下に隠れたら小ロゴを出す（同じロゴを2つ並べない）。
+// 全ページ共通の sticky ヘッダー。
+// ホームでは最上部で表紙ロゴ（#soda-wordmark）が見えている間だけ帯を透明にして小ロゴを隠し、
+// ロゴがヘッダーの下に隠れたら小ロゴ付きの帯に切り替える。
+// SP のホームは帯の高さ分だけ表紙を持ち上げ、空いた帯にカバーラインを差し込む（.is-home）。
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -17,7 +18,7 @@ const HEADER_NAV = NAV.filter((n) => n.href !== '/' && n.href !== '/letter')
 export default function SodaHeader({ home = false }: { home?: boolean }) {
   const pathname = usePathname() ?? '/'
   const { open } = useSodaNav()
-  // SSR 時点の初期値: ホームは「最上部」扱い（小ロゴを隠す）、それ以外は通常の帯
+  // SSR 時点の初期値: ホームは「最上部」扱い（透明）、それ以外は通常の帯
   const [atTop, setAtTop] = useState(home)
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function SodaHeader({ home = false }: { home?: boolean }) {
   }, [home, pathname])
 
   return (
-    <header className={`s-hdr${atTop ? ' is-top' : ''}`}>
+    <header className={`s-hdr${home ? ' is-home' : ''}${atTop ? ' is-top' : ''}`}>
       <Link
         href="/"
         className="s-logo-s"

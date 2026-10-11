@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import SodaPageHead from '@/components/soda/SodaPageHead'
-import SodaTicket from '@/components/soda/SodaTicket'
+import SodaCard from '@/components/soda/SodaCard'
+import Phrase from '@/components/soda/Phrase'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { fetchInEvent } from '@/lib/fetchInEvent'
-import { eventTicket } from '@/features/site/cardViews'
+import { eventCard } from '@/features/site/cardViews'
 
 const eventsDescription =
   '岩渕誠（いわぶちまこと）の配信・イベントの記録一覧。Twitch / YouTube などでの配信や現地イベントの情報を公開しています。'
@@ -44,10 +45,19 @@ export default async function EventsPage() {
         {events.length === 0 ? (
           <p className="s-empty">予定しているイベントはまだありません</p>
         ) : (
-          <div className="s-tickets is-page">
+          <div className="s-cgrid">
             {events.map((e) => {
-              const ticket = eventTicket(e, true)
-              return <SodaTicket key={ticket.id} {...ticket} />
+              const card = eventCard(e, false)
+              return (
+                <div key={card.id}>
+                  <SodaCard
+                    {...card}
+                    title={<Phrase text={card.label} />}
+                    sizes="(max-width: 600px) 92vw, (max-width: 1080px) 46vw, 400px"
+                  />
+                  {e.summary && <p className="s-cnote">{e.summary}</p>}
+                </div>
+              )
             })}
           </div>
         )}

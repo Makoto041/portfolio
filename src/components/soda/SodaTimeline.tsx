@@ -1,10 +1,9 @@
 // src/components/soda/SodaTimeline.tsx
-// タイムライン（日付ごとの日記帳）。日ごとに「曜日の丸 + M.D + 年 + きょう/○日前」の見出しを立て、
-// その日の投稿を並べる。写真はプリント（右下にフィルムの日付写し込み）。
+// タイムライン（日付ごとの日記帳）。日ごとに「曜日の丸 + M.D + 年」の見出しを立て、その日の投稿を並べる。
 // 追加分は Payload REST（GET /api/timeline）からページ単位で取得する（初期転送量の削減）。
-// 種類のフィルタと月の目次（その月だけを見る）は where 句としてサーバー側に問い合わせ、
-// 結果を「種類|月」のキーごとにキャッシュする。
-// compact（ホーム）ではフィルタ・目次・追加読込を出さず、専用ページへの導線を出す。
+// フィルタは postType の where 句としてサーバー側に問い合わせ、結果をキーごとにキャッシュする。
+// compact（ホーム）ではフィルタ・追加読込を出さず、専用ページへの導線を出す。
+// 1件は「時刻・種類（日記以外）・いいね」の1行 + 本文 + リンク/写真。短い投稿でも枠が主張しすぎない密度にする。
 'use client'
 
 import { useRef, useState } from 'react'
@@ -14,16 +13,8 @@ import UrlPreview from '@/components/shared/UrlPreview'
 import SodaIcon from '@/components/soda/SodaIcon'
 import SodaLike from '@/components/soda/SodaLike'
 import SodaPhotoGrid from '@/components/soda/SodaPhotoGrid'
-import RelDay from '@/components/soda/RelDay'
-import { dayParts, fmtFilmDate, fmtTime, type DayParts } from '@/lib/date'
-import {
-  TIMELINE_PAGE_SIZE,
-  TYPE_LABELS,
-  monthRange,
-  postPhotos,
-  postSummary,
-  type MonthBucket,
-} from '@/lib/timeline'
+import { dayParts, fmtTime, type DayParts } from '@/lib/date'
+import { TIMELINE_PAGE_SIZE, TYPE_LABELS, postPhotos, postSummary } from '@/lib/timeline'
 import { timeoutSignal } from '@/lib/timeoutSignal'
 import type { TimelineDoc, TimelinePostType } from '@/lib/payloadTypes'
 
@@ -65,24 +56,21 @@ function PostItem({ post }: { post: TimelineDoc }) {
           embedUrl={post.embedUrl}
         />
       )}
-      {photos.length > 0 && (
-        <SodaPhotoGrid photos={photos} alt={postSummary(post) || 'タイムラインの写真'} filmDate={fmtFilmDate(date)} />
-      )}
+      {photos.length > 0 && <SodaPhotoGrid photos={photos} alt={postSummary(post) || 'タイムラインの写真'} />}
     </article>
   )
 }
 
-type DayGroup = { key: string; date: string; parts: DayParts | null; items: TimelineDoc[] }
+type DayGroup = { key: string; parts: DayParts | null; items: TimelineDoc[] }
 
 function groupByDay(posts: TimelineDoc[]): DayGroup[] {
   const groups: DayGroup[] = []
   for (const post of posts) {
-    const date = post.publishedAt ?? post.createdAt
-    const parts = dayParts(date)
+    const parts = dayParts(post.publishedAt ?? post.createdAt)
     const key = parts?.key ?? `unknown-${post.id}`
     const last = groups[groups.length - 1]
     if (last && last.key === key) last.items.push(post)
-    else groups.push({ key, date, parts, items: [post] })
+    else groups.push({ key, parts, items: [post] })
   }
   return groups
 }
@@ -90,12 +78,12 @@ function groupByDay(posts: TimelineDoc[]): DayGroup[] {
 function DayFeed({ posts }: { posts: TimelineDoc[] }) {
   return (
     <>
-      {groupByDay(posts).map(({ key, date, parts, items }) => (
+      {groupByDay(posts).map(({ key, parts, items }) => (
         <div key={key} className="s-day">
           <h3 className="s-dayhead">
             {parts ? (
               <>
-                <span className={`s-wd${parts.weekday === '日' ? ' is-sun' : ''}`} aria-hidden="true">
+                <span className="s-wd" aria-hidden="true">
                   {parts.weekday}
                 </span>
                 <span className="s-md" aria-hidden="true">
@@ -107,7 +95,6 @@ function DayFeed({ posts }: { posts: TimelineDoc[] }) {
                 <span className="sr-only">
                   {parts.year}年{parts.month}月{parts.day}日（{parts.weekday}）
                 </span>
-                <RelDay date={date} />
               </>
             ) : (
               <span className="s-md">—</span>
@@ -128,51 +115,33 @@ function DayFeed({ posts }: { posts: TimelineDoc[] }) {
 
 type FeedState = { docs: TimelineDoc[]; page: number; hasMore: boolean; total: number }
 
-/** 種類と月の組み合わせ（キャッシュのキー） */
-const feedKey = (type: string, month: string) => `${type}|${month}`
-
 /** Payload REST から1ページ取得（read: anyone の公開コレクション） */
-async function fetchTimelinePage(type: string, month: string, page: number) {
-  const types = FILTERS.find((f) => f.key === type)?.types
-  const range = month ? monthRange(month) : null
+async function fetchTimelinePage(filterKey: string, page: number) {
+  const types = FILTERS.find((f) => f.key === filterKey)?.types
   const params = new URLSearchParams()
   params.set('limit', String(TIMELINE_PAGE_SIZE))
   params.set('page', String(page))
   params.set('sort', '-publishedAt')
   params.set('depth', '2')
   types?.forEach((t, i) => params.append(`where[postType][in][${i}]`, t))
-  if (range) {
-    params.set('where[publishedAt][greater_than_equal]', range.start)
-    params.set('where[publishedAt][less_than]', range.end)
-  }
   // 無応答時に loading/disabled が解除されなくなるのを防ぐタイムアウト
   const res = await fetch(`/api/timeline?${params.toString()}`, { signal: timeoutSignal(15_000) })
   if (!res.ok) throw new Error(`timeline fetch failed: ${res.status}`)
   return (await res.json()) as { docs: TimelineDoc[]; totalDocs: number; hasNextPage: boolean }
 }
 
-function emptyMessage(type: string, month: string): string {
-  if (month && type !== 'all') return 'この月のこの種類の投稿はありません'
-  if (month) return 'この月の投稿はありません'
-  if (type !== 'all') return 'この種類の投稿はまだありません'
-  return 'まだ投稿がありません'
-}
-
 type Props = {
   posts: TimelineDoc[]
   /** 全投稿数（「もっと見る」の件数表示に使う） */
   total: number
-  /** ホーム用ダイジェスト（フィルタ・目次・追加読込なし、専用ページへの導線を出す） */
+  /** ホーム用ダイジェスト（フィルタ・追加読込なし、専用ページへの導線を出す） */
   compact?: boolean
-  /** 月の目次（新しい月から）。2か月以上あるときだけ出す */
-  months?: MonthBucket[]
 }
 
-export default function SodaTimeline({ posts, total, compact = false, months = [] }: Props) {
-  const [type, setType] = useState('all')
-  const [month, setMonth] = useState('')
+export default function SodaTimeline({ posts, total, compact = false }: Props) {
+  const [filter, setFilter] = useState('all')
   const [feeds, setFeeds] = useState<Record<string, FeedState>>({
-    [feedKey('all', '')]: {
+    all: {
       docs: posts,
       page: posts.length > 0 ? 1 : 0,
       // SSR が空（取得失敗を含む）でもクライアントから page 1 を取り直せるようにする
@@ -180,84 +149,57 @@ export default function SodaTimeline({ posts, total, compact = false, months = [
       total,
     },
   })
-  // 取得中のキー（state は表示用・ref は連打時の同キー重複 fetch ガード）
+  // 取得中フィルタキー（state は表示用・ref は連打時の同キー重複 fetch ガード）
   const [pendingKeys, setPendingKeys] = useState<ReadonlySet<string>>(new Set())
   const inflight = useRef<Set<string>>(new Set())
   const [errorKey, setErrorKey] = useState<string | null>(null)
 
-  const key = feedKey(type, month)
-  const current = feeds[key]
+  const current = feeds[filter]
   const shown = compact ? posts : (current?.docs ?? [])
-  const loading = pendingKeys.has(key)
-  const failed = errorKey === key
+  const loading = pendingKeys.has(filter)
+  const failed = errorKey === filter
 
-  async function loadFeed(nextType: string, nextMonth: string, page: number) {
-    const k = feedKey(nextType, nextMonth)
-    if (inflight.current.has(k)) return
-    inflight.current.add(k)
+  async function loadFeed(filterKey: string, page: number) {
+    if (inflight.current.has(filterKey)) return
+    inflight.current.add(filterKey)
     setPendingKeys(new Set(inflight.current))
-    setErrorKey((e) => (e === k ? null : e))
+    setErrorKey((k) => (k === filterKey ? null : k))
     try {
-      const data = await fetchTimelinePage(nextType, nextMonth, page)
+      const data = await fetchTimelinePage(filterKey, page)
       setFeeds((prev) => {
-        const existing = page === 1 ? [] : (prev[k]?.docs ?? [])
+        const existing = page === 1 ? [] : (prev[filterKey]?.docs ?? [])
         // 追加読込の間に新規投稿があった場合のページずれ重複を除外
         const seen = new Set(existing.map((d) => String(d.id)))
         const docs = [...existing, ...data.docs.filter((d) => !seen.has(String(d.id)))]
-        return { ...prev, [k]: { docs, page, hasMore: data.hasNextPage, total: data.totalDocs } }
+        return { ...prev, [filterKey]: { docs, page, hasMore: data.hasNextPage, total: data.totalDocs } }
       })
     } catch (e) {
       console.error('タイムライン取得エラー:', e)
-      setErrorKey(k)
+      setErrorKey(filterKey)
     } finally {
-      inflight.current.delete(k)
+      inflight.current.delete(filterKey)
       setPendingKeys(new Set(inflight.current))
     }
   }
 
-  function select(nextType: string, nextMonth: string) {
-    setType(nextType)
-    setMonth(nextMonth)
-    if (!feeds[feedKey(nextType, nextMonth)]) void loadFeed(nextType, nextMonth, 1)
+  function handleFilter(key: string) {
+    setFilter(key)
+    if (!feeds[key]) void loadFeed(key, 1)
   }
 
   const remaining = Math.max(0, (current?.total ?? total) - shown.length)
 
   return (
     <div className="s-feed">
-      {!compact && months.length > 1 && (
-        <div className="s-months" role="group" aria-label="月の目次（その月の投稿だけを表示）">
-          {months.map((m) => {
-            const on = month === m.key
-            return (
-              <button
-                key={m.key}
-                type="button"
-                className="s-month"
-                aria-pressed={on}
-                aria-label={`${m.year}年${m.month}月（${m.count}件）`}
-                onClick={() => select(type, on ? '' : m.key)}
-              >
-                <b className="s-num">
-                  {m.year}.{m.month}
-                </b>
-                <small className="s-num">{m.count}件</small>
-                {on && <SodaIcon name="close" />}
-              </button>
-            )
-          })}
-        </div>
-      )}
-
       {!compact && (
-        <div className="s-chips" role="group" aria-label="種類で絞り込み">
-          {FILTERS.map(({ key: k, label }) => (
+        <div className="s-chips" role="group" aria-label="カテゴリで絞り込み">
+          {FILTERS.map(({ key, label }) => (
             <button
-              key={k}
+              key={key}
               type="button"
               className="s-chip"
-              aria-pressed={type === k}
-              onClick={() => select(k, month)}
+              aria-pressed={filter === key}
+              onClick={() => handleFilter(key)}
             >
               {label}
             </button>
@@ -269,7 +211,11 @@ export default function SodaTimeline({ posts, total, compact = false, months = [
         {shown.length > 0 ? (
           <DayFeed posts={shown} />
         ) : (
-          !failed && <p className="s-feed-state">{loading ? '読み込み中…' : emptyMessage(type, month)}</p>
+          !failed && (
+            <p className="s-feed-state">
+              {loading ? '読み込み中…' : filter === 'all' ? 'まだ投稿がありません' : 'この種類の投稿はまだありません'}
+            </p>
+          )
         )}
       </div>
 
@@ -282,7 +228,7 @@ export default function SodaTimeline({ posts, total, compact = false, months = [
       {compact ? (
         <div className="s-loadmore">
           <Link href="/timeline" className="s-pill">
-            タイムラインをもっと見る
+            タイムラインをもっと見る！
             <SodaIcon name="arrow" />
           </Link>
         </div>
@@ -292,7 +238,7 @@ export default function SodaTimeline({ posts, total, compact = false, months = [
             type="button"
             className="s-pill"
             disabled={loading}
-            onClick={() => void loadFeed(type, month, (current?.page ?? 0) + 1)}
+            onClick={() => void loadFeed(filter, (current?.page ?? 0) + 1)}
           >
             {loading
               ? '読み込み中…'

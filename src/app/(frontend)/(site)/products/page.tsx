@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import SodaPageHead from '@/components/soda/SodaPageHead'
-import SodaSticker from '@/components/soda/SodaSticker'
+import SodaCard from '@/components/soda/SodaCard'
+import Phrase from '@/components/soda/Phrase'
 import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
 import { fetchProducts } from '@/lib/fetchProducts'
-import { productSticker } from '@/features/site/cardViews'
+import { productCard } from '@/features/site/cardViews'
 
 export const metadata: Metadata = {
   // template が「| 岩渕誠（いわぶちまこと）」を付与するためページ名のみ
@@ -43,15 +44,18 @@ export default async function ProductsPage() {
         {products.length === 0 ? (
           <p className="s-empty">まだ公開しているものはありません</p>
         ) : (
-          <div className="s-stickers is-page">
+          <div className="s-cgrid">
             {products.map((p) => {
-              const sticker = productSticker(p, true)
+              const card = productCard(p)
               return (
-                <SodaSticker
-                  key={sticker.id}
-                  {...sticker}
-                  sizes="(max-width: 600px) 80vw, (max-width: 1080px) 40vw, 320px"
-                />
+                <div key={card.id}>
+                  <SodaCard
+                    {...card}
+                    title={<Phrase text={card.label} />}
+                    sizes="(max-width: 600px) 92vw, (max-width: 1080px) 46vw, 400px"
+                  />
+                  {p.description && <p className="s-cnote">{p.description}</p>}
+                </div>
               )
             })}
           </div>

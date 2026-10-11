@@ -4,7 +4,6 @@
 // 'use client' モジュールからの export はサーバー側でクライアント参照に
 // なり得るため、共用の定数・純関数はこの境界なしモジュールに置く。
 // ───────────────────────────────────────────
-import { dayParts } from '@/lib/date'
 import { lexicalToPlainText } from '@/lib/richtext'
 import { clip } from '@/lib/text'
 import type { TimelineDoc, TimelinePostType } from '@/lib/payloadTypes'
@@ -54,43 +53,7 @@ export function postSummary(post: TimelineDoc, max = 40): string {
   return clip(first, max)
 }
 
-/** 月の目次の1項目（Asia/Tokyo の年月ごとの投稿数） */
-export type MonthBucket = {
-  /** `2025-07` */
-  key: string
-  year: number
-  month: number
-  count: number
-}
-
-/** 投稿日を Asia/Tokyo の年月ごとに数える（新しい月から順に並べる） */
-export function monthBuckets(dates: string[]): MonthBucket[] {
-  const byKey = new Map<string, MonthBucket>()
-  for (const d of dates) {
-    const p = dayParts(d)
-    if (!p) continue
-    const key = `${p.year}-${String(p.month).padStart(2, '0')}`
-    const bucket = byKey.get(key)
-    if (bucket) bucket.count += 1
-    else byKey.set(key, { key, year: p.year, month: p.month, count: 1 })
-  }
-  return [...byKey.values()].sort((a, b) => (a.key < b.key ? 1 : a.key > b.key ? -1 : 0))
-}
-
-/** 月キー `2025-07` → その月（Asia/Tokyo）の範囲 [start, end)。不正なキーは null */
-export function monthRange(key: string): { start: string; end: string } | null {
-  const m = /^(\d{4})-(\d{2})$/.exec(key)
-  if (!m) return null
-  const year = Number(m[1])
-  const month = Number(m[2])
-  if (month < 1 || month > 12) return null
-  // 日本時間の 0 時 = 前日 15 時 UTC（夏時間なし）
-  const start = new Date(Date.UTC(year, month - 1, 1, -9))
-  const end = new Date(Date.UTC(year, month, 1, -9))
-  return { start: start.toISOString(), end: end.toISOString() }
-}
-
-/** プロフィールの数字（投稿数・写真数・連続日数・最終更新日） */
+/** TODAY カード・プロフィールの数字（投稿数・写真数・連続日数・最終更新日） */
 export type TodayStats = {
   entries: number
   photos: number

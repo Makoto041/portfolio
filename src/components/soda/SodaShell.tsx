@@ -1,5 +1,6 @@
 // src/components/soda/SodaShell.tsx
-// 全ページ共通の外枠。sticky ヘッダー → 本文 → 反転フッター + SP の下部ドック + 全画面メニュー。
+// 全ページ共通の外枠（Soda Press）。
+//   sticky ヘッダー → 本文 → 反転フッター + SP の下部ドック + 全画面メニュー
 // ホーム（page.tsx）と全サブページ（(site)/layout.tsx）の両方から使う。
 import React from 'react'
 import SodaHeader from '@/components/soda/SodaHeader'
@@ -12,7 +13,7 @@ import type { SiteChrome } from '@/features/site/getSiteChrome'
 type Props = {
   children: React.ReactNode
   chrome: SiteChrome
-  /** ホーム用（題字が見えている間はヘッダーの小ロゴを隠す） */
+  /** ホーム用（ヘッダーが題字と連動して透明→帯に切り替わる） */
   home?: boolean
 }
 
@@ -24,7 +25,7 @@ export default function SodaShell({ children, chrome, home = false }: Props) {
       </a>
       <SodaNavProvider>
         <SodaHeader home={home} />
-        <main id="main" className="s-main">
+        <main id="main" className={`s-main${home ? ' is-home' : ''}`}>
           {children}
         </main>
         <SodaFooter socials={chrome.socials} />

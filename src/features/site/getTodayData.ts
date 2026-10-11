@@ -1,7 +1,7 @@
 // ───────────────────────────────────────────
 // src/features/site/getTodayData.ts
-// おしらせ（メモ帳）と数字（投稿数・写真数・連続日数・最終更新日）。
-// ホーム・タイムライン・写真・プロフィールで共用し、React cache で同一リクエスト内の重複取得をまとめる。
+// TODAY カード（おしらせ・投稿数・写真数・連続日数）用のデータ。
+// ホーム・タイムライン・プロフィールで共用し、React cache で同一リクエスト内の重複取得をまとめる。
 // それぞれ独立に失敗を握りつぶし、取れた分だけで表示を成立させる。
 // ───────────────────────────────────────────
 import { cache } from 'react'
@@ -9,16 +9,7 @@ import { getPayloadClient } from '@/lib/payloadClient'
 import { buildStreak, fmtDateBadge, fmtMonthDay } from '@/lib/date'
 import { phraseChunks } from '@/lib/phrase'
 import type { TodayStats } from '@/lib/timeline'
-
-/** おしらせ1件（メモ帳・SP のピン留め用） */
-export type NoticeView = {
-  key: string
-  /** `07.05` */
-  badge: string
-  text: string
-  /** サーバーで分割済みの語の切れ目（<wbr> 用） */
-  chunks: string[]
-}
+import type { NoticeView } from '@/components/soda/SodaToday'
 
 /** タイムライン専用画像を除いた「ギャラリー写真」の条件 */
 export const GALLERY_WHERE = {

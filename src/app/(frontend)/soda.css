@@ -1,33 +1,26 @@
 /* ──────────────────────────────────────────────
    Soda Press ― サイト全体のデザインシステム
-   「日記帳 × フィルムカメラ」。パステルの地 × 黒い1本線 × 丸いロゴを土台に、
-   左寄せの題字と赤インクの日付印・罫線のノート・白フチのプリント（日付の写し込み）・
-   ちぎれるメモ帳・ベタ焼き・インデックスタブ・半券・ステッカーで、紙の日記帳の手ざわりを出す。
+   パステルの地 × 黒い1本線 × 大きな丸いロゴ。文字は写真に重ねず、写真の下の紙面に置く。
    タイムライン（日記帳）が主役。
 
    トークン
    - 地色パレット（月替わり可）: --s-bg / --s-logo / --s-card を :root[data-palette] が持つ
    - 文字・線: --s-ink（主文字/罫線/ベタ面）--s-sub（補助）--s-faint（微メタ）
      → どのパレットの --s-bg / --s-card / --s-paper 上でも AA(4.5:1) 以上
-   - 面: --s-paper（地色を白で薄めた紙面）--s-print（プリント・ステッカーの白フチ）
-   - 赤: --s-hot（いいね・LIVE。非テキスト or 白文字太字）
-         --s-stamp（日付印・日曜の朱。どのパレットの地・紙面上でも 4.5:1 以上）
-   - フィルム: --s-film（日付の写し込み・コマ番号の橙。写真の上と黒い台紙の上だけで使う）
-   - 角丸: --s-r-xl 26 / --s-r-l 20 / --s-r-m 14 / --s-r-s 6
+   - 面: --s-paper（地色を白で薄めた紙面）--s-hot（いいね・LIVE の赤。非テキスト or 白文字太字）
+   - 角丸: --s-r-xl 26 / --s-r-l 20 / --s-r-m 14 / --s-r-s 6（ラベル）
    - 文字: --s-fs-cap 11 / meta 12.5 / ui 14 / body 16 / post 17 / h3 20（display は各要素の clamp）
-   - 書体: --s-font（DM Sans + Zen Kaku Gothic New）--s-font-logo（Bagel Fat One）
-           --s-font-hand（Klee One。手書きの添え書き）--s-font-dot（Doto。日付の写し込み）
    - 余白は 4px 系。ガター --s-gut は 16 / 32 / 44（760px / 1080px で切替）
    コンポーネントのクラスは s- 接頭辞で .soda 配下にスコープする（Tailwind ユーティリティと衝突させない）。
 ─────────────────────────────────────────────── */
 
-/* ===== 地色パレット（src/lib/palette.ts のキーと対応。:root は既定のクリームソーダ） ===== */
+/* ===== 地色パレット（src/lib/palette.ts のキーと対応） ===== */
 :root {
-  --s-bg: #e6f1de;
-  --s-logo: #4f9d69;
-  --s-card: #fbf3dc;
+  --s-bg: #e3e8f8;
+  --s-logo: #95a1da;
+  --s-card: #f0e6c0;
 }
-:root[data-palette='gunjo'] { --s-bg: #e3e8f8; --s-logo: #95a1da; --s-card: #f0e6c0; }
+:root[data-palette='creamsoda'] { --s-bg: #e6f1de; --s-logo: #4f9d69; --s-card: #fbf3dc; }
 :root[data-palette='ramune'] { --s-bg: #dbecf8; --s-logo: #8aaecd; --s-card: #f3e5a3; }
 :root[data-palette='melon'] { --s-bg: #e0f0e1; --s-logo: #7fb38a; --s-card: #f6dccd; }
 :root[data-palette='lemon'] { --s-bg: #f6f0cc; --s-logo: #c8b14f; --s-card: #d4e4f6; }
@@ -44,12 +37,6 @@
   60% { transform: scale(1.3); }
   100% { transform: scale(1); }
 }
-/* 日付印を押す（少し浮いた大きさから紙に押し付ける） */
-@keyframes s-press {
-  0% { opacity: 0; transform: rotate(-9deg) scale(1.35); }
-  60% { opacity: 1; transform: rotate(-9deg) scale(0.95); }
-  100% { opacity: 1; transform: rotate(-9deg) scale(1); }
-}
 @keyframes s-fadein { from { opacity: 0; } to { opacity: 1; } }
 @keyframes s-shimmer {
   from { background-position: 200% 0; }
@@ -61,11 +48,8 @@
   --s-ink: #141414;
   --s-sub: #42444b;
   --s-faint: #5b5e66;
-  --s-paper: #f6f9f3;
-  --s-print: #fffdf8;
+  --s-paper: #f4f6fc;
   --s-hot: #d63a1e;
-  --s-stamp: #b3301b;
-  --s-film: #ff7b1c;
   --s-r-xl: 26px;
   --s-r-l: 20px;
   --s-r-m: 14px;
@@ -73,8 +57,6 @@
   --s-font: var(--font-dm), var(--font-zkg), 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, sans-serif;
   --s-font-num: var(--font-dm), system-ui, sans-serif;
   --s-font-logo: var(--font-bagel), var(--font-dm), system-ui, sans-serif;
-  --s-font-hand: var(--font-klee), var(--font-zkg), 'Hiragino Maru Gothic ProN', sans-serif;
-  --s-font-dot: var(--font-doto), var(--font-dm), ui-monospace, monospace;
   --s-fs-cap: 11px;
   --s-fs-meta: 12.5px;
   --s-fs-ui: 14px;
@@ -83,10 +65,8 @@
   --s-fs-h3: 20px;
   --s-gut: 16px;
   --s-header-h: 52px;
-  /* フッターの袋文字「MAKOTO」は画面幅（ガター内）にぴったり収まる大きさ。上限 250px */
+  /* ロゴ「MAKOTO」は画面幅（ガター内）にぴったり収まる大きさ。上限 250px */
   --s-wm: min(250px, calc((100vw - 2 * var(--s-gut)) / 4.12));
-  /* 罫線・プリントの影など、墨（--s-ink）を薄めた線 */
-  --s-line-soft: rgb(20 20 20 / 0.16);
 
   min-height: 100vh;
   min-height: 100dvh;
@@ -206,6 +186,7 @@
   padding-inline: max(var(--s-gut), env(safe-area-inset-left, 0px)) max(var(--s-gut), env(safe-area-inset-right, 0px));
   background: var(--s-bg);
   border-bottom: 1px solid var(--s-ink);
+  transition: background 0.25s, border-color 0.25s;
 }
 .soda .s-logo-s {
   font-family: var(--s-font-logo);
@@ -218,32 +199,21 @@
 }
 .soda .s-hdr-nav { display: flex; gap: 2px; margin-left: auto; }
 .soda .s-hdr-nav a {
-  position: relative;
-  padding: 7px 12px;
+  padding: 7px 13px;
+  border-radius: 999px;
   font-size: var(--s-fs-ui);
   text-decoration: none;
   white-space: nowrap;
-}
-/* 現在地はインデックスの下線（塗りのピルにしない） */
-.soda .s-hdr-nav a::after {
-  content: '';
-  position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 1px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--s-ink);
-  opacity: 0;
-  transition: opacity 0.2s;
+  transition: background 0.2s, color 0.2s;
 }
 @media (hover: hover) {
-  .soda .s-hdr-nav a:hover::after { opacity: 0.35; }
+  .soda .s-hdr-nav a:hover { background: color-mix(in srgb, var(--s-ink) 8%, transparent); }
 }
-.soda .s-hdr-nav a[aria-current='page']::after { opacity: 1; }
+.soda .s-hdr-nav a[aria-current='page'] { background: var(--s-ink); color: var(--s-bg); }
 .soda .s-hdr-right { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
 .soda .s-hdr-right .s-mailbtn { display: none; }
-/* ホームで題字が見えている間は、同じロゴを2つ並べないよう小ロゴを隠す */
+/* ホーム最上部では表紙ロゴが主役：小ロゴを隠し、帯を透明に */
+.soda .s-hdr.is-top { background: transparent; border-bottom-color: transparent; }
 .soda .s-hdr.is-top .s-logo-s { opacity: 0; transform: translateY(6px); pointer-events: none; }
 @media (max-width: 1079px) {
   .soda .s-hdr-nav { display: none; }
@@ -254,28 +224,35 @@
   .soda .s-hdr-right .s-letterpill,
   .soda .s-hdr-right .s-menubtn { display: none; }
   .soda .s-hdr-right .s-mailbtn { display: inline-grid; }
+  /* ホームは帯の高さ分だけ表紙を持ち上げ、最上部の透明な帯にカバーラインを差し込む
+     （is-top の切替に依らず常に持ち上げるので、スクロール中にレイアウトがずれない） */
+  .soda .s-hdr.is-home { margin-bottom: calc(-1 * var(--s-header-h)); }
 }
 
-/* ══════════════ 題字（左寄せ）＋ 日付印 ══════════════
-   SP: [題字 | 日付印] / [時刻・天気 | 日付印] / [キャッチ]
-   PC: [題字 | 日付印] / [キャッチ | 時刻・天気] */
-.soda .s-mast {
-  --s-stamp-d: 92px;
+/* ══════════════ 題字（巨大ワードマーク + カバーライン） ══════════════
+   SP: カバーライン → 全幅の題字。PC（761px〜）: 題字を左に寄せ、カバーラインを右に縦に並べる。
+   題字は下の投稿に重ねない */
+.soda .s-mast { position: relative; z-index: 3; padding-block: 8px 22px; text-align: center; pointer-events: none; }
+.soda .s-coverline {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: 'word stamp' 'wx stamp' 'sub sub';
-  align-items: center;
-  gap: 6px 12px;
-  padding-block: 16px 14px;
-  border-bottom: 1px solid var(--s-ink);
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  gap: 6px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  pointer-events: auto;
 }
+.soda .s-coverline > :first-child { text-align: left; }
+.soda .s-coverline > :last-child { text-align: right; }
+.soda .s-coverline .s-tagline { text-transform: none; letter-spacing: 0.06em; font-weight: 400; color: var(--s-sub); }
 .soda .s-wordmark {
-  grid-area: word;
   display: block;
-  /* 「MAKOTO」の幅は文字サイズの約 4.1 倍。日付印の横に収まる大きさにする */
-  font-size: min(136px, calc((100vw - 2 * var(--s-gut) - var(--s-stamp-d) - 24px) / 4.2));
+  margin-top: 6px;
   font-family: var(--s-font-logo);
-  line-height: 0.9;
+  font-size: var(--s-wm);
+  line-height: 0.86;
   letter-spacing: -0.01em;
   white-space: nowrap;
   color: var(--s-logo);
@@ -286,373 +263,166 @@
 .soda .s-wordmark span:nth-child(4) { animation-delay: 0.15s; }
 .soda .s-wordmark span:nth-child(5) { animation-delay: 0.2s; }
 .soda .s-wordmark span:nth-child(6) { animation-delay: 0.25s; }
-/* 日付印と時刻・天気は題字のグリッドに直接並べる */
-.soda .s-today { display: contents; }
-.soda .s-mast-sub {
-  grid-area: sub;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 14px;
-  font-size: var(--s-fs-ui);
-  color: var(--s-sub);
-}
-.soda .s-kick {
-  font-family: var(--s-font-num);
-  font-size: var(--s-fs-cap);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--s-ink);
-}
 @media (max-width: 760px) {
-  .soda .s-mast-sub .s-tagline { display: none; }
+  .soda .s-coverline { grid-template-columns: 1fr 1fr; font-size: 10.5px; letter-spacing: 0.12em; }
+  .soda .s-coverline .s-tagline { grid-row: 2; grid-column: 1 / -1; text-align: center; font-size: 12px; letter-spacing: 0.04em; }
+  /* 1行目を帯の中央に置き、右端はお便りアイコンを避ける */
+  .soda .s-main.is-home .s-mast { padding-top: 16px; }
+  .soda .s-main.is-home .s-coverline > :last-child { padding-right: 48px; }
 }
 @media (min-width: 761px) {
   .soda .s-mast {
-    --s-stamp-d: 116px;
-    grid-template-areas: 'word stamp' 'sub wx';
-    column-gap: 28px;
-    padding-block: 24px 18px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+    gap: 0 32px;
+    padding-block: 28px 30px;
+    text-align: left;
   }
-  .soda .s-mast .s-stamp,
-  .soda .s-mast .s-today-wx { justify-self: center; }
+  /* 題字はガター内の約 6 割の幅（上限 200px の文字サイズ） */
+  .soda .s-mast .s-wordmark {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: 0;
+    font-size: min(200px, calc((100vw - 2 * var(--s-gut)) * 0.6 / 4.12));
+  }
+  .soda .s-coverline {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    padding-bottom: 4px;
+    text-align: right;
+  }
+  .soda .s-coverline .s-tagline { max-width: 24em; font-size: var(--s-fs-ui); letter-spacing: 0.04em; text-wrap: balance; }
 }
 
-/* 日付印（事務の日付スタンプ。朱のインク・少し傾けて押す） */
-.soda .s-stamp {
-  grid-area: stamp;
+/* ══════════════ ホーム（PC・タブレット: 最新＋タイムライン | TODAY、写真は下に横長） ══════════════ */
+.soda .s-home-grid {
   position: relative;
-  width: var(--s-stamp-d);
-  height: var(--s-stamp-d);
+  z-index: 1;
   display: grid;
-  grid-template-rows: 1fr auto 1fr;
-  justify-items: center;
-  align-items: center;
-  border: 2.5px solid var(--s-stamp);
-  border-radius: 50%;
-  color: var(--s-stamp);
-  font-family: var(--s-font-num);
-  font-weight: 700;
-  line-height: 1.1;
-  transform: rotate(-9deg);
-  animation: s-press 0.5s cubic-bezier(0.3, 1.4, 0.5, 1) 0.35s both;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'lead' 'today' 'feed' 'photos';
 }
-.soda .s-stamp::after { content: ''; position: absolute; inset: 4px; border: 1px solid var(--s-stamp); border-radius: 50%; }
-.soda .s-stamp-t { align-self: end; padding-bottom: 3px; font-size: calc(var(--s-stamp-d) * 0.1); letter-spacing: 0.14em; }
-.soda .s-stamp-m {
-  width: 100%;
-  padding: 3px 0;
-  border-block: 1.5px solid var(--s-stamp);
-  font-size: calc(var(--s-stamp-d) * 0.15);
-  letter-spacing: 0.02em;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-.soda .s-stamp-b { align-self: start; padding-top: 3px; font-size: calc(var(--s-stamp-d) * 0.092); letter-spacing: 0.12em; }
-/* 時刻・東京の天気（1行） */
-.soda .s-today-wx {
-  grid-area: wx;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px 6px;
-  font-size: var(--s-fs-meta);
-  color: var(--s-sub);
-  white-space: nowrap;
-}
-.soda .s-today-wx b { font-weight: 700; color: var(--s-ink); }
-.soda .s-wx-icon { display: inline-flex; color: var(--s-ink); }
-.soda .s-wx-icon svg { width: 18px; height: 18px; }
-.soda .s-wx-icon .rays { transform-origin: 32px 32px; animation: s-spin 28s linear infinite; }
-.soda .s-wx-credit { font-size: var(--s-fs-cap); color: var(--s-faint); text-decoration: underline dotted; text-underline-offset: 2px; }
-
-/* ══════════════ ホーム（PC は 日記 | 脇 の2段組） ══════════════ */
-.soda .s-home { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; padding-top: 22px; }
-.soda .s-home-main { display: grid; align-content: start; gap: 22px; min-width: 0; }
-.soda .s-side { display: grid; align-content: start; gap: 22px; min-width: 0; }
-@media (max-width: 1079px) {
-  /* SP・タブレットはベタ焼き → メモ帳の順（おしらせの要点は上のピン留めで先に見せる） */
-  .soda .s-home .s-side > .s-memo { order: 1; }
+.soda .s-home-grid > .s-lead { grid-area: lead; }
+.soda .s-home-grid > .s-today { grid-area: today; }
+.soda .s-home-grid > .s-feedsec { grid-area: feed; }
+.soda .s-home-grid > .s-photocol { grid-area: photos; }
+@media (min-width: 761px) {
+  .soda .s-home-grid {
+    grid-template-columns: minmax(0, 1fr) 280px;
+    /* 最新の行は中身の高さに保ち、TODAY との長さの差はタイムラインの行が引き受ける */
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 'lead today' 'feed today' 'photos photos';
+    gap: 32px;
+  }
+  .soda .s-home-grid > .s-today { align-self: start; position: sticky; top: calc(var(--s-header-h) + 24px); }
+  .soda .s-home-grid > .s-photocol { margin-top: 24px; }
 }
 @media (min-width: 1080px) {
-  .soda .s-home {
-    grid-template-columns: minmax(0, 840px) 320px;
-    justify-content: space-between;
-    gap: 44px;
-    padding-top: 28px;
-  }
-  .soda .s-home .s-side { align-self: start; }
-}
-/* 脇は画面に収まる高さのときだけ追従させる（はみ出すと下端が読めなくなる） */
-@media (min-width: 1080px) and (min-height: 860px) {
-  .soda .s-home .s-side,
-  .soda .s-tl-layout > .s-side { position: sticky; top: calc(var(--s-header-h) + 24px); }
+  .soda .s-home-grid { grid-template-columns: minmax(0, 1fr) 320px; gap: 36px 48px; }
 }
 
-/* マスキングテープ（ノート・プリントの上辺に貼る） */
-.soda .s-tape {
-  position: absolute;
-  top: -11px;
-  left: 50%;
-  z-index: 1;
-  width: 96px;
-  height: 22px;
-  border-inline: 1px dashed var(--s-line-soft);
-  background: var(--s-card);
-  opacity: 0.9;
-  box-shadow: 0 1px 0 rgb(20 20 20 / 0.08);
-  transform: translateX(-50%) rotate(-3deg);
-  pointer-events: none;
-}
-
-/* ── 最新の投稿: 見出しの行（LATEST・きょう/○日前・日時）と足もと ── */
-.soda .s-lead-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: var(--s-fs-meta); color: var(--s-sub); }
-.soda .s-lead-head .s-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--s-hot); }
-.soda .s-lead-lbl { font-family: var(--s-font-num); font-weight: 700; letter-spacing: 0.14em; color: var(--s-ink); }
-.soda .s-lead-rel,
-.soda .s-rel {
-  padding: 0 8px;
-  border-radius: 999px;
-  background: var(--s-card);
-  font-size: 11.5px;
-  line-height: 20px;
-  letter-spacing: 0.04em;
-  color: var(--s-sub);
-  white-space: nowrap;
-}
-.soda .s-lead-head time { letter-spacing: 0.04em; }
-.soda .s-lead-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 16px; }
-.soda .s-lead-foot .s-like { margin-left: auto; }
-/* 長文は数行で畳み、「続きを読む」でタイムラインの該当投稿へ */
-.soda .is-folded { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-.soda .s-note-text.is-folded { -webkit-line-clamp: 6; }
-.soda .s-note-sub.is-folded,
-.soda .s-print-text.is-folded { -webkit-line-clamp: 4; }
-
-/* 文章のみ＝罫線のノートの1ページ（文字の行に横罫をそろえる） */
-.soda .s-note {
-  --s-rule: rgb(20 20 20 / 0.12);
-  position: relative;
-  padding: 26px 22px 20px;
-  border: 1px solid var(--s-ink);
-  border-radius: var(--s-r-l);
-  background: var(--s-paper);
-}
-@supports (color: color-mix(in srgb, red, blue)) {
-  .soda .s-note { --s-rule: color-mix(in srgb, var(--s-logo) 45%, transparent); }
-}
-.soda .s-note-text {
-  --s-lh: 38px;
-  margin-top: 12px;
-  font-size: 22px;
+/* ── 最新の投稿 ── */
+.soda .s-lead { position: relative; overflow: hidden; border-radius: var(--s-r-xl); background: var(--s-paper); }
+.soda .s-lead.is-text { display: flex; flex-direction: column; gap: 22px; padding: 26px 26px 24px; }
+.soda .s-eyebrow { display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; }
+.soda .s-eyebrow .s-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--s-hot); }
+.soda .s-big {
+  font-size: clamp(26px, 4.4vw, 44px);
   font-weight: 500;
-  line-height: var(--s-lh);
+  line-height: 1.5;
   letter-spacing: 0.01em;
   white-space: pre-line;
+  text-wrap: balance;
   word-break: keep-all;
   overflow-wrap: anywhere;
-  text-wrap: balance;
   font-feature-settings: 'palt';
-  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(var(--s-lh) - 1px), var(--s-rule) calc(var(--s-lh) - 1px) var(--s-lh));
 }
-.soda .s-note-text.is-long { --s-lh: 34px; font-size: 18px; text-wrap: pretty; }
-.soda .s-note-sub { margin-top: 12px; font-size: var(--s-fs-body); line-height: 1.8; color: var(--s-sub); white-space: pre-line; overflow-wrap: anywhere; }
-.soda .s-note .s-linkcard { margin-top: 14px; }
-.soda .s-note.is-empty { color: var(--s-sub); }
-@media (min-width: 761px) {
-  .soda .s-note { padding: 30px 30px 24px; }
-  .soda .s-note-text { --s-lh: 54px; font-size: clamp(28px, 3vw, 36px); }
-  .soda .s-note-text.is-long { --s-lh: 40px; font-size: 22px; }
+.soda .s-big.is-long { font-size: clamp(20px, 2.6vw, 27px); line-height: 1.75; text-wrap: pretty; }
+/* 長文は数行で畳み、「続きを読む」でタイムラインの該当投稿へ */
+.soda .s-big.is-folded,
+.soda .s-lead-sub.is-folded,
+.soda .s-lead-body.is-folded { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.soda .s-big.is-folded { -webkit-line-clamp: 6; }
+.soda .s-lead-sub.is-folded,
+.soda .s-lead-body.is-folded { -webkit-line-clamp: 4; }
+.soda .s-lead-sub { font-size: var(--s-fs-body); color: var(--s-sub); white-space: pre-line; }
+/* 写真の下に置く見出し・本文（本文はタイムラインと同じ組み） */
+.soda .s-lead-title {
+  font-size: clamp(22px, 2.6vw, 30px);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  font-feature-settings: 'palt';
 }
-
-/* 写真つき＝プリント（白いフチ・下の余白に手書きのキャプション） */
-.soda .s-print {
-  position: relative;
-  padding: 10px 10px 0;
-  border-radius: 6px;
-  background: var(--s-print);
-  box-shadow: 0 0 0 1px var(--s-line-soft), 0 14px 28px -18px rgb(20 20 20 / 0.55);
-}
-.soda .s-print-ph {
-  position: relative;
-  display: block;
-  width: 100%;
-  aspect-ratio: 5 / 4;
-  overflow: hidden;
-  padding: 0;
-  border: 0;
-  border-radius: 2px;
-  background: var(--s-card);
-  cursor: zoom-in;
-}
-.soda .s-print-count {
+.soda .s-lead-body { font-size: var(--s-fs-post); font-weight: 500; line-height: 1.85; white-space: pre-line; overflow-wrap: anywhere; }
+.soda .s-lead-more { align-self: flex-start; }
+/* 下の行: 種類・日時（左）といいね（右） */
+.soda .s-lead-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 12px; }
+.soda .s-lead-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: var(--s-fs-meta); color: var(--s-sub); }
+.soda .s-lead-meta time { letter-spacing: 0.04em; }
+/* 写真つき: 写真を大きく見せ、文字は下の紙面に続ける */
+.soda .s-lead-cover { position: relative; aspect-ratio: 16 / 10; }
+.soda .s-lead-cover > .s-lead-img { position: absolute; inset: 0; padding: 0; border: 0; background: var(--s-card); cursor: zoom-in; }
+.soda .s-lead-count {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 14px;
+  right: 14px;
   padding: 2px 10px;
   border-radius: 999px;
   background: rgb(20 20 20 / 0.72);
   color: #ffffff;
-  font-family: var(--s-font-num);
   font-size: 12px;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
-.soda .s-print-cap { padding: 14px 6px 16px; color: #23242a; }
-.soda .s-print-title { margin-top: 8px; font-size: var(--s-fs-h3); font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
-.soda .s-print-text {
-  margin-top: 8px;
-  font-family: var(--s-font-hand);
-  font-size: 19px;
-  font-weight: 600;
-  line-height: 1.7;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-.soda .s-print .s-linkcard { margin-top: 14px; }
-@media (min-width: 761px) {
-  .soda .s-print { padding: 14px 14px 0; }
-  .soda .s-print-ph { aspect-ratio: 3 / 2; }
-  .soda .s-print-cap { padding: 16px 8px 20px; }
-  .soda .s-print-text { font-size: 21px; }
-}
-/* フィルムの日付写し込み（右下・橙のドット文字） */
-.soda .s-datemark {
-  position: absolute;
-  right: 12px;
-  bottom: 10px;
-  font-family: var(--s-font-dot);
-  font-size: 19px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  color: var(--s-film);
-  text-shadow: 0 0 6px rgb(255 120 30 / 0.65), 0 0 1px rgb(255 160 80 / 0.9);
-  white-space: nowrap;
-  pointer-events: none;
+.soda .s-lead-after { display: flex; flex-direction: column; gap: 14px; padding: 20px 26px 24px; }
+.soda .s-lead-after .s-linkcard { margin-top: 0; }
+.soda .s-lead.is-empty { padding: 26px; color: var(--s-sub); }
+@media (max-width: 760px) {
+  .soda .s-lead.is-text { gap: 16px; }
+  .soda .s-lead.is-text,
+  .soda .s-lead.is-empty { padding: 20px; }
+  .soda .s-lead-cover { aspect-ratio: 5 / 4; }
+  .soda .s-lead-after { padding: 16px 20px 20px; }
 }
 
-/* SP・タブレット: 最新のおしらせを1行だけピン留め（全件は下のメモ帳） */
-.soda .s-pin {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 6px 16px;
-  border: 1px solid var(--s-ink);
-  border-radius: 999px;
-  background: var(--s-card);
-  font-size: 13.5px;
-  text-decoration: none;
-}
-.soda .s-pin-head { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--s-hot); box-shadow: 0 2px 0 -1px rgb(20 20 20 / 0.5); }
-.soda .s-pin b { flex: none; font-weight: 700; }
-.soda .s-pin-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.soda .s-pin-more { flex: none; margin-left: auto; font-size: 12px; color: var(--s-faint); white-space: nowrap; }
-@media (min-width: 1080px) {
-  .soda .s-pin { display: none; }
-}
-
-/* おしらせのメモ帳（上がミシン目の切り取りメモ・手書きの添え書き） */
-.soda .s-memo {
-  position: relative;
-  display: grid;
-  gap: 10px;
-  padding: 26px 18px 18px;
-  border: 1px solid var(--s-ink);
-  border-radius: 4px 4px var(--s-r-m) var(--s-r-m);
-  background: var(--s-card);
-  scroll-margin-top: calc(var(--s-header-h) + 16px);
-}
-.soda .s-memo::before { content: ''; position: absolute; left: 12px; right: 12px; top: 10px; border-top: 2px dotted rgb(20 20 20 / 0.42); }
-.soda .s-memo-h { font-family: var(--s-font-num); font-size: var(--s-fs-cap); font-weight: 700; letter-spacing: 0.18em; }
-.soda .s-memo-h span { margin-left: 8px; font-family: var(--s-font); font-weight: 500; letter-spacing: 0.08em; }
-.soda .s-memo-list { display: grid; gap: 10px; font-family: var(--s-font-hand); font-size: 16px; font-weight: 600; line-height: 1.6; }
-.soda .s-memo-list li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; word-break: keep-all; overflow-wrap: anywhere; }
-.soda .s-memo-list b { padding-top: 2px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.soda .s-memo-empty { font-family: var(--s-font-hand); color: var(--s-sub); }
-.soda .s-memo .s-memo-cta { width: 100%; height: 48px; margin-top: 6px; font-size: 15px; color: var(--s-card); }
-.soda .s-memo .s-memo-cta:active { color: var(--s-ink); }
-@media (hover: hover) {
-  .soda .s-memo .s-memo-cta:hover { color: var(--s-ink); }
-}
-
-/* 最近の写真のベタ焼き（黒い台紙・コマ番号） */
-.soda .s-contact {
-  display: grid;
-  gap: 12px;
-  padding: 14px 14px 10px;
-  border-radius: var(--s-r-m);
-  background: #1d1d1f;
-  color: #f3efe4;
-}
-.soda .s-contact :focus-visible { outline-color: #f3efe4; }
-.soda .s-contact-h { font-size: 13px; font-weight: 500; letter-spacing: 0.08em; }
-.soda .s-contact-h .s-num { margin-left: 2px; font-weight: 700; }
-.soda .s-contact-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 6px; }
-.soda .s-contact-grid a { display: grid; gap: 3px; text-decoration: none; }
-.soda .s-contact-ph { position: relative; display: block; overflow: hidden; aspect-ratio: 1; border-radius: 2px; background: #2c2c2f; }
-.soda .s-contact-ph img { transition: transform 0.6s; }
-@media (hover: hover) {
-  .soda .s-contact-grid a:hover img { transform: scale(1.05); }
-}
-.soda .s-contact-no { font-family: var(--s-font-dot); font-size: 11px; font-weight: 800; line-height: 1.2; letter-spacing: 0.06em; color: var(--s-film); }
-.soda .s-contact-more { justify-self: end; padding: 6px 0; font-size: 13px; text-decoration: none; }
-@media (hover: hover) {
-  .soda .s-contact-more:hover { text-decoration: underline; text-underline-offset: 3px; }
-}
-@media (min-width: 761px) and (max-width: 1079px) {
-  .soda .s-contact-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .soda .s-contact-grid a:nth-child(n + 7) { display: none; }
-}
-
-/* ── セクション見出し＝インデックスタブ（耳の形の見出し + 件数） ── */
+/* ── セクション見出し ── */
 .soda .s-sh {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
   border-bottom: 1px solid var(--s-ink);
 }
-.soda .s-sh h2 {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: -1px;
-  padding: 7px 14px 6px;
-  border: 1px solid var(--s-ink);
-  border-bottom-color: var(--s-bg);
-  border-radius: 12px 12px 0 0;
-  background: var(--s-bg);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.5;
-  letter-spacing: 0.06em;
+.soda .s-sh h2 { font-size: 15px; font-weight: 500; letter-spacing: 0.08em; }
+.soda .s-sh .s-en {
+  margin-left: 10px;
+  font-family: var(--s-font-num);
+  font-size: var(--s-fs-cap);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--s-faint);
 }
-.soda .s-cnt {
-  min-width: 22px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--s-ink);
-  color: var(--s-bg);
-  font-size: 11.5px;
-  font-weight: 700;
-  line-height: 20px;
-  letter-spacing: 0.02em;
-  text-align: center;
-}
-.soda .s-more { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 8px 0; font-size: 13px; text-decoration: none; white-space: nowrap; }
+.soda .s-more { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 6px 0; font-size: 13px; text-decoration: none; white-space: nowrap; }
 .soda .s-more::after { content: ''; position: absolute; inset: -6px -6px; }
 .soda .s-more .s-ico { width: 16px; height: 16px; transition: transform 0.2s; }
 @media (hover: hover) {
   .soda .s-more:hover .s-ico { transform: translateX(3px); }
 }
 
-/* ── 絞り込み（種類のチップ・月の目次） ── */
-.soda .s-chips,
-.soda .s-months {
+/* ── フィルタ ── */
+.soda .s-chips {
   display: flex;
   gap: 8px;
   overflow-x: auto;
@@ -660,9 +430,7 @@
   margin: 0 calc(-1 * var(--s-gut)) 8px;
   padding: 2px var(--s-gut) 12px;
 }
-.soda .s-chips::-webkit-scrollbar,
-.soda .s-months::-webkit-scrollbar { display: none; }
-.soda .s-months { margin-bottom: 0; padding-bottom: 8px; }
+.soda .s-chips::-webkit-scrollbar { display: none; }
 .soda .s-chip {
   position: relative;
   flex: none;
@@ -679,42 +447,14 @@
 }
 .soda .s-chip::after { content: ''; position: absolute; inset: -4px 0; }
 .soda .s-chip[aria-pressed='true'] { background: var(--s-ink); color: var(--s-bg); }
-/* 月の目次はインデックスカードの形（角の丸い四角）で種類のチップと見分ける */
-.soda .s-month {
-  position: relative;
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 12px;
-  border: 1px solid var(--s-ink);
-  border-radius: var(--s-r-s);
-  background: var(--s-paper);
-  color: var(--s-ink);
-  font: inherit;
-  font-size: 13.5px;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-.soda .s-month::after { content: ''; position: absolute; inset: -4px 0; }
-.soda .s-month b { font-weight: 700; }
-.soda .s-month small { font-size: 11.5px; color: var(--s-faint); }
-.soda .s-month .s-ico { width: 14px; height: 14px; }
-.soda .s-month[aria-pressed='true'] { background: var(--s-ink); color: var(--s-bg); }
-.soda .s-month[aria-pressed='true'] small { color: inherit; }
-@media (hover: hover) {
-  .soda .s-month:hover:not([aria-pressed='true']) { background: var(--s-card); }
-}
 @media (min-width: 761px) {
-  .soda .s-chips,
-  .soda .s-months { flex-wrap: wrap; margin-inline: 0; padding-inline: 0; }
+  .soda .s-chips { margin-inline: 0; padding-inline: 0; }
 }
 
 /* ══════════════ タイムライン（日付ごとの日記帳） ══════════════ */
 .soda .s-day { display: grid; grid-template-columns: minmax(0, 1fr); padding-top: 14px; border-top: 1px solid var(--s-ink); }
 .soda .s-day:first-child { padding-top: 0; border-top: 0; }
-.soda .s-dayhead { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding-bottom: 6px; }
+.soda .s-dayhead { display: flex; align-items: center; gap: 10px; padding-bottom: 6px; }
 .soda .s-wd {
   flex: none;
   width: 34px;
@@ -726,12 +466,11 @@
   font-size: var(--s-fs-ui);
   line-height: 1;
 }
-.soda .s-wd.is-sun { border-color: var(--s-stamp); color: var(--s-stamp); }
 .soda .s-md { font-family: var(--s-font-num); font-size: 21px; font-weight: 500; line-height: 1; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
 .soda .s-yr { font-family: var(--s-font-num); font-size: 12px; letter-spacing: 0.08em; color: var(--s-faint); }
 @media (min-width: 761px) {
-  .soda .s-day { grid-template-columns: 104px minmax(0, 1fr); column-gap: 20px; }
-  .soda .s-dayhead { position: sticky; top: calc(var(--s-header-h) + 16px); align-self: start; flex-direction: column; align-items: flex-start; gap: 7px; padding-top: 4px; }
+  .soda .s-day { grid-template-columns: 96px minmax(0, 1fr); column-gap: 20px; }
+  .soda .s-dayhead { position: sticky; top: calc(var(--s-header-h) + 16px); align-self: start; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 4px; }
 }
 .soda .s-post { padding: 2px 0 16px; scroll-margin-top: calc(var(--s-header-h) + 20px); }
 .soda .s-post + .s-post { padding-top: 12px; border-top: 1px dashed var(--s-faint); }
@@ -841,221 +580,239 @@
 .soda .s-linkcard-desc { font-size: 12px; line-height: 1.6; color: var(--s-sub); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .soda .s-linkcard-host { font-family: var(--s-font-num); font-size: 12px; color: var(--s-faint); overflow-wrap: anywhere; }
 
-/* 写真＝プリント（白いフチ。1枚目の右下にフィルムの日付写し込み） */
-.soda .s-pgrid { display: grid; gap: 10px; max-width: 560px; margin-top: 12px; }
-.soda .s-pgrid > button {
-  display: block;
-  width: 100%;
-  padding: 6px 6px 16px;
-  border: 0;
-  border-radius: 3px;
-  background: var(--s-print);
-  box-shadow: 0 0 0 1px var(--s-line-soft), 0 10px 20px -16px rgb(20 20 20 / 0.6);
-  cursor: zoom-in;
-}
-.soda .s-pgrid-ph {
+/* 写真（枚数で組み替え・角丸） */
+.soda .s-pgrid { display: grid; gap: 6px; max-width: 560px; margin-top: 12px; overflow: hidden; border-radius: var(--s-r-l); }
+.soda .s-pgrid button {
   position: relative;
   display: block;
   overflow: hidden;
-  aspect-ratio: 4 / 5;
-  border-radius: 1px;
+  padding: 0;
+  border: 0;
   background: linear-gradient(105deg, var(--s-paper), var(--s-card), var(--s-paper));
   background-size: 300% 100%;
   animation: s-shimmer 1.8s ease-in-out infinite;
+  cursor: zoom-in;
 }
-.soda .s-pgrid-ph:has(img.is-loaded) { animation: none; background: var(--s-card); }
+.soda .s-pgrid button:has(img.is-loaded) { animation: none; background: var(--s-card); }
 .soda .s-pgrid img { transition: filter 0.25s; }
 @media (hover: hover) {
-  .soda .s-pgrid > button:hover img { filter: brightness(0.94); }
+  .soda .s-pgrid button:hover img { filter: brightness(0.94); }
 }
-.soda .s-pgrid .s-datemark { right: 8px; bottom: 7px; font-size: 13px; }
-/* 1枚: 幅は写真の向きで決める（縦長は 320px まで） */
-.soda .s-pgrid.is-1 { display: block; }
-.soda .s-pgrid.is-1 > button { width: min(100%, var(--s-w, 560px)); padding: 8px 8px 20px; }
-.soda .s-pgrid.is-1 .s-pgrid-ph { aspect-ratio: var(--s-ar, 4 / 3); }
-.soda .s-pgrid.is-1 .s-datemark { right: 10px; bottom: 9px; font-size: 16px; }
+/* 1枚: 幅は写真の向きで決める（縦長は 320px まで）。角丸は写真そのものに付ける */
+.soda .s-pgrid.is-1 { display: block; overflow: visible; border-radius: 0; }
+.soda .s-pgrid.is-1 button { width: min(100%, var(--s-w, 560px)); aspect-ratio: var(--s-ar, 4 / 3); border-radius: var(--s-r-l); }
 @media (max-width: 760px) {
-  /* SP は縦長でも全幅（隣の 2〜3 枚の並びと幅をそろえる。縦横比は 3:4 までに丸め済み） */
-  .soda .s-pgrid.is-1 > button { width: 100%; }
+  /* SP は縦長でも全幅（隣の 2〜4 枚グリッドと幅をそろえる。縦横比は 3:4 までに丸め済み） */
+  .soda .s-pgrid.is-1 button { width: 100%; }
 }
-.soda .s-pgrid.is-2,
-.soda .s-pgrid.is-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.soda .s-pgrid.is-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.soda .s-pgrid.is-3 > button { padding: 5px 5px 12px; }
-.soda .s-pgrid.is-3 .s-datemark { right: 6px; bottom: 5px; font-size: 11px; }
+.soda .s-pgrid.is-2 { grid-template-columns: 1fr 1fr; aspect-ratio: 16 / 10; }
+.soda .s-pgrid.is-3 { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 16 / 10; }
+.soda .s-pgrid.is-3 button:first-child { grid-row: 1 / 3; }
+.soda .s-pgrid.is-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; aspect-ratio: 4 / 3; }
 
 /* 読み込み完了フェードイン（SmartImage が is-loaded を付与。opacity のみ） */
 .soda .imgfade { opacity: 0; transition: opacity 0.3s ease; }
 .soda .imgfade.is-loaded { opacity: 1; }
+
+/* ══════════════ TODAY（日付・時刻・天気・おしらせ・数字・お便り） ══════════════ */
+.soda .s-today {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 26px 24px 24px;
+  border: 1px solid var(--s-ink);
+  border-radius: var(--s-r-xl);
+  background: var(--s-card);
+  scroll-margin-top: calc(var(--s-header-h) + 16px);
+}
+.soda .s-clock { display: grid; gap: 2px; text-align: center; }
+.soda .s-clock-date { display: grid; }
+.soda .s-d1 { font-size: 17px; letter-spacing: 0.06em; }
+.soda .s-d2 { font-size: var(--s-fs-ui); letter-spacing: 0.1em; }
+.soda .s-tm { font-family: var(--s-font-num); font-size: 46px; font-weight: 500; line-height: 1.15; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.soda .s-wx { display: flex; justify-content: center; align-items: center; gap: 8px; font-size: var(--s-fs-ui); }
+.soda .s-wx-row { display: inline-flex; align-items: center; gap: 6px; }
+.soda .s-wx-icon { display: flex; }
+.soda .s-wx-icon .rays { transform-origin: 32px 32px; animation: s-spin 28s linear infinite; }
+.soda .s-wx b { font-family: var(--s-font-num); font-size: var(--s-fs-body); font-weight: 500; }
+.soda .s-wx-credit { font-size: var(--s-fs-cap); color: var(--s-faint); text-decoration: underline dotted; text-underline-offset: 2px; }
+.soda .s-today hr { width: 100%; margin: 0; border: 0; border-top: 1px solid var(--s-ink); }
+.soda .s-today h3 { font-size: var(--s-fs-ui); font-weight: 500; text-align: center; letter-spacing: 0.08em; }
+.soda .s-notices { display: grid; gap: 10px; }
+.soda .s-notices li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 4px;
+  font-size: var(--s-fs-ui);
+  line-height: 1.65;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.soda .s-nd { margin-right: 6px; font-family: var(--s-font-num); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* 行頭の赤い点（1行目の高さにそろえる） */
+.soda .s-ndot { justify-self: center; width: 7px; height: 7px; margin-top: 0.62em; border-radius: 50%; background: var(--s-hot); }
+.soda .s-today-bottom { display: grid; gap: 16px; padding-top: 18px; border-top: 1px solid var(--s-ink); }
+.soda .s-stats { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; }
+.soda .s-stats > div { display: flex; flex-direction: column; }
+.soda .s-stats > div + div { border-left: 1px solid var(--s-faint); }
+@supports (color: color-mix(in srgb, red, blue)) {
+  .soda .s-stats > div + div { border-left-color: color-mix(in srgb, var(--s-ink) 35%, transparent); }
+}
+.soda .s-stats b { font-family: var(--s-font-num); font-size: 24px; font-weight: 500; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.soda .s-stats span { font-size: 11.5px; letter-spacing: 0.08em; }
+.soda .s-today .s-pill.is-solid { width: 100%; height: 50px; font-size: 15px; color: var(--s-card); }
+.soda .s-today .s-pill.is-solid:active { color: var(--s-ink); }
+@media (hover: hover) {
+  .soda .s-today .s-pill.is-solid:hover { color: var(--s-ink); }
+}
+/* SP: 最新の投稿の直下の細い帯（時計の段 + 最新のおしらせ1件）。
+   数字とお便りは出さない（プロフィール / ヘッダーが担う） */
+@media (max-width: 760px) {
+  .soda .s-today { gap: 10px; padding: 12px 16px 14px; border-radius: var(--s-r-l); }
+  .soda .s-clock { grid-template-columns: auto 1fr auto; align-items: end; column-gap: 12px; text-align: left; }
+  .soda .s-d1 { font-size: 13px; }
+  .soda .s-d2 { font-size: 12px; }
+  .soda .s-tm { font-size: 34px; line-height: 1; }
+  .soda .s-wx { flex-direction: column; align-items: flex-end; justify-content: flex-end; gap: 2px; font-size: 12.5px; }
+  .soda .s-today h3 { display: none; }
+  .soda .s-notices { gap: 4px; }
+  .soda .s-notices li { font-size: 13.5px; }
+  .soda .s-notices li:nth-child(n + 2) { display: none; }
+  .soda .s-notices li > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .soda .s-today-bottom { display: none; }
+}
+
+/* ── 写真（PC 5列×2段 / タブレット 6列 / SP 3列×2段。タイムラインの下に横長に並べる） ── */
+.soda .s-phs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.soda .s-phs a { position: relative; display: block; overflow: hidden; aspect-ratio: 1; border-radius: var(--s-r-l); background: var(--s-card); }
+.soda .s-phs img { transition: transform 0.6s; }
+@media (hover: hover) {
+  .soda .s-phs a:hover img { transform: scale(1.04); }
+}
+.soda .s-photocol-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; }
+@media (max-width: 1079px) {
+  .soda .s-phs a:nth-child(n + 7) { display: none; }
+}
+@media (min-width: 761px) and (max-width: 1079px) {
+  .soda .s-phs { grid-template-columns: repeat(6, 1fr); }
+}
+@media (min-width: 1080px) {
+  .soda .s-phs { grid-template-columns: repeat(5, 1fr); gap: 16px; }
+}
 
 /* ══════════════ 下段セクション ══════════════ */
 .soda .s-sections { display: grid; gap: 56px; margin-top: 64px; }
 @media (max-width: 760px) {
   .soda .s-sections { gap: 44px; margin-top: 48px; }
 }
-
-/* つくったもの＝ステッカー（白いフチの角丸を少し傾けて貼る。SP は横スワイプ） */
-.soda .s-stickers {
+/* 横スワイプのレール（SP）→ グリッド（PC） */
+.soda .s-rail {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 46%;
-  gap: 18px;
+  grid-auto-columns: 76%;
+  gap: 12px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   margin-inline: calc(-1 * var(--s-gut));
-  padding: 10px var(--s-gut) 8px;
+  padding-inline: var(--s-gut);
+  padding-bottom: 4px;
   scroll-padding-inline: var(--s-gut);
 }
-.soda .s-stickers::-webkit-scrollbar { display: none; }
-.soda .s-stickers > * { scroll-snap-align: start; }
-.soda .s-stickers.is-page {
-  grid-auto-flow: row;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px 18px;
-  overflow: visible;
-  margin-inline: 0;
-  padding-inline: 0;
+.soda .s-rail::-webkit-scrollbar { display: none; }
+.soda .s-rail > * { scroll-snap-align: start; }
+.soda .s-railnav { display: none; }
+@media (max-width: 760px) {
+  .soda .s-railnav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 14px;
+    font-family: var(--s-font-num);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .soda .s-railnav button {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--s-ink);
+    border-radius: 50%;
+    background: var(--s-ink);
+    color: var(--s-bg);
+    cursor: pointer;
+  }
+  .soda .s-railnav button.is-prev { background: transparent; color: var(--s-ink); }
+  .soda .s-railnav button:disabled { opacity: 0.35; cursor: default; }
+  .soda .s-railnav .s-ico { width: 16px; height: 16px; }
 }
 @media (min-width: 761px) {
-  .soda .s-stickers { grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; overflow: visible; margin-inline: 0; padding-inline: 0; }
-  .soda .s-stickers.is-page { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px 32px; }
+  .soda .s-rail { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; overflow: visible; margin-inline: 0; padding-inline: 0; }
 }
 @media (min-width: 1080px) {
-  .soda .s-stickers.is-page { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .soda .s-rail.is-four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
-/* position: relative で読み上げ用の補足（.sr-only）を横スワイプの枠の中に閉じ込める（はみ出すと画面幅が広がる） */
-.soda .s-sticker { position: relative; display: grid; align-content: start; gap: 10px; text-decoration: none; }
-.soda .s-sticker:focus-visible { outline-offset: 6px; }
-.soda .s-sticker-art {
-  --s-rot: -2deg;
+
+/* 写真の下に文字を置くカード（文字は写真に重ねない） */
+.soda .s-card { display: grid; align-content: start; gap: 12px; text-decoration: none; }
+.soda .s-card-ph {
   position: relative;
   display: block;
+  overflow: hidden;
   aspect-ratio: 1;
-  padding: 8px;
-  border-radius: 28px;
-  background: var(--s-print);
-  box-shadow: 0 0 0 1px rgb(20 20 20 / 0.22), 0 10px 18px -12px rgb(20 20 20 / 0.55);
-  transform: rotate(var(--s-rot));
-  transition: transform 0.25s;
+  border-radius: var(--s-r-xl);
+  background: var(--s-card);
 }
-.soda .s-sticker:nth-child(2n) .s-sticker-art { --s-rot: 1.6deg; }
-.soda .s-sticker:nth-child(3n) .s-sticker-art { --s-rot: -1deg; }
+.soda .s-card-ph img { transition: transform 0.6s; }
 @media (hover: hover) {
-  .soda .s-sticker:hover .s-sticker-art { transform: rotate(0deg) translateY(-3px); }
+  .soda .s-card:hover .s-card-ph img { transform: scale(1.03); }
+  .soda .s-card:hover .s-card-title { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 }
-.soda .s-sticker-ph { position: relative; display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; border-radius: 20px; background: var(--s-card); }
-.soda .s-sticker-cover {
-  padding: 14px;
-  font-family: var(--s-font-logo);
-  font-size: 24px;
-  line-height: 1.05;
-  text-align: center;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-  color: var(--s-ink);
-}
-.soda .s-sticker-tag { justify-self: start; margin-top: 4px; padding: 0 8px; border: 1px solid var(--s-ink); border-radius: 999px; background: var(--s-card); font-size: 11.5px; line-height: 20px; }
-.soda .s-sticker-name { font-size: 15px; font-weight: 500; line-height: 1.5; word-break: keep-all; overflow-wrap: anywhere; }
-.soda .s-sticker-desc { font-size: 13.5px; line-height: 1.75; color: var(--s-sub); white-space: pre-line; overflow-wrap: anywhere; }
-
-/* イベント＝半券（左の半券に日付・ミシン目・切り欠き） */
-.soda .s-tickets { display: grid; gap: 14px; }
-@media (min-width: 761px) {
-  .soda .s-tickets { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-  .soda .s-tickets.is-page { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (min-width: 1080px) {
-  .soda .s-tickets.is-page { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
-}
-.soda .s-ticket {
-  --s-stub: 82px;
-  --s-notch: 9px;
-  position: relative;
-  isolation: isolate;
-  display: grid;
-  grid-template-columns: var(--s-stub) minmax(0, 1fr);
-  border-radius: var(--s-r-m);
-  text-decoration: none;
-  transition: transform 0.2s;
-}
-/* 券面（枠・地・切り欠き）は背面の層に描き、リンク本体のフォーカス枠は切り抜かない */
-.soda .s-ticket::before {
-  content: '';
+.soda .s-card-cover {
   position: absolute;
   inset: 0;
-  z-index: -1;
-  border: 1px solid var(--s-ink);
-  border-radius: inherit;
-  background: linear-gradient(to right, var(--s-card) 0 var(--s-stub), var(--s-paper) var(--s-stub));
-  -webkit-mask:
-    radial-gradient(circle var(--s-notch) at var(--s-stub) 0, #0000 98%, #000) top / 100% 51% no-repeat,
-    radial-gradient(circle var(--s-notch) at var(--s-stub) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
-  mask:
-    radial-gradient(circle var(--s-notch) at var(--s-stub) 0, #0000 98%, #000) top / 100% 51% no-repeat,
-    radial-gradient(circle var(--s-notch) at var(--s-stub) 100%, #0000 98%, #000) bottom / 100% 51% no-repeat;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  font-family: var(--s-font-logo);
+  font-size: 34px;
+  line-height: 1;
+  color: var(--s-ink);
+  text-align: center;
 }
-@media (hover: hover) {
-  .soda .s-ticket:hover { transform: translateY(-2px); }
-}
-.soda .s-ticket-stub { position: relative; display: grid; align-content: center; justify-items: center; gap: 2px; padding: 12px 4px; text-align: center; }
-/* 切り欠きのふち（券面の枠線を半円に沿って回す） */
-.soda .s-ticket-stub::before {
-  content: '';
+.soda .s-card-ext {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: calc(-1 * var(--s-notch) - 1px);
-  width: calc(2 * var(--s-notch) + 2px);
-  background:
-    radial-gradient(circle at 50% 0, transparent calc(var(--s-notch) - 0.5px), var(--s-ink) calc(var(--s-notch) - 0.5px) calc(var(--s-notch) + 0.5px), transparent calc(var(--s-notch) + 1px)) top / 100% 50% no-repeat,
-    radial-gradient(circle at 50% 100%, transparent calc(var(--s-notch) - 0.5px), var(--s-ink) calc(var(--s-notch) - 0.5px) calc(var(--s-notch) + 0.5px), transparent calc(var(--s-notch) + 1px)) bottom / 100% 50% no-repeat;
-  pointer-events: none;
-}
-/* ミシン目（切り欠きの間だけ） */
-.soda .s-ticket-stub::after {
-  content: '';
-  position: absolute;
-  top: calc(var(--s-notch) + 4px);
-  bottom: calc(var(--s-notch) + 4px);
-  right: 0;
-  border-right: 1.5px dashed rgb(20 20 20 / 0.5);
-}
-.soda .s-ticket-ym { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; }
-.soda .s-ticket-d { font-size: 32px; font-weight: 700; line-height: 1; }
-.soda .s-ticket-wd { font-size: 12px; }
-.soda .s-ticket-body { display: grid; align-content: start; gap: 4px; min-width: 0; padding: 12px 16px 14px; }
-.soda .s-ticket.is-ext .s-ticket-body { padding-right: 46px; }
-.soda .s-ticket-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.soda .s-ticket-plat { padding: 0 8px; border: 1px solid var(--s-ink); border-radius: 999px; font-size: 11px; line-height: 19px; }
-.soda .s-ticket-title { font-size: 15.5px; font-weight: 700; line-height: 1.45; word-break: keep-all; overflow-wrap: anywhere; }
-.soda .s-ticket-time { font-size: var(--s-fs-meta); color: var(--s-sub); }
-.soda .s-ticket-note { margin-top: 4px; font-size: 13.5px; line-height: 1.75; color: var(--s-sub); white-space: pre-line; overflow-wrap: anywhere; }
-.soda .s-ticket-ext {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 28px;
-  height: 28px;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
   border: 1px solid var(--s-ink);
   border-radius: 50%;
   background: var(--s-bg);
 }
-.soda .s-ticket-ext .s-ico { width: 14px; height: 14px; }
+.soda .s-card-ext .s-ico { width: 16px; height: 16px; }
+.soda .s-card-body { display: grid; justify-items: start; gap: 6px; }
+.soda .s-card-attr { padding: 0 8px; border: 1px solid var(--s-ink); border-radius: var(--s-r-s); font-size: 11.5px; line-height: 20px; }
+.soda .s-card-title { font-size: 16px; font-weight: 500; line-height: 1.55; word-break: keep-all; overflow-wrap: anywhere; }
+.soda .s-card-desc { font-size: var(--s-fs-meta); color: var(--s-sub); }
 .soda .s-live {
+  position: absolute;
+  top: 12px;
+  left: 12px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0 9px;
+  padding: 3px 10px;
   border-radius: 999px;
   background: var(--s-hot);
   color: #ffffff;
   font-family: var(--s-font-num);
   font-size: var(--s-fs-cap);
   font-weight: 700;
-  line-height: 19px;
   letter-spacing: 0.1em;
 }
 .soda .s-live::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #ffffff; }
@@ -1395,42 +1152,39 @@
 .soda .imgmodal :focus-visible { outline-color: var(--s-bg); }
 
 /* ══════════════ サブページ共通 ══════════════ */
-/* 見出しは1行（和文 h1 + 丸い書体の英字）に抑え、すぐ一覧に入る */
-.soda .s-phead {
+.soda .s-phead { padding-top: 26px; }
+.soda .s-phead-en {
+  display: block;
+  font-family: var(--s-font-logo);
+  font-size: clamp(60px, 13vw, 148px);
+  line-height: 0.9;
+  letter-spacing: -0.005em;
+  color: var(--s-logo);
+}
+.soda .s-phead-row {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 6px 16px;
-  padding-block: 24px 14px;
+  gap: 8px 16px;
+  margin-top: 14px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--s-ink);
 }
-.soda .s-phead h1 {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 12px;
-  font-size: clamp(24px, 3.2vw, 30px);
-  font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: 0.04em;
-  word-break: keep-all;
-  overflow-wrap: anywhere;
-}
-.soda .s-phead-en { font-family: var(--s-font-logo); font-size: 0.8em; font-weight: 400; letter-spacing: 0; color: var(--s-logo); }
+.soda .s-phead h1 { font-size: var(--s-fs-h3); font-weight: 500; letter-spacing: 0.04em; }
 .soda .s-phead p { font-size: var(--s-fs-ui); color: var(--s-sub); }
 .soda .s-phead-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.soda .s-pbody { padding-top: 24px; }
+.soda .s-pbody { padding-top: 26px; }
 .soda .s-empty { padding: 8px 0; font-size: var(--s-fs-ui); color: var(--s-faint); }
 
-/* タイムラインページ（PC は脇にメモ帳とベタ焼き） */
+/* タイムラインページ（PC は TODAY を右に） */
 .soda .s-tl-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; }
-.soda .s-tl-layout > .s-side { display: none; }
+.soda .s-tl-layout > .s-today { display: none; }
 /* 本文は1行 40 字前後に収める（PC で行が長くなりすぎないように） */
 .soda .s-tl-main { max-width: 760px; min-width: 0; }
 @media (min-width: 1080px) {
-  .soda .s-tl-layout { grid-template-columns: minmax(0, 760px) 320px; justify-content: space-between; gap: 48px; }
-  .soda .s-tl-layout > .s-side { display: grid; align-self: start; }
+  .soda .s-tl-layout { grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; }
+  .soda .s-tl-layout > .s-today { display: flex; position: sticky; top: calc(var(--s-header-h) + 24px); align-self: start; }
 }
 
 /* 写真（masonry） */
@@ -1463,6 +1217,18 @@
   .soda .s-masonry { columns: 4; column-gap: 18px; }
   .soda .s-masonry .s-tile { margin-bottom: 18px; }
 }
+
+/* カードのグリッド（イベント・つくったもの） */
+.soda .s-cgrid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px 16px; }
+@media (min-width: 600px) {
+  .soda .s-cgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1080px) {
+  .soda .s-cgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 24px; }
+}
+.soda .s-cgrid .s-card-ph { aspect-ratio: 4 / 3; }
+.soda .s-cnote { margin-top: 10px; font-size: var(--s-fs-ui); line-height: 1.8; color: var(--s-sub); white-space: pre-line; }
+.soda .s-cmeta { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; font-size: var(--s-fs-meta); color: var(--s-sub); }
 
 /* 記事 */
 .soda .s-article { max-width: 700px; margin-inline: auto; }
@@ -1560,8 +1326,7 @@
 .soda .s-facts b { font-family: var(--s-font-num); font-size: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .soda .s-facts span { font-size: 12px; letter-spacing: 0.08em; }
 .soda .s-spotify { display: grid; gap: 12px; margin-top: 28px; padding: 18px; border: 1px solid var(--s-ink); border-radius: var(--s-r-xl); background: var(--s-paper); }
-.soda .s-spotify-h { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; }
-.soda .s-spotify-h span { margin-left: 4px; font-family: var(--s-font-num); font-size: var(--s-fs-cap); font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--s-faint); }
+.soda .s-spotify .s-sh { margin: 0; padding: 0; border: 0; }
 .soda .s-spotify iframe { display: block; width: 100%; border: 0; border-radius: var(--s-r-m); }
 
 /* 404 / エラー */
@@ -1589,11 +1354,10 @@
 /* ── reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   .soda .s-wordmark span,
-  .soda .s-stamp,
   .soda .s-like.is-pop .s-ico,
   .soda .s-wx-icon .rays,
   .soda .imgmodal-spin { animation: none !important; }
-  .soda .s-pgrid-ph,
+  .soda .s-pgrid button,
   .soda .s-masonry .s-tile,
   .soda .s-skel { animation: none !important; background: var(--s-card); }
   .soda *,

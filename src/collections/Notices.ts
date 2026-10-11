@@ -1,6 +1,6 @@
 // src/collections/Notices.ts
-// お知らせ（NOTICE）コレクション。ホーム・タイムラインのメモ帳（SP はホームのピン留めも）に
-// 日付+メッセージを新しい順に表示する（docs/README.md 参照）。
+// お知らせ（NOTICE）コレクション。ホーム・タイムラインの TODAY カードに日付+メッセージを
+// 新しい順に表示する（docs/README.md 参照）。
 import type { Access, CollectionConfig } from 'payload'
 import { adminOnly } from '@/lib/access'
 import { makeRevalidate } from '@/lib/revalidate'
@@ -28,7 +28,7 @@ export const Notices: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
-  // お知らせ更新でホーム（メモ帳・ピン留め）とタイムライン（PC のメモ帳）を再検証
+  // お知らせ更新でホーム（TODAY）とタイムライン（PC の TODAY）を再検証
   hooks: makeRevalidate(['/', '/timeline']),
   fields: [
     {
@@ -37,7 +37,7 @@ export const Notices: CollectionConfig = {
       required: true,
       label: '日付',
       admin: {
-        description: 'ホームのメモ帳（おしらせ）と SP のピン留めに「12.06」形式で表示されます',
+        description: 'TODAY カードに「12.06」形式で表示されます（SP のホームは最新の1件）',
         date: { pickerAppearance: 'dayOnly' },
       },
     },

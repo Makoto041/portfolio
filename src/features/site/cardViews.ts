@@ -1,15 +1,14 @@
 // ───────────────────────────────────────────
 // src/features/site/cardViews.ts
-// コレクションのドキュメント → 半券・ステッカー・行の表示モデルへの変換（純関数）。
+// コレクションのドキュメント → カード/行の表示モデルへの変換（純関数）。
 // ホームと各一覧ページで共用する。
 // ───────────────────────────────────────────
-import { dayParts, fmtDateJa } from '@/lib/date'
+import { fmtDateJa } from '@/lib/date'
 import { lexicalFirstImageUrl, lexicalToPlainText } from '@/lib/richtext'
 import { clip } from '@/lib/text'
 import { safeHref } from '@/lib/safeHref'
 import { formatEventDateWithExtendedHour } from '@/components/utils/formatEventDateWithExtendedHour'
-import type { TicketView } from '@/components/soda/SodaTicket'
-import type { StickerView } from '@/components/soda/SodaSticker'
+import type { CardView } from '@/components/soda/SodaCard'
 import type { BlogRowView } from '@/components/soda/SodaBlogRow'
 import type { BlogPost as BlogPostDoc } from '@/payload-types'
 
@@ -64,38 +63,40 @@ export function isLiveNow(start: string, end?: string | null, now: number = Date
   return Number.isFinite(s) && now >= s && now <= e
 }
 
-/** イベント → 半券（withNote: 一覧ページでは概要も添える） */
-export function eventTicket(e: EventLike, withNote = false): TicketView {
+/** イベント → カード */
+export function eventCard(e: EventLike, short = true): CardView {
   const { time } = formatEventDateWithExtendedHour(e.startDate, e.endDate)
-  const day = dayParts(e.startDate)
+  const thumb = uploadUrl(e.thumbnail)
+  // カードでは開始時刻まで（「〜」以降の終了時刻は一覧ページの補足に回す）
+  const when = short ? `${fmtDateJa(e.startDate)} ${time.split('〜')[0]}〜` : `${fmtDateJa(e.startDate)} ${time}`
   const url = safeHref(e.externalUrl)
   return {
     id: String(e.id),
     href: url ?? '/events',
     external: Boolean(url),
+    imageUrl: thumb ?? null,
+    cover: PLATFORM_LABELS[e.platform ?? 'other'] ?? 'Event',
+    attr: PLATFORM_LABELS[e.platform ?? 'other'] ?? 'イベント',
     title: e.title,
-    platform: PLATFORM_LABELS[e.platform ?? 'other'] ?? 'イベント',
-    year: day?.year,
-    month: day?.month,
-    day: day?.day,
-    weekday: day?.weekday,
-    time,
+    label: e.title,
+    desc: when,
     live: isLiveNow(e.startDate, e.endDate),
-    note: withNote ? e.summary : null,
   }
 }
 
-/** つくったもの → ステッカー（withDesc: 一覧ページでは説明も添える） */
-export function productSticker(p: ProductLike, withDesc = false): StickerView {
+/** つくったもの → カード */
+export function productCard(p: ProductLike): CardView {
+  const image = uploadUrl(p.image)
   const url = safeHref(p.url)
   return {
     id: String(p.id),
     href: url ?? '/products',
     external: Boolean(url),
-    imageUrl: uploadUrl(p.image),
-    name: p.name,
-    tag: p.tags?.[0] || 'つくったもの',
-    desc: withDesc ? p.description : null,
+    imageUrl: image ?? null,
+    cover: p.name,
+    attr: p.tags?.[0] || 'つくったもの',
+    title: p.name,
+    label: p.name,
   }
 }
 
