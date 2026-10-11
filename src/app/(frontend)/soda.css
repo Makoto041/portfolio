@@ -14,13 +14,13 @@
    コンポーネントのクラスは s- 接頭辞で .soda 配下にスコープする（Tailwind ユーティリティと衝突させない）。
 ─────────────────────────────────────────────── */
 
-/* ===== 地色パレット（src/lib/palette.ts のキーと対応） ===== */
+/* ===== 地色パレット（src/lib/palette.ts のキーと対応。:root は既定のクリームソーダ） ===== */
 :root {
-  --s-bg: #e3e8f8;
-  --s-logo: #95a1da;
-  --s-card: #f0e6c0;
+  --s-bg: #e6f1de;
+  --s-logo: #4f9d69;
+  --s-card: #fbf3dc;
 }
-:root[data-palette='creamsoda'] { --s-bg: #e6f1de; --s-logo: #4f9d69; --s-card: #fbf3dc; }
+:root[data-palette='gunjo'] { --s-bg: #e3e8f8; --s-logo: #95a1da; --s-card: #f0e6c0; }
 :root[data-palette='ramune'] { --s-bg: #dbecf8; --s-logo: #8aaecd; --s-card: #f3e5a3; }
 :root[data-palette='melon'] { --s-bg: #e0f0e1; --s-logo: #7fb38a; --s-card: #f6dccd; }
 :root[data-palette='lemon'] { --s-bg: #f6f0cc; --s-logo: #c8b14f; --s-card: #d4e4f6; }
@@ -48,7 +48,7 @@
   --s-ink: #141414;
   --s-sub: #42444b;
   --s-faint: #5b5e66;
-  --s-paper: #f4f6fc;
+  --s-paper: #f6f9f3;
   --s-hot: #d63a1e;
   --s-r-xl: 26px;
   --s-r-l: 20px;

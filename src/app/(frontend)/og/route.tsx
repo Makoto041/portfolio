@@ -7,8 +7,8 @@ import { PALETTES, SITE_PALETTE } from '@/lib/palette'
 
 const size = { width: 1200, height: 630 }
 
-// SNS 側で長くキャッシュされるため、月替わり設定のときも定番の群青ソーダで固定する
-const PALETTE = PALETTES[SITE_PALETTE === 'monthly' ? 'gunjo' : SITE_PALETTE]
+// SNS 側で長くキャッシュされるため、月替わり設定のときも定番のクリームソーダで固定する
+const PALETTE = PALETTES[SITE_PALETTE === 'monthly' ? 'creamsoda' : SITE_PALETTE]
 const BG = PALETTE.bg
 const LOGO = PALETTE.logo
 const INK = '#141414'
