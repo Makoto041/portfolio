@@ -22,6 +22,21 @@ export const LIMITS = {
   images: 3,
 } as const
 
+/** 写真として受け付ける形式（Content-Type）。本当に読めるかはサーバーが中身で確かめる（HEIC は環境によって読めない） */
+export const PHOTO_TYPES: readonly string[] = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/avif',
+]
+
+/** ブラウザで縮小できない写真を、そのままサーバーに送ってよいか（受け付ける形式で、空でなく上限以下） */
+export function canSendPhotoAsIs(type: string, size: number, maxBytes: number): boolean {
+  return PHOTO_TYPES.includes(type.toLowerCase()) && size > 0 && size <= maxBytes
+}
+
 export type QuickPostInput = {
   text: string
   title?: string

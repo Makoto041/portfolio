@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto'
 import type { NextRequest } from 'next/server'
 import { QP } from '@/lib/quickpost/config'
 import { reencodePhoto, UnsupportedImageError } from '@/lib/quickpost/image'
+import { PHOTO_TYPES } from '@/lib/quickpost/input'
 import {
   consumeRate,
   fail,
@@ -20,14 +21,7 @@ export const dynamic = 'force-dynamic'
 // 写真の作り直しと保存（R2）に時間がかかっても途中で切れないように
 export const maxDuration = 30
 
-const ACCEPT = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/heic',
-  'image/heif',
-  'image/avif',
-])
+const ACCEPT = new Set(PHOTO_TYPES)
 
 export async function POST(req: NextRequest) {
   const blocked = rejectCrossSite(req)

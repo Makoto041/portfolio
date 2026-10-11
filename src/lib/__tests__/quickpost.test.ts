@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { deviceLabel, normalizeText, parseQuickPost } from '@/lib/quickpost/input'
+import {
+  canSendPhotoAsIs,
+  deviceLabel,
+  normalizeText,
+  parseQuickPost,
+  PHOTO_TYPES,
+} from '@/lib/quickpost/input'
 import {
   createIpLimiter,
   isSameOriginRequest,
@@ -302,5 +308,20 @@ describe('パスキーの応答の形', () => {
     expect(parseTransports('usb,internal,usb')).toEqual(['usb', 'internal'])
     expect(parseTransports('')).toBeUndefined()
     expect(parseTransports(null)).toBeUndefined()
+  })
+})
+
+describe('canSendPhotoAsIs', () => {
+  it('受け付ける形式で上限以下なら、そのまま送る（HEIC・AVIF を含む）', () => {
+    for (const type of PHOTO_TYPES) expect(canSendPhotoAsIs(type, 1000, 2000)).toBe(true)
+    expect(canSendPhotoAsIs('image/HEIC', 2000, 2000)).toBe(true)
+  })
+
+  it('ほかの形式・空・上限超えは送らない', () => {
+    expect(canSendPhotoAsIs('image/gif', 1000, 2000)).toBe(false)
+    expect(canSendPhotoAsIs('image/svg+xml', 1000, 2000)).toBe(false)
+    expect(canSendPhotoAsIs('', 1000, 2000)).toBe(false)
+    expect(canSendPhotoAsIs('image/jpeg', 0, 2000)).toBe(false)
+    expect(canSendPhotoAsIs('image/heic', 2001, 2000)).toBe(false)
   })
 })

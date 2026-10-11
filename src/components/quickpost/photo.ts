@@ -2,6 +2,7 @@
 // 送る前にスマホで写真を縮小する（Vercel の送信上限 4.5MB に収め、通信量を減らす）。
 // canvas に描き直すので、この時点で位置情報などの撮影データは落ちる（サーバーでも必ず作り直す）。
 // 向きは <img> の EXIF 反映（image-orientation: from-image が既定）に任せる。
+import { canSendPhotoAsIs } from '@/lib/quickpost/input'
 
 /** 縮小の段階（長辺 px, JPEG 品質）。上限に収まるまで順に試す */
 const STEPS: ReadonlyArray<readonly [number, number]> = [
@@ -21,7 +22,7 @@ function toBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob | null
   return new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
 }
 
-/** 上限（maxBytes）以下の JPEG にして返す。読めない形式でも、そのまま送れる大きさならそのまま返す */
+/** 上限（maxBytes）以下の JPEG にして返す。ブラウザで読めない形式でも、受け付ける形式で上限以下ならそのまま返す */
 export async function prepareForUpload(file: File, maxBytes: number): Promise<Blob> {
   const url = URL.createObjectURL(file)
   try {
@@ -31,8 +32,9 @@ export async function prepareForUpload(file: File, maxBytes: number): Promise<Bl
     try {
       await img.decode()
     } catch {
-      // このブラウザで描けない形式（一部の HEIC など）。サーバーが読める形式で小さければそのまま送る
-      if (/^image\/(jpeg|png|webp)$/.test(file.type) && file.size <= maxBytes) return file
+      // このブラウザで描けない形式（HEIC・AVIF など）。受け付ける形式で上限以下ならそのまま送り、
+      // 読めるかはサーバーが中身で確かめる（読めなければ 415 で返り、画面に理由を出す）
+      if (canSendPhotoAsIs(file.type, file.size, maxBytes)) return file
       throw new PhotoError('unreadable')
     }
     const w = img.naturalWidth
