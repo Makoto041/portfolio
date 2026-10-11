@@ -3,11 +3,9 @@ import type { CollectionBeforeChangeHook, CollectionAfterChangeHook } from 'payl
 import { fetchUrlMetadata } from '@/lib/urlMetadata'
 import { extractUrlsFromRichText } from '@/lib/urlExtractor'
 import { anyone, adminOnly } from '@/lib/access'
-import { makeRevalidate } from '@/lib/revalidate'
+import { makeRevalidate, TIMELINE_PAGES } from '@/lib/revalidate'
 
 // タイムライン更新で Home（ダイジェスト/entries/streak）と専用タブを再検証
-/** タイムラインの投稿が変わったときに作り直すページ */
-export const TIMELINE_PAGES = ['/', '/timeline']
 const revalidateTimeline = makeRevalidate(TIMELINE_PAGES)
 
 interface TimelineData {

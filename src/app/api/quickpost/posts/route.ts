@@ -9,9 +9,8 @@
 import type { NextRequest } from 'next/server'
 import type { Timeline } from '@/payload-types'
 import { textToLexical } from '@/lib/richtext'
-import { TIMELINE_PAGES } from '@/collections/TimelinePosts'
 import { parseQuickPost } from '@/lib/quickpost/input'
-import { revalidate } from '@/lib/revalidate'
+import { revalidate, TIMELINE_PAGES } from '@/lib/revalidate'
 import {
   assertInTransaction,
   claimPostReceipt,
@@ -51,7 +50,11 @@ export async function POST(req: NextRequest) {
 
     // 再送なら作った投稿を返し、同じ下書きをいま送っている途中なら待ってもらう（回数制限も使わない）
     const claim = await claimPostReceipt(payload, input.key)
-    if (claim.status === 'done') return json({ id: claim.postId, duplicate: true })
+    if (claim.status === 'done') {
+      // 投稿は前の送信で確定済み。確定の直後に止まっていた場合に備えて、ページの作り直しだけやり直す
+      await revalidate(TIMELINE_PAGES)
+      return json({ id: claim.postId, duplicate: true })
+    }
     if (claim.status === 'busy') return fail(409, 'in_progress')
     const { receiptId } = claim
 
@@ -98,6 +101,20 @@ export async function POST(req: NextRequest) {
         })
         // フックの中の失敗で投稿ごと取り消されていたら、受付票に書かずに失敗として返す
         assertInTransaction(txReq)
+        // 写真の代替テキストが空なら、投稿の見出しか本文の1行目を入れる（読み上げ用）。投稿と一緒に確定する
+        const alt = firstLine(input.title || input.text, 60)
+        for (const m of media) {
+          if (m.alt) continue
+          await payload.update({
+            collection: 'media',
+            id: m.id,
+            data: { alt },
+            user,
+            overrideAccess: false,
+            depth: 0,
+            req: txReq,
+          })
+        }
         await completePostReceipt(payload, receiptId, created.id, txReq)
         return created
       })
@@ -111,25 +128,6 @@ export async function POST(req: NextRequest) {
 
     // 保存のフックでも再検証しているが、それは確定の前。間に作り直されたページに投稿が欠けないよう、確定後にもう一度
     await revalidate(TIMELINE_PAGES)
-
-    // 写真の代替テキストが空なら、投稿の見出しか本文の1行目を入れる（読み上げ用）
-    const alt = firstLine(input.title || input.text, 60)
-    await Promise.all(
-      media
-        .filter((m) => !m.alt)
-        .map((m) =>
-          payload
-            .update({
-              collection: 'media',
-              id: m.id,
-              data: { alt },
-              user,
-              overrideAccess: false,
-              depth: 0,
-            })
-            .catch((e) => console.error('quickpost: failed to set alt text', e)),
-        ),
-    )
 
     const now = new Date().toISOString()
     await recordPost(payload, session.id, now).then(

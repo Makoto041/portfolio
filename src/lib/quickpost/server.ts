@@ -447,14 +447,9 @@ export async function claimPostReceipt(payload: Payload, key: string): Promise<R
       if (typeof receipt.postId === 'number') return { status: 'done', postId: receipt.postId }
       if (Date.now() - Date.parse(receipt.createdAt) < RECEIPT_STALE_MS) return { status: 'busy' }
       // 途中で落ちた受付票は取り直す（同時に取り直した相手が先に消していても、そのまま作り直しへ）
-      // 投稿の ID が入った受付票は消さない（待っている間に確定した受付票を消すと二重投稿になる）
-      await payload
-        .delete({
-          collection: 'quickpost-nonces',
-          where: { and: [{ id: { equals: receipt.id } }, { postId: { exists: false } }] },
-          overrideAccess: true,
-        })
-        .catch((e) => console.error('quickpost: failed to drop stale receipt', e))
+      await deleteOpenReceipt(payload, receipt.id).catch((e) =>
+        console.error('quickpost: failed to drop stale receipt', e),
+      )
     }
   }
   return { status: 'busy' }
@@ -478,17 +473,20 @@ export async function completePostReceipt(
 }
 
 /**
- * 投稿できなかった受付票を消す（同じ下書きで送り直せるように）。
- * 投稿の ID が残っている受付票は消さない（消すと送り直しで二重に投稿されうる）
+ * 投稿の ID が入っていない受付票だけを消す。確定した受付票を消すと送り直しで二重に投稿されうるため、
+ * 「まだ空か」の確認と削除を1回の DELETE で行う（別々に行うと、その間に確定した受付票を消しうる）
  */
+async function deleteOpenReceipt(payload: Payload, receiptId: ID): Promise<void> {
+  await payload.db.drizzle.execute(
+    sql`DELETE FROM quickpost_nonces WHERE id = ${receiptId} AND post_id IS NULL`,
+  )
+}
+
+/** 投稿できなかった受付票を消す（同じ下書きで送り直せるように） */
 export async function releasePostReceipt(payload: Payload, receiptId: ID): Promise<void> {
-  await payload
-    .delete({
-      collection: 'quickpost-nonces',
-      where: { and: [{ id: { equals: receiptId } }, { postId: { exists: false } }] },
-      overrideAccess: true,
-    })
-    .catch((e) => console.error('quickpost: failed to release receipt', e))
+  await deleteOpenReceipt(payload, receiptId).catch((e) =>
+    console.error('quickpost: failed to release receipt', e),
+  )
 }
 
 /** 期限を過ぎた記録を片付ける（投稿のたびに、ついでに） */
