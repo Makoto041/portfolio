@@ -14,7 +14,7 @@ import {
   startRegistration,
 } from '@simplewebauthn/browser'
 import SodaIcon from '@/components/soda/SodaIcon'
-import { LIMITS, POST_TYPES } from '@/lib/quickpost/input'
+import { LIMITS, photoTypeOf, POST_TYPES } from '@/lib/quickpost/input'
 import { TYPE_LABELS } from '@/lib/timeline'
 import { PhotoError, prepareForUpload } from './photo'
 
@@ -335,7 +335,8 @@ export default function QuickPostApp() {
     if (!files) return
     const room = limits.images - photos.length
     const picked = Array.from(files)
-      .filter((f) => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name))
+      // 形式が空で渡される写真（HEIC・AVIF など）は拡張子から形式を補って判定する
+      .filter((f) => photoTypeOf(f.type, f.name).startsWith('image/'))
       .slice(0, Math.max(0, room))
       .map((file) => ({ id: crypto.randomUUID(), file, url: URL.createObjectURL(file) }))
     if (picked.length) setPhotos((prev) => [...prev, ...picked])

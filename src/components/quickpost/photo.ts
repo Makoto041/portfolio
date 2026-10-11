@@ -52,6 +52,9 @@ export async function prepareForUpload(file: File, maxBytes: number): Promise<Bl
       canvas.height = Math.round(h * scale)
       const ctx = canvas.getContext('2d')
       if (!ctx) throw new PhotoError('unreadable')
+      // JPEG は透明を持てないので、先に白で塗っておく（塗らないと透明な部分が黒になる）
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
       const blob = await toBlob(canvas, quality)
       // iOS は canvas のメモリを早めに手放さないと大きな写真で落ちるため、使い終えたら 0 にする
