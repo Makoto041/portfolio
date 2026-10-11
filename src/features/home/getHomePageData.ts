@@ -5,7 +5,7 @@
 // 別コレクションの取得失敗はセクション単位で握りつぶし、ホーム全体を巻き込まない。
 // ───────────────────────────────────────────
 import { getPayloadClient } from '@/lib/payloadClient'
-import { fmtMonthDay } from '@/lib/date'
+import { fmtDateBadge } from '@/lib/date'
 import { lexicalToPlainText } from '@/lib/richtext'
 import { GALLERY_WHERE, getTodayData, EMPTY_TODAY, type TodayData } from '@/features/site/getTodayData'
 import { blogRow, eventCard, firstLine, productCard } from '@/features/site/cardViews'
@@ -100,18 +100,19 @@ export async function getHomePageData(): Promise<HomePageData> {
   const posts = postsRes.docs as unknown as TimelineDoc[]
   const [lead, ...feed] = posts
 
-  // ── ティッカー: おしらせ → 最新の投稿（4件） ──
+  // ── ティッカー: 最新のおしらせ（3件）→ 最新の投稿（4件）。日付はどちらも「07.05」形式 ──
+  // おしらせ全件は TODAY カードに出ている。改行は1行目だけにする（流れる文字は1行）
   const ticker: TickerItem[] = [
-    ...today.notices.map((n) => ({
+    ...today.notices.slice(0, 3).map((n) => ({
       key: `n-${n.key}`,
       kind: 'notice' as const,
       date: n.badge,
-      text: n.text,
+      text: firstLine(n.text, 60),
     })),
     ...posts.slice(0, 4).map((p) => ({
       key: `p-${p.id}`,
       kind: 'post' as const,
-      date: fmtMonthDay(p.publishedAt ?? p.createdAt),
+      date: fmtDateBadge(p.publishedAt ?? p.createdAt),
       text: firstLine(p.title || lexicalToPlainText(p.text), 40),
       href: `/timeline#post-${p.id}`,
     })),

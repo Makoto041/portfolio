@@ -2,10 +2,11 @@
 // ホーム最上部のティッカー。おしらせと最新の投稿が右から左へ流れる。
 // 内容を2セット並べて translateX(-50%) でループ（2セット目は装飾扱いで読み上げ・フォーカス対象外）。
 // ホバー/フォーカスで一時停止、右端のボタンでも停止できる（WCAG 2.2.2）。
+// 流れる時間は項目数に比例させる（--s-tk-n）。
 // prefers-reduced-motion では流さず、1セットだけを横スクロールで読めるようにする（CSS）。
 'use client'
 
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import Link from 'next/link'
 import SodaIcon from '@/components/soda/SodaIcon'
 
@@ -48,7 +49,11 @@ export default function SodaTicker({ items }: { items: TickerItem[] }) {
     })
 
   return (
-    <section className={`s-ticker${paused ? ' is-paused' : ''}`} aria-label="おしらせと最新の投稿">
+    <section
+      className={`s-ticker${paused ? ' is-paused' : ''}`}
+      aria-label="おしらせと最新の投稿"
+      style={{ '--s-tk-n': items.length } as CSSProperties}
+    >
       <div className="s-ticker-view">
         <div className="s-ticker-track">
           {render(false)}

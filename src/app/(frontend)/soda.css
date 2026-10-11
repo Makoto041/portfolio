@@ -177,6 +177,8 @@
 
 /* ══════════════ ティッカー（おしらせ＋最新の投稿が流れる） ══════════════ */
 .soda .s-ticker {
+  /* 一時停止ボタンの右余白（iPhone 横向きはノッチ側の安全領域に合わせる）。文字のフェードもこれに揃える */
+  --s-tk-r: max(8px, env(safe-area-inset-right, 0px));
   position: relative;
   height: 40px;
   display: flex;
@@ -192,14 +194,15 @@
   overflow: hidden;
   white-space: nowrap;
   /* 右端の一時停止ボタンの下に文字が潜り込まないよう、手前でフェードさせる */
-  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 72px), transparent calc(100% - 40px));
-  mask-image: linear-gradient(90deg, #000 calc(100% - 72px), transparent calc(100% - 40px));
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - var(--s-tk-r) - 64px), transparent calc(100% - var(--s-tk-r) - 32px));
+  mask-image: linear-gradient(90deg, #000 calc(100% - var(--s-tk-r) - 64px), transparent calc(100% - var(--s-tk-r) - 32px));
 }
 .soda .s-ticker-track {
   display: inline-flex;
   gap: 44px;
   padding-left: 44px;
-  animation: s-tick 46s linear infinite;
+  /* 1項目あたり 8 秒（項目数が変わっても流れる速さをほぼ一定に保つ） */
+  animation: s-tick calc(var(--s-tk-n, 6) * 8s) linear infinite;
 }
 .soda .s-ticker:hover .s-ticker-track,
 .soda .s-ticker:focus-within .s-ticker-track { animation-play-state: paused; }
@@ -213,7 +216,7 @@
 /* 流れる文字の一時停止（WCAG 2.2.2）。右端に固定 */
 .soda .s-ticker-toggle {
   position: absolute;
-  right: max(8px, env(safe-area-inset-right, 0px));
+  right: var(--s-tk-r);
   top: 50%;
   z-index: 1;
   width: 28px;
@@ -1441,9 +1444,11 @@
 
 /* ── reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-  .soda .s-ticker-view { overflow-x: auto; scrollbar-width: none; }
-  .soda .s-ticker-track { padding-right: 72px; }
-  .soda .s-ticker .s-tk-dup { display: none; }
+  /* 流さないので、一時停止ボタンと右端のフェードは不要。1セットだけを横スクロールで読ませる */
+  .soda .s-ticker-view { overflow-x: auto; scrollbar-width: none; -webkit-mask-image: none; mask-image: none; }
+  .soda .s-ticker-track { padding-right: var(--s-gut); }
+  .soda .s-ticker .s-tk-dup,
+  .soda .s-ticker-toggle { display: none; }
   .soda .s-ticker-track,
   .soda .s-wordmark span,
   .soda .s-like.is-pop .s-ico,
