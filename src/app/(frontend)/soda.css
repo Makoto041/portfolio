@@ -1611,6 +1611,20 @@
 .soda .s-qp-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .soda .s-qp-ph { position: relative; aspect-ratio: 1; max-width: 100%; border-radius: var(--s-r-m); overflow: hidden; background: var(--s-card); }
 .soda .s-qp-ph img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* この端末で描けない写真（HEIC など）の目印。× ボタン（右上）と重ならないよう中央下寄せ */
+.soda .s-qp-ph-none {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 36px 8px 8px;
+  font-size: var(--s-fs-cap);
+  color: var(--s-sub);
+  text-align: center;
+}
+.soda .s-qp-ph-none .s-ico { width: 22px; height: 22px; }
 .soda .s-qp-x {
   position: absolute;
   top: 6px;

@@ -38,7 +38,7 @@ type View = 'loading' | 'login' | 'register' | 'compose' | 'done' | 'account' | 
 
 type Draft = { text: string; title: string; showTitle: boolean; postType: string; key: string }
 
-type Photo = { id: string; file: File; url: string; mediaId?: number }
+type Photo = { id: string; file: File; url: string; mediaId?: number; noPreview?: boolean }
 
 type Sending = { step: 'photos'; done: number; total: number } | { step: 'post' }
 
@@ -333,6 +333,11 @@ export default function QuickPostApp() {
     if (fileRef.current) fileRef.current.value = ''
   }
 
+  /** この端末で描けない写真（HEIC など）は、壊れた画像の代わりに目印を出す。送ればサーバーが中身で判断する */
+  function markNoPreview(id: string) {
+    setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, noPreview: true } : p)))
+  }
+
   function removePhoto(id: string) {
     setPhotos((prev) => {
       const target = prev.find((p) => p.id === id)
@@ -583,9 +588,20 @@ export default function QuickPostApp() {
         <div className="s-qp-photos">
           {photos.map((p, i) => (
             <div key={p.id} className="s-qp-ph">
-              {/* プレビューは端末の中の画像（blob:）なので最適化は通さない */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt={`${i + 1}枚目の写真`} />
+              {p.noPreview ? (
+                <span
+                  className="s-qp-ph-none"
+                  role="img"
+                  aria-label={`${i + 1}枚目の写真（この端末では表示できません）`}
+                >
+                  <SodaIcon name="camera" />
+                  <span aria-hidden="true">プレビューなし</span>
+                </span>
+              ) : (
+                // プレビューは端末の中の画像（blob:）なので最適化は通さない
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={p.url} alt={`${i + 1}枚目の写真`} onError={() => markNoPreview(p.id)} />
+              )}
               <button
                 type="button"
                 className="s-qp-x"
