@@ -2,10 +2,19 @@
 // さっと投稿の API（/api/quickpost/*）で共通に使うサーバー側の処理。
 // - 送信元・IP の回数制限・JSON の受信上限
 // - 端末ごとのログイン（post-sessions）の発行・確認・延長・取り消しと Cookie
-// - パスキーの確認値（チャレンジ）Cookie
+// - パスキーの確認値（チャレンジ）Cookie と、使用済みの記録（使い回しの拒否）
+// - 1台ごとの回数制限（SQL で原子的に数える）・投稿の受付票（二重投稿の防止）・トランザクション
 // - 新しい端末を登録するときの管理画面パスワードの確認
+import { sql } from '@payloadcms/db-vercel-postgres'
 import { NextResponse, type NextRequest } from 'next/server'
-import type { Payload } from 'payload'
+import {
+  commitTransaction,
+  createLocalReq,
+  initTransaction,
+  killTransaction,
+  type Payload,
+  type PayloadRequest,
+} from 'payload'
 import { getPayloadClient } from '@/lib/payloadClient'
 import type { PostSession } from '@/payload-types'
 import { COOKIE_BASE, QP } from './config'
@@ -16,6 +25,7 @@ import {
   maxAgeSeconds,
   sessionDeadline,
   shouldTouch,
+  type RateKind,
 } from './policy'
 import {
   isSessionTokenShape,
@@ -29,6 +39,8 @@ import {
 
 /** Payload（Postgres）の ID は数値 */
 type ID = number
+
+const DAY = 24 * 60 * 60 * 1000
 
 export type QPUser = { id: ID; email: string; name?: string | null; collection: 'users' }
 
@@ -236,30 +248,83 @@ export function refreshSessionCookies(req: NextRequest, res: NextResponse, sessi
   if (isSessionTokenShape(token)) setSessionCookies(res, token, sessionDeadline(session, QP.idleMs))
 }
 
-/** 新しくログインを発行する。同じ確認値での2回目のログインは一意制約で失敗する */
+/**
+ * ひとまとまりの書き込みを1つのトランザクションで行う（途中で失敗したら全部取り消す）。
+ * fn には Local API に渡す req（transactionID つき）を渡す
+ */
+export async function withTransaction<T>(
+  payload: Payload,
+  fn: (req: PayloadRequest) => Promise<T>,
+): Promise<T> {
+  const req = await createLocalReq({}, payload)
+  const own = await initTransaction(req)
+  try {
+    const result = await fn(req)
+    if (own) await commitTransaction(req)
+    return result
+  } catch (e) {
+    if (own) await killTransaction(req)
+    throw e
+  }
+}
+
+export class ReplayedChallengeError extends Error {
+  constructor() {
+    super('challenge already used')
+    this.name = 'ReplayedChallengeError'
+  }
+}
+
+/**
+ * 確認値（チャレンジ）を「使用済み」として記録する。同じ確認値の2回目は一意制約で失敗させる。
+ * ログアウトや端末の取り消しでも消えない別の表（quickpost-nonces）に残すので、取り消し後の使い回しも通らない
+ */
+export async function markChallengeUsed(
+  payload: Payload,
+  purpose: ChallengePurpose,
+  challenge: string,
+  req: PayloadRequest,
+): Promise<void> {
+  try {
+    await payload.create({
+      collection: 'quickpost-nonces',
+      data: {
+        key: `challenge:${sha256Hex(`${purpose}:${challenge}`)}`,
+        expiresAt: new Date(Date.now() + DAY).toISOString(),
+      },
+      depth: 0,
+      overrideAccess: true,
+      req,
+    })
+  } catch {
+    throw new ReplayedChallengeError()
+  }
+}
+
+/** 新しくログインを発行する（呼び出し側のトランザクションの中で） */
 export async function createSession(
   payload: Payload,
-  opts: { userId: ID; passkeyId: ID; name: string; challenge: string; purpose: ChallengePurpose },
+  opts: { userId: ID; passkeyId: ID; name: string },
+  req: PayloadRequest,
 ): Promise<{ token: string; deadline: number }> {
   const now = Date.now()
   // このユーザーの期限切れの記録を片付ける（表が増え続けないように）
-  await payload
-    .delete({
-      collection: 'post-sessions',
-      where: {
-        and: [
-          { user: { equals: opts.userId } },
-          {
-            or: [
-              { expiresAt: { less_than: new Date(now).toISOString() } },
-              { lastUsedAt: { less_than: new Date(now - QP.idleMs).toISOString() } },
-            ],
-          },
-        ],
-      },
-      overrideAccess: true,
-    })
-    .catch((e) => console.error('quickpost: failed to prune sessions', e))
+  await payload.delete({
+    collection: 'post-sessions',
+    where: {
+      and: [
+        { user: { equals: opts.userId } },
+        {
+          or: [
+            { expiresAt: { less_than: new Date(now).toISOString() } },
+            { lastUsedAt: { less_than: new Date(now - QP.idleMs).toISOString() } },
+          ],
+        },
+      ],
+    },
+    overrideAccess: true,
+    req,
+  })
 
   const token = newSessionToken()
   const doc = await payload.create({
@@ -269,15 +334,118 @@ export async function createSession(
       passkey: opts.passkeyId,
       name: opts.name,
       tokenHash: sha256Hex(token),
-      challengeHash: sha256Hex(`${opts.purpose}:${opts.challenge}`),
       lastUsedAt: new Date(now).toISOString(),
       expiresAt: new Date(now + QP.absoluteMs).toISOString(),
       postCount: 0,
     },
     depth: 0,
     overrideAccess: true,
+    req,
   })
   return { token, deadline: sessionDeadline(doc, QP.idleMs) }
+}
+
+/**
+ * 1台ごとの回数制限を1回分使う。使えたら true。
+ * 読んでから書く方式だと同時に送られた分を数え漏らすため、1回の UPDATE で
+ * 「時間枠が過ぎていれば数え直し、上限未満なら 1 足す」を行い、更新できた行があるかで判定する
+ */
+export async function consumeRate(
+  payload: Payload,
+  sessionId: ID,
+  kind: RateKind,
+): Promise<boolean> {
+  const max = QP.rate[kind]
+  const windowSecs = QP.rate.windowMs / 1000
+  const expired = sql`(rl_window_start IS NULL OR rl_window_start <= now() - make_interval(secs => ${windowSecs}))`
+  const used = kind === 'posts' ? sql`COALESCE(rl_posts, 0)` : sql`COALESCE(rl_photos, 0)`
+  const addPosts = kind === 'posts' ? 1 : 0
+  const addPhotos = kind === 'photos' ? 1 : 0
+  const result = await payload.db.drizzle.execute(sql`
+    UPDATE post_sessions SET
+      rl_window_start = CASE WHEN ${expired} THEN now() ELSE rl_window_start END,
+      rl_posts = CASE WHEN ${expired} THEN ${addPosts} ELSE COALESCE(rl_posts, 0) + ${addPosts} END,
+      rl_photos = CASE WHEN ${expired} THEN ${addPhotos} ELSE COALESCE(rl_photos, 0) + ${addPhotos} END
+    WHERE id = ${sessionId} AND (${expired} OR ${used} < ${max})
+    RETURNING id`)
+  return (result.rows?.length ?? 0) > 0
+}
+
+// ── 投稿の受付票（二重投稿の防止） ──
+
+/** 作りかけの受付票を「途中で落ちた」とみなすまでの時間（投稿は数秒で終わる） */
+const RECEIPT_STALE_MS = 2 * 60 * 1000
+
+export type ReceiptClaim =
+  | { status: 'new'; receiptId: ID }
+  | { status: 'done'; postId: number }
+  | { status: 'busy' }
+
+/**
+ * 下書きのキーで受付票を取る。最初の1回だけ new、すでに投稿できていれば done（その投稿を返す）、
+ * 同じ下書きをいま送っている途中なら busy
+ */
+export async function claimPostReceipt(payload: Payload, key: string): Promise<ReceiptClaim> {
+  const receiptKey = `post:${key}`
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const doc = await payload.create({
+        collection: 'quickpost-nonces',
+        data: { key: receiptKey, expiresAt: new Date(Date.now() + 30 * DAY).toISOString() },
+        depth: 0,
+        overrideAccess: true,
+      })
+      return { status: 'new', receiptId: doc.id }
+    } catch {
+      const found = await payload.find({
+        collection: 'quickpost-nonces',
+        where: { key: { equals: receiptKey } },
+        limit: 1,
+        depth: 0,
+        pagination: false,
+        overrideAccess: true,
+      })
+      const receipt = found.docs[0]
+      if (!receipt) continue
+      if (typeof receipt.postId === 'number') return { status: 'done', postId: receipt.postId }
+      if (Date.now() - Date.parse(receipt.createdAt) < RECEIPT_STALE_MS) return { status: 'busy' }
+      // 途中で落ちた受付票は取り直す
+      await payload.delete({ collection: 'quickpost-nonces', id: receipt.id, overrideAccess: true })
+    }
+  }
+  return { status: 'busy' }
+}
+
+export async function completePostReceipt(
+  payload: Payload,
+  receiptId: ID,
+  postId: number,
+): Promise<void> {
+  await payload.update({
+    collection: 'quickpost-nonces',
+    id: receiptId,
+    data: { postId },
+    depth: 0,
+    overrideAccess: true,
+  })
+}
+
+/** 投稿できなかった受付票を消す（同じ下書きで送り直せるように） */
+export async function releasePostReceipt(payload: Payload, receiptId: ID): Promise<void> {
+  await payload
+    .delete({ collection: 'quickpost-nonces', id: receiptId, overrideAccess: true })
+    .catch((e) => console.error('quickpost: failed to release receipt', e))
+}
+
+/** 期限を過ぎた記録を片付ける（投稿のたびに、ついでに） */
+export async function pruneNonces(payload: Payload): Promise<void> {
+  await payload
+    .delete({
+      collection: 'quickpost-nonces',
+      where: { expiresAt: { less_than: new Date().toISOString() } },
+      overrideAccess: true,
+    })
+    .catch((e) => console.error('quickpost: failed to prune nonces', e))
 }
 
 /** 管理画面のメールアドレスとパスワードを確かめる（Payload のログインと同じ失敗回数ロックが効く） */

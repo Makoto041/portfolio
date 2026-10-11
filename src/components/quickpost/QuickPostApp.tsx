@@ -381,13 +381,23 @@ export default function QuickPostApp() {
       }
 
       setSending({ step: 'post' })
-      const created = await call<{ id: number }>('/api/quickpost/posts', {
+      const body = {
         text,
         title: draft.showTitle ? draft.title : undefined,
         postType: draft.postType,
         images: ids,
         key: draft.key,
-      })
+      }
+      // 同じ下書きをまだ送っている途中（409）なら、少し待って送り直す（2回目以降は最初の投稿が返る）
+      let created: { id: number } | null = null
+      for (let attempt = 0; !created; attempt++) {
+        try {
+          created = await call<{ id: number }>('/api/quickpost/posts', body)
+        } catch (e) {
+          if (!(e instanceof ApiError && e.status === 409) || attempt >= 4) throw e
+          await new Promise((r) => window.setTimeout(r, 1500))
+        }
+      }
 
       queue.forEach((p) => URL.revokeObjectURL(p.url))
       setPhotos([])

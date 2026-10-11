@@ -6,8 +6,8 @@ import { randomUUID } from 'node:crypto'
 import type { NextRequest } from 'next/server'
 import { QP } from '@/lib/quickpost/config'
 import { reencodePhoto, UnsupportedImageError } from '@/lib/quickpost/image'
-import { takeRate } from '@/lib/quickpost/policy'
 import {
+  consumeRate,
   fail,
   getSession,
   json,
@@ -17,6 +17,8 @@ import {
 } from '@/lib/quickpost/server'
 
 export const dynamic = 'force-dynamic'
+// 写真の作り直しと保存（R2）に時間がかかっても途中で切れないように
+export const maxDuration = 30
 
 const ACCEPT = new Set([
   'image/jpeg',
@@ -41,15 +43,8 @@ export async function POST(req: NextRequest) {
     if (!active) return fail(401, 'unauthorized')
     const { payload, session, user } = active
 
-    const rate = takeRate(session, 'photos', QP.rate)
-    if (!rate.ok) return fail(429, 'rate_limited')
-    await payload.update({
-      collection: 'post-sessions',
-      id: session.id,
-      data: rate.next,
-      depth: 0,
-      overrideAccess: true,
-    })
+    // 1台ごとの回数制限（同時に送られても数え漏らさない）
+    if (!(await consumeRate(payload, session.id, 'photos'))) return fail(429, 'rate_limited')
 
     const input = Buffer.from(await req.arrayBuffer())
     if (input.length === 0) return fail(400, 'empty')

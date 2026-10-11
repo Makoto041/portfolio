@@ -11,6 +11,9 @@ import {
   clearChallengeCookie,
   createSession,
   json,
+  markChallengeUsed,
+  ReplayedChallengeError,
+  withTransaction,
   readChallenge,
   readJson,
   rejectCrossSite,
@@ -20,6 +23,8 @@ import {
 import { asRegistrationResponse } from '@/lib/quickpost/webauthn'
 
 export const dynamic = 'force-dynamic'
+
+class AlreadyRegisteredError extends Error {}
 
 export async function POST(req: NextRequest) {
   const blocked = rejectCrossSite(req) ?? rejectTooManyFromIp(req, 'register')
@@ -67,37 +72,43 @@ export async function POST(req: NextRequest) {
     const name = deviceLabel(req.headers.get('user-agent'))
     const now = new Date().toISOString()
 
-    let passkeyId: number | string
+    // 確認値を使用済みにする・パスキーを保存・ログインを発行、を1つのトランザクションで
+    // （途中で失敗したらパスキーだけが残ることのないよう、全部取り消す）
+    let created
     try {
-      const passkey = await payload.create({
-        collection: 'passkeys',
-        data: {
-          name,
-          user: user.id,
-          credentialId: credential.id,
-          publicKey: isoBase64URL.fromBuffer(credential.publicKey),
-          counter: credential.counter,
-          transports: (credential.transports ?? []).join(','),
-          backedUp: credentialBackedUp,
-          lastUsedAt: now,
-        },
-        depth: 0,
-        overrideAccess: true,
+      created = await withTransaction(payload, async (txReq) => {
+        await markChallengeUsed(payload, 'register', ticket.c, txReq)
+        let passkeyId: number
+        try {
+          const passkey = await payload.create({
+            collection: 'passkeys',
+            data: {
+              name,
+              user: user.id,
+              credentialId: credential.id,
+              publicKey: isoBase64URL.fromBuffer(credential.publicKey),
+              counter: credential.counter,
+              transports: (credential.transports ?? []).join(','),
+              backedUp: credentialBackedUp,
+              lastUsedAt: now,
+            },
+            depth: 0,
+            overrideAccess: true,
+            req: txReq,
+          })
+          passkeyId = passkey.id
+        } catch {
+          // 同じ鍵の二重登録（credentialId の一意制約）
+          throw new AlreadyRegisteredError()
+        }
+        return createSession(payload, { userId: user.id, passkeyId, name }, txReq)
       })
-      passkeyId = passkey.id
     } catch (e) {
-      // 同じ鍵の二重登録（credentialId の一意制約）
-      console.warn('quickpost: passkey was not saved:', e instanceof Error ? e.message : e)
-      return done(409, { error: 'already_registered' })
+      if (e instanceof ReplayedChallengeError) return done(400, { error: 'verification_failed' })
+      if (e instanceof AlreadyRegisteredError) return done(409, { error: 'already_registered' })
+      throw e
     }
 
-    const created = await createSession(payload, {
-      userId: user.id,
-      passkeyId,
-      name,
-      challenge: ticket.c,
-      purpose: 'register',
-    })
     const res = done(200, { ok: true })
     setSessionCookies(res, created.token, created.deadline)
     return res

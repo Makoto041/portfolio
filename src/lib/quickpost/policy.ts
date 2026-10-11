@@ -36,40 +36,9 @@ export function maxAgeSeconds(deadline: number, now: number = Date.now()): numbe
 }
 
 // ── 回数制限（1台ごと・時間枠ごと） ──
-
-export type RateState = {
-  rlWindowStart?: string | null
-  rlPosts?: number | null
-  rlPhotos?: number | null
-}
+// 数える処理は同時アクセスでも漏れないよう SQL の1回の UPDATE で行う（server.ts の consumeRate）
 
 export type RateKind = 'posts' | 'photos'
-
-export type RateLimits = { windowMs: number; posts: number; photos: number }
-
-/** 1回分を使えるか判定し、使った後の状態を返す（使えないときは状態を変えない） */
-export function takeRate(
-  state: RateState,
-  kind: RateKind,
-  limits: RateLimits,
-  now: number = Date.now(),
-): { ok: boolean; next: { rlWindowStart: string; rlPosts: number; rlPhotos: number } } {
-  const start = state.rlWindowStart ? Date.parse(state.rlWindowStart) : NaN
-  const fresh = Number.isNaN(start) || now - start >= limits.windowMs || now < start
-  const base = fresh
-    ? { rlWindowStart: new Date(now).toISOString(), rlPosts: 0, rlPhotos: 0 }
-    : {
-        rlWindowStart: state.rlWindowStart as string,
-        rlPosts: state.rlPosts ?? 0,
-        rlPhotos: state.rlPhotos ?? 0,
-      }
-  const used = kind === 'posts' ? base.rlPosts : base.rlPhotos
-  if (used >= limits[kind]) return { ok: false, next: base }
-  return {
-    ok: true,
-    next: kind === 'posts' ? { ...base, rlPosts: used + 1 } : { ...base, rlPhotos: used + 1 },
-  }
-}
 
 // ── 送信元 ──
 

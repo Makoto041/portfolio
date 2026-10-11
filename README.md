@@ -88,6 +88,7 @@ src/
 | `users` | 管理者認証 |
 | `passkeys` | さっと投稿のパスキー（公開鍵のみ。管理画面で削除するとその鍵の端末もログアウト） |
 | `post-sessions` | さっと投稿にログイン中の端末（Cookie の SHA-256 だけを保存。削除 = その端末を即ログアウト） |
+| `quickpost-nonces` | さっと投稿の1回きりの記録（使用済みの確認値・投稿の受付票。管理画面には出さない） |
 | グローバル `site-settings` | プロフィール・ヒーロー文言・Spotify プレイリスト |
 
 ## ローカル開発
@@ -140,10 +141,13 @@ pnpm payload migrate:create <name>   # 生成してコミットするだけ
   新しい端末の登録は、そのつど管理画面のメールアドレスとパスワードを確かめてから（5回失敗で10分ロック）
 - **ログイン状態**: 端末ごとに `post-sessions` に記録し、管理画面で削除すると即無効。
   使わなければ 30 日・最長 90 日で切れる。Cookie は `__Host-`・HttpOnly・Secure・SameSite=Strict、
-  中身は 256bit 乱数（DB には SHA-256 のみ）。パスキーの確認値は HMAC 署名つきの 5 分 Cookie で持ち、1回きり
+  中身は 256bit 乱数（DB には SHA-256 のみ）。パスキーの確認値は HMAC 署名つきの 5 分 Cookie で持ち、
+  使い終えたら `quickpost-nonces` に記録して2回目を拒否（ログアウト後も残る）。登録・ログインの書き込みは1つのトランザクション
 - **送信**: すべての書き込みで Origin（と `Sec-Fetch-Site`）を確認。1台あたり 投稿 30件/時・写真 60枚/時
+  （1回の UPDATE で数えるので、同時に送られても上限を超えない）
 - **写真**: スマホで縮小してから送り、サーバーで作り直す（形式を中身で判定・向きを反映・位置情報など撮影データを削除・ランダムなファイル名）
-- **二重投稿**: 下書きごとの UUID（`timeline.quickPostKey`・一意）で、再送しても1件
+- **二重投稿**: 下書きごとの UUID で受付票（`quickpost-nonces`・一意）を取り、再送・二度押しでも1件。
+  タイムラインの表は変えないので、マイグレーションの適用が遅れても公開ページは壊れない
 - **画面**: `noindex`・`no-store`・nonce つき CSP（`src/middleware.ts`）・埋め込み禁止
 
 API: `GET /api/quickpost/session` / `POST /api/quickpost/{login,register}/{options,verify}` /

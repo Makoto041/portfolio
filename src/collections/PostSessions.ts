@@ -54,14 +54,6 @@ export const PostSessions: CollectionConfig = {
       admin: { hidden: true },
     },
     {
-      // ログインに使った確認値（チャレンジ）の SHA-256。同じ確認値でのログインを2回通さない
-      name: 'challengeHash',
-      type: 'text',
-      unique: true,
-      access: { read: never },
-      admin: { hidden: true },
-    },
-    {
       name: 'lastUsedAt',
       type: 'date',
       label: '最後に使った日時',
@@ -88,7 +80,7 @@ export const PostSessions: CollectionConfig = {
       defaultValue: 0,
       admin: { readOnly: true },
     },
-    // 回数制限（1時間ごとの枠）
+    // 回数制限（1時間ごとの枠）。数えるのは src/lib/quickpost/server.ts の consumeRate（1回の UPDATE で原子的に）
     { name: 'rlWindowStart', type: 'date', access: { read: never }, admin: { hidden: true } },
     {
       name: 'rlPosts',

@@ -256,15 +256,5 @@ export const TimelinePosts: CollectionConfig = {
       defaultValue: 0,
       admin: { readOnly: true },
     },
-    {
-      // さっと投稿（/post）の二重投稿防止キー（下書きごとの UUID）。同じキーの投稿は1件しか作らない。
-      // 公開 API には出さない（サーバーは overrideAccess で照会する）
-      name: 'quickPostKey',
-      type: 'text',
-      unique: true,
-      index: true,
-      access: { read: () => false },
-      admin: { hidden: true },
-    },
   ],
 }

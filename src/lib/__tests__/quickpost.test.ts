@@ -7,7 +7,6 @@ import {
   maxAgeSeconds,
   sessionDeadline,
   shouldTouch,
-  takeRate,
 } from '@/lib/quickpost/policy'
 import {
   isSessionTokenShape,
@@ -124,38 +123,7 @@ describe('ログインの期限', () => {
   })
 })
 
-describe('1台ごとの回数制限', () => {
-  const limits = { windowMs: HOUR, posts: 2, photos: 1 }
-  const t0 = Date.UTC(2026, 9, 11, 10)
-
-  it('枠の中で上限まで使え、超えると断る', () => {
-    const a = takeRate({}, 'posts', limits, t0)
-    expect(a.ok).toBe(true)
-    const b = takeRate(a.next, 'posts', limits, t0 + 1000)
-    expect(b.ok).toBe(true)
-    const c = takeRate(b.next, 'posts', limits, t0 + 2000)
-    expect(c.ok).toBe(false)
-    expect(c.next.rlPosts).toBe(2)
-  })
-
-  it('写真と投稿は別に数える', () => {
-    const a = takeRate({}, 'photos', limits, t0)
-    expect(takeRate(a.next, 'photos', limits, t0).ok).toBe(false)
-    expect(takeRate(a.next, 'posts', limits, t0).ok).toBe(true)
-  })
-
-  it('時間枠が過ぎれば数え直す', () => {
-    const full = { rlWindowStart: new Date(t0).toISOString(), rlPosts: 2, rlPhotos: 1 }
-    expect(takeRate(full, 'posts', limits, t0 + HOUR - 1).ok).toBe(false)
-    const fresh = takeRate(full, 'posts', limits, t0 + HOUR)
-    expect(fresh.ok).toBe(true)
-    expect(fresh.next).toEqual({
-      rlWindowStart: new Date(t0 + HOUR).toISOString(),
-      rlPosts: 1,
-      rlPhotos: 0,
-    })
-  })
-
+describe('IP ごとの回数制限', () => {
   it('IP ごとの制限は枠の中の回数を超えると断る', () => {
     const allow = createIpLimiter(60_000, 2)
     expect(allow('a', 0)).toBe(true)

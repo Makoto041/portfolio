@@ -28,6 +28,7 @@ import { Products } from './collections/Products'
 import { Notices } from './collections/Notices'
 import { Passkeys } from './collections/Passkeys'
 import { PostSessions } from './collections/PostSessions'
+import { QuickpostNonces } from './collections/QuickpostNonces'
 
 // Globals
 import { SiteSettings } from './globals/SiteSettings'
@@ -66,9 +67,10 @@ export default buildConfig({
     Events,
     Products,
     Notices,
-    // さっと投稿（/post）のパスキーとログイン中の端末
+    // さっと投稿（/post）のパスキー・ログイン中の端末・1回きりの記録
     Passkeys,
     PostSessions,
+    QuickpostNonces,
   ],
   
   // グローバル設定

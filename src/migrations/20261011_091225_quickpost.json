@@ -1,5 +1,5 @@
 {
-  "id": "c1ffdf00-f999-42ea-8827-c372240ebd61",
+  "id": "c628fb89-7b2b-4d74-8ca9-7ba1b74ab6c7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -493,12 +493,6 @@
           "notNull": false,
           "default": 0
         },
-        "quick_post_key": {
-          "name": "quick_post_key",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "updated_at": {
           "name": "updated_at",
           "type": "timestamp(3) with time zone",
@@ -556,21 +550,6 @@
             }
           ],
           "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "timeline_quick_post_key_idx": {
-          "name": "timeline_quick_post_key_idx",
-          "columns": [
-            {
-              "expression": "quick_post_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1747,12 +1726,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "challenge_hash": {
-          "name": "challenge_hash",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
         "last_used_at": {
           "name": "last_used_at",
           "type": "timestamp(3) with time zone",
@@ -1859,21 +1832,6 @@
           "method": "btree",
           "with": {}
         },
-        "post_sessions_challenge_hash_idx": {
-          "name": "post_sessions_challenge_hash_idx",
-          "columns": [
-            {
-              "expression": "challenge_hash",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "post_sessions_updated_at_idx": {
           "name": "post_sessions_updated_at_idx",
           "columns": [
@@ -1933,6 +1891,118 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.quickpost_nonces": {
+      "name": "quickpost_nonces",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "post_id": {
+          "name": "post_id",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "quickpost_nonces_key_idx": {
+          "name": "quickpost_nonces_key_idx",
+          "columns": [
+            {
+              "expression": "key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quickpost_nonces_expires_at_idx": {
+          "name": "quickpost_nonces_expires_at_idx",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quickpost_nonces_updated_at_idx": {
+          "name": "quickpost_nonces_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "quickpost_nonces_created_at_idx": {
+          "name": "quickpost_nonces_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2114,6 +2184,12 @@
         },
         "post_sessions_id": {
           "name": "post_sessions_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quickpost_nonces_id": {
+          "name": "quickpost_nonces_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -2329,6 +2405,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "payload_locked_documents_rels_quickpost_nonces_id_idx": {
+          "name": "payload_locked_documents_rels_quickpost_nonces_id_idx",
+          "columns": [
+            {
+              "expression": "quickpost_nonces_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -2481,6 +2572,19 @@
           "tableTo": "post_sessions",
           "columnsFrom": [
             "post_sessions_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_quickpost_nonces_fk": {
+          "name": "payload_locked_documents_rels_quickpost_nonces_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "quickpost_nonces",
+          "columnsFrom": [
+            "quickpost_nonces_id"
           ],
           "columnsTo": [
             "id"

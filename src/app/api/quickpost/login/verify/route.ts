@@ -11,6 +11,9 @@ import {
   clearChallengeCookie,
   createSession,
   json,
+  markChallengeUsed,
+  ReplayedChallengeError,
+  withTransaction,
   readChallenge,
   readJson,
   rejectCrossSite,
@@ -85,32 +88,38 @@ export async function POST(req: NextRequest) {
       : null
     if (!user) return done(401, { error: 'verification_failed' })
 
+    // 確認値を使用済みにする・パスキーの使用回数を更新・ログインを発行、を1つのトランザクションで
     const { newCounter, credentialBackedUp } = verification.authenticationInfo
-    await payload.update({
-      collection: 'passkeys',
-      id: passkey.id,
-      data: {
-        counter: newCounter,
-        backedUp: credentialBackedUp,
-        lastUsedAt: new Date().toISOString(),
-      },
-      depth: 0,
-      overrideAccess: true,
-    })
-
     let created
     try {
-      created = await createSession(payload, {
-        userId: user.id,
-        passkeyId: passkey.id,
-        name: deviceLabel(req.headers.get('user-agent')),
-        challenge: ticket.c,
-        purpose: 'login',
+      created = await withTransaction(payload, async (txReq) => {
+        await markChallengeUsed(payload, 'login', ticket.c, txReq)
+        await payload.update({
+          collection: 'passkeys',
+          id: passkey.id,
+          data: {
+            counter: newCounter,
+            backedUp: credentialBackedUp,
+            lastUsedAt: new Date().toISOString(),
+          },
+          depth: 0,
+          overrideAccess: true,
+          req: txReq,
+        })
+        return createSession(
+          payload,
+          {
+            userId: user.id,
+            passkeyId: passkey.id,
+            name: deviceLabel(req.headers.get('user-agent')),
+          },
+          txReq,
+        )
       })
     } catch (e) {
-      // 同じ確認値での2回目（使い回し）はここで失敗する
-      console.warn('quickpost: session was not created:', e instanceof Error ? e.message : e)
-      return done(401, { error: 'verification_failed' })
+      // 同じ確認値での2回目（使い回し）はここで弾く
+      if (e instanceof ReplayedChallengeError) return done(401, { error: 'verification_failed' })
+      throw e
     }
 
     const res = done(200, { ok: true })

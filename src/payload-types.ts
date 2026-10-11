@@ -78,6 +78,7 @@ export interface Config {
     notices: Notice;
     passkeys: Passkey;
     'post-sessions': PostSession;
+    'quickpost-nonces': QuickpostNonce;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -95,6 +96,7 @@ export interface Config {
     notices: NoticesSelect<false> | NoticesSelect<true>;
     passkeys: PasskeysSelect<false> | PasskeysSelect<true>;
     'post-sessions': PostSessionsSelect<false> | PostSessionsSelect<true>;
+    'quickpost-nonces': QuickpostNoncesSelect<false> | QuickpostNoncesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -234,7 +236,6 @@ export interface Timeline {
     product?: (number | null) | Product;
   };
   likes?: number | null;
-  quickPostKey?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -379,7 +380,6 @@ export interface PostSession {
   user: number | User;
   passkey?: (number | null) | Passkey;
   tokenHash: string;
-  challengeHash?: string | null;
   lastUsedAt: string;
   expiresAt: string;
   lastPostAt?: string | null;
@@ -387,6 +387,18 @@ export interface PostSession {
   rlWindowStart?: string | null;
   rlPosts?: number | null;
   rlPhotos?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quickpost-nonces".
+ */
+export interface QuickpostNonce {
+  id: number;
+  key: string;
+  postId?: number | null;
+  expiresAt: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -440,6 +452,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'post-sessions';
         value: number | PostSession;
+      } | null)
+    | ({
+        relationTo: 'quickpost-nonces';
+        value: number | QuickpostNonce;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -553,7 +569,6 @@ export interface TimelineSelect<T extends boolean = true> {
         product?: T;
       };
   likes?: T;
-  quickPostKey?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -666,7 +681,6 @@ export interface PostSessionsSelect<T extends boolean = true> {
   user?: T;
   passkey?: T;
   tokenHash?: T;
-  challengeHash?: T;
   lastUsedAt?: T;
   expiresAt?: T;
   lastPostAt?: T;
@@ -674,6 +688,17 @@ export interface PostSessionsSelect<T extends boolean = true> {
   rlWindowStart?: T;
   rlPosts?: T;
   rlPhotos?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quickpost-nonces_select".
+ */
+export interface QuickpostNoncesSelect<T extends boolean = true> {
+  key?: T;
+  postId?: T;
+  expiresAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
