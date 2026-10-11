@@ -52,6 +52,22 @@ const nextConfig = {
           },
         ],
       },
+      // さっと投稿（自分専用）: 検索に出さず、どこにも保存させない（ブランケットの no-cache を上書き）
+      {
+        source: '/post',
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+          { key: 'Referrer-Policy', value: 'same-origin' },
+        ],
+      },
+      {
+        source: '/api/quickpost/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
       // Long-term cache for Next.js static assets（最後に置いてブランケットを上書き）
       {
         source: '/_next/static/:path*',

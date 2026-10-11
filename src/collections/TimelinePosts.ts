@@ -86,12 +86,15 @@ const afterChangeHook: CollectionAfterChangeHook = async ({ req, operation, doc 
       const payload = req.payload
 
       // 各画像に対してisTimelineOnlyフラグをtrueに設定
+      // req を渡して投稿の保存と同じトランザクションで更新する。渡さないと別トランザクションになり、
+      // 投稿側が保持する画像行のロック（images の外部キー）を待ち続けて保存が止まる
       for (const imageId of (req as any).timelineImageIds) {
         try {
           await payload.update({
             collection: 'media',
             id: imageId,
             data: { isTimelineOnly: true },
+            req,
           })
           console.log(`画像の更新成功: ${imageId}`)
         } catch (err) {
@@ -252,6 +255,16 @@ export const TimelinePosts: CollectionConfig = {
       type: 'number',
       defaultValue: 0,
       admin: { readOnly: true },
+    },
+    {
+      // さっと投稿（/post）の二重投稿防止キー（下書きごとの UUID）。同じキーの投稿は1件しか作らない。
+      // 公開 API には出さない（サーバーは overrideAccess で照会する）
+      name: 'quickPostKey',
+      type: 'text',
+      unique: true,
+      index: true,
+      access: { read: () => false },
+      admin: { hidden: true },
     },
   ],
 }

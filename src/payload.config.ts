@@ -26,20 +26,17 @@ import Letter from './collections/Letters'
 import { Events } from './collections/Events'
 import { Products } from './collections/Products'
 import { Notices } from './collections/Notices'
+import { Passkeys } from './collections/Passkeys'
+import { PostSessions } from './collections/PostSessions'
 
 // Globals
 import { SiteSettings } from './globals/SiteSettings'
+import { SITE_URL } from './lib/siteUrl'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// 自サイトのオリジン（CORS / CSRF 制限用）
-// 空文字は || で既定値に落とし、Origin ヘッダーとの突き合わせのため末尾スラッシュを除去
-const siteURL = (
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'https://iwabuchi-makoto.com'
-    : 'http://localhost:3000')
-).replace(/\/$/, '')
+// 自サイトのオリジン（CORS / CSRF 制限用。src/lib/siteUrl.ts でさっと投稿の送信元チェックと共有）
+const siteURL = SITE_URL
 
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET!,
@@ -59,7 +56,20 @@ export default buildConfig({
   },
 
   // コレクション定義
-  collections: [Users, Media, TimelinePosts, BlogPosts, BlogMedia, Letter, Events, Products, Notices],
+  collections: [
+    Users,
+    Media,
+    TimelinePosts,
+    BlogPosts,
+    BlogMedia,
+    Letter,
+    Events,
+    Products,
+    Notices,
+    // さっと投稿（/post）のパスキーとログイン中の端末
+    Passkeys,
+    PostSessions,
+  ],
   
   // グローバル設定
   globals: [SiteSettings],

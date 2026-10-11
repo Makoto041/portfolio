@@ -1,3 +1,5 @@
+import { fetchPublicHtml } from '@/lib/netguard'
+
 export interface UrlMetadata {
   title?: string
   description?: string
@@ -8,20 +10,19 @@ export interface UrlMetadata {
 
 export async function fetchUrlMetadata(url: string): Promise<UrlMetadata | null> {
   try {
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Timeline Bot/1.0)',
-      },
-      // 遅い相手先で呼び出し全体（beforeChange 経由の投稿処理含む）がハングしないよう上限を設ける。
-      // タイムアウト時は下の catch が null を返し、メタデータなしで投稿自体は成立する。
-      signal: AbortSignal.timeout(5000),
+    // 内部ネットワーク（localhost・プライベート IP・クラウドのメタデータなど）へは接続しない（src/lib/netguard.ts）。
+    // 遅い相手先で呼び出し全体（beforeChange 経由の投稿処理含む）がハングしないよう上限を設ける。
+    // 拒否・タイムアウト時は下の catch が null を返し、メタデータなしで投稿自体は成立する。
+    const response = await fetchPublicHtml(url, {
+      userAgent: 'Mozilla/5.0 (compatible; Timeline Bot/1.0)',
+      timeoutMs: 5000,
     })
 
-    if (!response.ok) {
+    if (response.status < 200 || response.status >= 300) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
-    
-    const html = await response.text()
+
+    const html = response.body
     
     // 正規表現を使用してメタデータを抽出
     const metadata: UrlMetadata = {

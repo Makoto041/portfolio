@@ -2,6 +2,7 @@
 // src/lib/richtext.ts
 // Lexical（Payload richText）の JSON からプレーンテキスト・最初の画像を取り出す。
 // 最新の投稿の大きな文字など「装飾なしの本文」が欲しい箇所、カバー画像の無い記事のサムネイルで使う。
+// 逆向き（プレーンテキスト → Lexical）は LINE 投稿とさっと投稿で使う。
 // 段落・見出し・リスト項目の区切りは改行にする。純関数（server/client 共用）。
 // ───────────────────────────────────────────
 
@@ -63,3 +64,31 @@ export function lexicalFirstImageUrl(data: unknown): string | null {
   return find(root.children)
 }
 
+/**
+ * プレーンテキストを Payload（lexical）の richText editorState に変換する。
+ * 改行ごとに段落を分け、空行は空の段落として保持する。
+ */
+export function textToLexical(text: string) {
+  const paragraphs = text.split('\n').map((line) => ({
+    type: 'paragraph',
+    format: '',
+    indent: 0,
+    version: 1,
+    direction: 'ltr',
+    textStyle: '',
+    textFormat: 0,
+    children: line
+      ? [{ type: 'text', text: line, format: 0, style: '', mode: 'normal', detail: 0, version: 1 }]
+      : [],
+  }))
+  return {
+    root: {
+      type: 'root',
+      format: '',
+      indent: 0,
+      version: 1,
+      direction: 'ltr',
+      children: paragraphs,
+    },
+  }
+}

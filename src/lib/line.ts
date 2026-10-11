@@ -41,34 +41,8 @@ export function isAllowedUser(userId: string | undefined, allowList: string | un
     .includes(userId)
 }
 
-/**
- * プレーンテキストを Payload（lexical）の richText editorState に変換する。
- * 改行ごとに段落を分け、空行は空の段落として保持する。
- */
-export function textToLexical(text: string) {
-  const paragraphs = text.split('\n').map((line) => ({
-    type: 'paragraph',
-    format: '',
-    indent: 0,
-    version: 1,
-    direction: 'ltr',
-    textStyle: '',
-    textFormat: 0,
-    children: line
-      ? [{ type: 'text', text: line, format: 0, style: '', mode: 'normal', detail: 0, version: 1 }]
-      : [],
-  }))
-  return {
-    root: {
-      type: 'root',
-      format: '',
-      indent: 0,
-      version: 1,
-      direction: 'ltr',
-      children: paragraphs,
-    },
-  }
-}
+// プレーンテキスト → Lexical の変換は richtext.ts に移した（さっと投稿と共用）。既存の import 先として再エクスポートする
+export { textToLexical } from '@/lib/richtext'
 
 /** 投稿確認用の Flex（リッチ）メッセージ。本文プレビューとタイムラインへの導線を持つ。 */
 export function buildConfirmFlex(preview: string) {

@@ -4,6 +4,7 @@ import * as migration_20250706_074347_timeline_richtext_update from './20250706_
 import * as migration_20260703_155139_add_timeline_lifelog_fields from './20260703_155139_add_timeline_lifelog_fields';
 import * as migration_20260705_021042_notices_and_hero from './20260705_021042_notices_and_hero';
 import * as migration_20260705_031719_spotify_playlist from './20260705_031719_spotify_playlist';
+import * as migration_20261011_083743_quickpost from './20261011_083743_quickpost';
 
 export const migrations = [
   {
@@ -34,6 +35,11 @@ export const migrations = [
   {
     up: migration_20260705_031719_spotify_playlist.up,
     down: migration_20260705_031719_spotify_playlist.down,
-    name: '20260705_031719_spotify_playlist'
+    name: '20260705_031719_spotify_playlist',
+  },
+  {
+    up: migration_20261011_083743_quickpost.up,
+    down: migration_20261011_083743_quickpost.down,
+    name: '20261011_083743_quickpost'
   },
 ];

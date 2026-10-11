@@ -48,13 +48,17 @@ src/
 │   │       ├── posts/         # ブログ（Lexical リッチテキスト）
 │   │       ├── gallery/       # 写真アーカイブ（masonry + 前後移動つき写真ビューア）
 │   │       ├── events/ products/ profile/ letter/
+│   ├── (post)/post/           # さっと投稿（スマホ用の投稿画面。専用ルートレイアウト・nonce つき CSP）
 │   ├── (payload)/             # Payload 管理画面 + REST API（/api/<collection>）
-│   └── api/                   # カスタム API（weather / letter / like / LINE webhook）
+│   └── api/                   # カスタム API（weather / letter / like / LINE webhook / quickpost）
 ├── collections/               # Payload コレクション定義
 ├── features/                  # ページのデータ取得・集計・表示モデル（home / site）
 ├── components/soda/           # Soda Press コンポーネント群（シェル・題字・タイムライン・カード）
 ├── components/gallery/        # 写真ビューア（<dialog>）とギャラリー
-└── lib/                       # date / palette / phrase / richtext / social / cfUrl などの純関数
+├── components/quickpost/      # さっと投稿の画面（パスキー・写真の縮小・下書き）
+├── lib/quickpost/             # さっと投稿のログイン・回数制限・入力チェック・写真の作り直し
+├── middleware.ts              # /post だけに nonce つき CSP
+└── lib/                       # date / palette / phrase / richtext / social / cfUrl / netguard などの純関数
 ```
 
 ### データフロー
@@ -68,6 +72,7 @@ src/
   をクライアントから直接叩く（`read: anyone` の公開コレクション）
 - LINE から Timeline へ投稿する webhook（`/api/line/webhook`）を持つ
   （詳細は `docs/LINE_TIMELINE_SETUP.md`）
+- スマホからの投稿は「さっと投稿」（`/post`・下記）
 
 ### Payload コレクション
 
@@ -81,6 +86,8 @@ src/
 | `notices` | おしらせ（ティッカー・TODAY カード） |
 | `letters` | 問い合わせフォーム送信 |
 | `users` | 管理者認証 |
+| `passkeys` | さっと投稿のパスキー（公開鍵のみ。管理画面で削除するとその鍵の端末もログアウト） |
+| `post-sessions` | さっと投稿にログイン中の端末（Cookie の SHA-256 だけを保存。削除 = その端末を即ログアウト） |
 | グローバル `site-settings` | プロフィール・ヒーロー文言・Spotify プレイリスト |
 
 ## ローカル開発
@@ -124,6 +131,24 @@ pnpm payload migrate:create <name>   # 生成してコミットするだけ
 適用（`pnpm payload migrate`）はデプロイ側に委ねる（ローカルの `.env` は本番 Neon を
 指すため、手元から本番へは適用しない）。
 
+## さっと投稿（/post）
+
+スマホから本文・写真（3枚まで）・種類だけでタイムラインに投稿する自分専用の画面。
+ホーム画面に追加すると `/post` から開く（`public/post.webmanifest`）。
+
+- **ログイン**: Face ID / Touch ID のパスキー（WebAuthn・`@simplewebauthn`）。本人確認（UV）必須。
+  新しい端末の登録は、そのつど管理画面のメールアドレスとパスワードを確かめてから（5回失敗で10分ロック）
+- **ログイン状態**: 端末ごとに `post-sessions` に記録し、管理画面で削除すると即無効。
+  使わなければ 30 日・最長 90 日で切れる。Cookie は `__Host-`・HttpOnly・Secure・SameSite=Strict、
+  中身は 256bit 乱数（DB には SHA-256 のみ）。パスキーの確認値は HMAC 署名つきの 5 分 Cookie で持ち、1回きり
+- **送信**: すべての書き込みで Origin（と `Sec-Fetch-Site`）を確認。1台あたり 投稿 30件/時・写真 60枚/時
+- **写真**: スマホで縮小してから送り、サーバーで作り直す（形式を中身で判定・向きを反映・位置情報など撮影データを削除・ランダムなファイル名）
+- **二重投稿**: 下書きごとの UUID（`timeline.quickPostKey`・一意）で、再送しても1件
+- **画面**: `noindex`・`no-store`・nonce つき CSP（`src/middleware.ts`）・埋め込み禁止
+
+API: `GET /api/quickpost/session` / `POST /api/quickpost/{login,register}/{options,verify}` /
+`POST /api/quickpost/photo` / `POST /api/quickpost/posts` / `POST /api/quickpost/logout`
+
 ## 実装上の工夫
 
 - **転送量**: タイムラインは初期 20 件のみ SSR し、以降はページ単位の REST 追加読込。
@@ -135,6 +160,8 @@ pnpm payload migrate:create <name>   # 生成してコミットするだけ
 - **プライバシー**: 訪問者の位置情報系の外部リクエストなし（天気は自サイトのプロキシ API・東京固定）
 - **画像**: next/image + AVIF/WebP、CloudFront 変換（`toCFUrl`）。外部 OGP 画像は
   `unoptimized` で直接参照し、画像オプティマイザを任意ホストへ開放しない
+- **リンクのプレビュー**: サーバーが取りに行く URL は `src/lib/netguard.ts` で検査し、
+  内部ネットワーク（localhost・プライベート IP・クラウドのメタデータ）へは接続しない（DNS の差し替え・リダイレクトも検査）
 
 ## 今後の改善予定
 
