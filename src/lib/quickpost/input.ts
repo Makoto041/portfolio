@@ -32,6 +32,23 @@ export const PHOTO_TYPES: readonly string[] = [
   'image/avif',
 ]
 
+const PHOTO_EXTENSIONS: Readonly<Record<string, string>> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  avif: 'image/avif',
+}
+
+/** 写真の形式（Content-Type）。端末が形式を空で渡したとき（HEIC で起きる）は拡張子から補う */
+export function photoTypeOf(type: string, name: string): string {
+  if (type) return type.toLowerCase()
+  const ext = /\.([a-z0-9]+)$/i.exec(name)?.[1]?.toLowerCase()
+  return (ext && PHOTO_EXTENSIONS[ext]) || ''
+}
+
 /** ブラウザで縮小できない写真を、そのままサーバーに送ってよいか（受け付ける形式で、空でなく上限以下） */
 export function canSendPhotoAsIs(type: string, size: number, maxBytes: number): boolean {
   return PHOTO_TYPES.includes(type.toLowerCase()) && size > 0 && size <= maxBytes

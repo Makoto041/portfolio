@@ -5,6 +5,7 @@ import {
   normalizeText,
   parseQuickPost,
   PHOTO_TYPES,
+  photoTypeOf,
 } from '@/lib/quickpost/input'
 import {
   createIpLimiter,
@@ -323,5 +324,25 @@ describe('canSendPhotoAsIs', () => {
     expect(canSendPhotoAsIs('', 1000, 2000)).toBe(false)
     expect(canSendPhotoAsIs('image/jpeg', 0, 2000)).toBe(false)
     expect(canSendPhotoAsIs('image/heic', 2001, 2000)).toBe(false)
+  })
+})
+
+describe('photoTypeOf', () => {
+  it('形式があればそのまま使う（小文字にそろえる）', () => {
+    expect(photoTypeOf('image/HEIC', 'IMG_0001.HEIC')).toBe('image/heic')
+    expect(photoTypeOf('image/jpeg', 'photo.heic')).toBe('image/jpeg')
+  })
+
+  it('形式が空なら拡張子から補う', () => {
+    expect(photoTypeOf('', 'IMG_0001.HEIC')).toBe('image/heic')
+    expect(photoTypeOf('', 'scan.heif')).toBe('image/heif')
+    expect(photoTypeOf('', 'a.JPG')).toBe('image/jpeg')
+    expect(photoTypeOf('', 'b.avif')).toBe('image/avif')
+  })
+
+  it('知らない拡張子・拡張子なしは空のまま（送らない）', () => {
+    expect(photoTypeOf('', 'anim.gif')).toBe('')
+    expect(photoTypeOf('', 'noext')).toBe('')
+    expect(canSendPhotoAsIs(photoTypeOf('', 'x.svg'), 100, 2000)).toBe(false)
   })
 })
