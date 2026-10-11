@@ -40,6 +40,26 @@ export function maxAgeSeconds(deadline: number, now: number = Date.now()): numbe
 
 export type RateKind = 'posts' | 'photos'
 
+// ── 写真 ──
+
+/** さっと投稿で上げた写真のファイル名の頭（photo API がこの形で保存する） */
+export const QUICKPOST_PHOTO_PREFIX = 'post-'
+
+/**
+ * さっと投稿で上げた写真か。投稿で使える写真をこれに限り、ギャラリーの写真などを
+ * 「タイムライン専用」にしたり、代替テキストを書き換えたりしないようにする
+ */
+export function isQuickPostPhoto(media: {
+  filename?: string | null
+  isTimelineOnly?: boolean | null
+}): boolean {
+  return (
+    media.isTimelineOnly === true &&
+    typeof media.filename === 'string' &&
+    media.filename.startsWith(QUICKPOST_PHOTO_PREFIX)
+  )
+}
+
 // ── 送信元 ──
 
 /**

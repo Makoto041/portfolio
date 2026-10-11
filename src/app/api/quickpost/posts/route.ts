@@ -10,6 +10,7 @@ import type { NextRequest } from 'next/server'
 import type { Timeline } from '@/payload-types'
 import { textToLexical } from '@/lib/richtext'
 import { parseQuickPost } from '@/lib/quickpost/input'
+import { isQuickPostPhoto } from '@/lib/quickpost/policy'
 import { revalidate, TIMELINE_PAGES } from '@/lib/revalidate'
 import {
   assertInTransaction,
@@ -33,7 +34,12 @@ export const dynamic = 'force-dynamic'
 // 写真の確認・投稿の作成・リンクのプレビュー取得（最大5秒）が重なっても途中で切れないように
 export const maxDuration = 30
 
-type MediaRow = { id: number; alt?: string | null }
+type MediaRow = {
+  id: number
+  alt?: string | null
+  filename?: string | null
+  isTimelineOnly?: boolean | null
+}
 
 export async function POST(req: NextRequest) {
   const blocked = rejectCrossSite(req)
@@ -66,7 +72,7 @@ export async function POST(req: NextRequest) {
         return fail(429, 'rate_limited')
       }
 
-      // 写真がすべて存在するか（消された写真を指していないか）
+      // 写真がすべて存在し、さっと投稿で上げたものか（消された写真や、ギャラリーなどほかの写真を指していないか）
       for (const id of input.images) {
         const doc = await payload.findByID({
           collection: 'media',
@@ -75,7 +81,7 @@ export async function POST(req: NextRequest) {
           overrideAccess: true,
           disableErrors: true,
         })
-        if (!doc) {
+        if (!doc || !isQuickPostPhoto(doc)) {
           await releasePostReceipt(payload, receiptId)
           return fail(400, 'invalid_images')
         }

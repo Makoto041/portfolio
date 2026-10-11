@@ -9,6 +9,7 @@ import {
 } from '@/lib/quickpost/input'
 import {
   createIpLimiter,
+  isQuickPostPhoto,
   isSameOriginRequest,
   isSessionAlive,
   maxAgeSeconds,
@@ -344,5 +345,18 @@ describe('photoTypeOf', () => {
     expect(photoTypeOf('', 'anim.gif')).toBe('')
     expect(photoTypeOf('', 'noext')).toBe('')
     expect(canSendPhotoAsIs(photoTypeOf('', 'x.svg'), 100, 2000)).toBe(false)
+  })
+})
+
+describe('isQuickPostPhoto', () => {
+  it('さっと投稿で上げた写真（タイムライン専用・post- で始まる名前）だけを使える', () => {
+    expect(isQuickPostPhoto({ filename: 'post-3f2a.jpg', isTimelineOnly: true })).toBe(true)
+  })
+
+  it('ギャラリーの写真・管理画面で上げた写真は使えない', () => {
+    expect(isQuickPostPhoto({ filename: 'post-3f2a.jpg', isTimelineOnly: false })).toBe(false)
+    expect(isQuickPostPhoto({ filename: 'IMG_0001.jpg', isTimelineOnly: true })).toBe(false)
+    expect(isQuickPostPhoto({ filename: null, isTimelineOnly: true })).toBe(false)
+    expect(isQuickPostPhoto({})).toBe(false)
   })
 })

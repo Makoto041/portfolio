@@ -7,6 +7,7 @@ import type { NextRequest } from 'next/server'
 import { QP } from '@/lib/quickpost/config'
 import { reencodePhoto, UnsupportedImageError } from '@/lib/quickpost/image'
 import { PHOTO_TYPES } from '@/lib/quickpost/input'
+import { QUICKPOST_PHOTO_PREFIX } from '@/lib/quickpost/policy'
 import {
   consumeRate,
   fail,
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       file: {
         data: photo,
         mimetype: 'image/jpeg',
-        name: `post-${randomUUID()}.jpg`,
+        name: `${QUICKPOST_PHOTO_PREFIX}${randomUUID()}.jpg`,
         size: photo.length,
       },
       user,
