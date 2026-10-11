@@ -407,6 +407,24 @@ export async function recordPost(payload: Payload, sessionId: ID, at: string): P
     WHERE id = ${sessionId}`)
 }
 
+/**
+ * パスキーの使用回数を、記録より大きいときだけ進める（1回の UPDATE で原子的に）。進めたら true。
+ * 同時のログインで小さい値に戻さない。進められないのは、同じかより新しい回数の応答がすでに通ったとき
+ * （複製された鍵の疑い）なので、呼び出し側はログインさせない。トランザクションの外で呼ぶこと
+ */
+export async function advancePasskeyCounter(
+  payload: Payload,
+  passkeyId: ID,
+  counter: number,
+): Promise<boolean> {
+  const at = new Date().toISOString()
+  const result = await payload.db.drizzle.execute(sql`
+    UPDATE passkeys SET counter = ${counter}, updated_at = ${at}
+    WHERE id = ${passkeyId} AND COALESCE(counter, 0) < ${counter}
+    RETURNING id`)
+  return result.rows.length > 0
+}
+
 // ── 投稿の受付票（二重投稿の防止） ──
 
 /** 作りかけの受付票を「途中で落ちた」とみなすまでの時間（投稿は数秒で終わる） */

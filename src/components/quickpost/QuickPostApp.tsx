@@ -43,8 +43,6 @@ type Draft = {
   postType: string
   /** 二重投稿を防ぐキー（この下書きを送るたびに同じものを使う） */
   key: string
-  /** このキーで最初に送った内容（本文・タイトル・種類・写真の指紋）。送り直しで「すでに投稿済み」と返ったとき、直したかどうかを見分ける */
-  sent?: string
 }
 
 type Photo = {
@@ -85,7 +83,6 @@ function loadDraft(): Draft | null {
         ? (d.postType as string)
         : 'diary',
       key: d.key,
-      sent: typeof d.sent === 'string' ? d.sent : undefined,
     }
   } catch {
     return null
@@ -106,6 +103,43 @@ function clearDraft() {
   } catch {
     // 同上
   }
+}
+
+const SENT_KEY = 'mk_post_sent_v1'
+/** 覚えておく下書きのキーの数（古いものから捨てる） */
+const SENT_LIMIT = 20
+/** localStorage が使えないときの控え（このタブの中だけ） */
+const sentInTab = new Map<string, string>()
+
+/**
+ * この下書きのキーで最初に送った内容（本文・タイトル・種類・写真の指紋）を返す。まだ無ければ今の内容を記録する。
+ * 送り直しで「すでに投稿済み」と返ったとき、直したかどうかを見分けるのに使う。下書きとは別に持つので、
+ * 投稿が済んで下書きを消したあとも残り、同じ下書きを開いたほかのタブとも共有される（あとから送ったタブが上書きしない）
+ */
+function firstSent(key: string, signature: string): string {
+  let map: Record<string, unknown> = {}
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(SENT_KEY) ?? '{}')
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      map = parsed as Record<string, unknown>
+    }
+  } catch {
+    // 読めないときはこのタブの控えだけで見分ける
+  }
+  const stored = map[key]
+  const first = typeof stored === 'string' ? stored : (sentInTab.get(key) ?? signature)
+  sentInTab.set(key, first)
+  if (stored !== first) {
+    map[key] = first
+    const keys = Object.keys(map)
+    for (const old of keys.slice(0, Math.max(0, keys.length - SENT_LIMIT))) delete map[old]
+    try {
+      localStorage.setItem(SENT_KEY, JSON.stringify(map))
+    } catch {
+      // 保存できないときはこのタブの控えだけで見分ける
+    }
+  }
+  return first
 }
 
 class ApiError extends Error {
@@ -426,12 +460,9 @@ export default function QuickPostApp() {
       // 写真は ID ではなく中身の指紋で比べる（読み込み直すと選び直しになって ID は変わるが、同じファイルなら指紋は同じ。
       // 端末が選び直しのたびに写真を変換し直して中身が変わる場合は、直したとみなして下書きを残す側に倒れる）
       const signature = JSON.stringify([body.text, body.title ?? '', body.postType, prints])
-      const sent = draft.sent ?? signature
-      if (draft.sent === undefined) {
-        const marked = { ...draft, sent }
-        setDraft(marked)
-        saveDraft(marked)
-      }
+      const sent = firstSent(draft.key, signature)
+      // 送る前に下書きをすぐ保存する（自動保存を待たない）。応答が届かないまま読み込み直しても、同じキーで送り直せるように
+      saveDraft(draft)
       // 同じ下書きをまだ送っている途中（409）なら、少し待って送り直す（2回目以降は最初の投稿が返る）
       let created: { id: number; duplicate?: boolean } | null = null
       for (let attempt = 0; !created; attempt++) {
@@ -446,7 +477,7 @@ export default function QuickPostApp() {
       if (created.duplicate && signature !== sent) {
         // 前に送った内容はすでに投稿されていた（応答だけが届かなかった）。直した内容は消さずに残し、
         // 別の投稿として送れるようキーを新しくする
-        const next = { ...draft, key: crypto.randomUUID(), sent: undefined }
+        const next = { ...draft, key: crypto.randomUUID() }
         setDraft(next)
         saveDraft(next)
         setError(

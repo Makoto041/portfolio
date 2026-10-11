@@ -8,6 +8,7 @@ import { getPayloadClient } from '@/lib/payloadClient'
 import { QP } from '@/lib/quickpost/config'
 import { deviceLabel } from '@/lib/quickpost/input'
 import {
+  advancePasskeyCounter,
   clearChallengeCookie,
   createSession,
   json,
@@ -88,8 +89,16 @@ export async function POST(req: NextRequest) {
       : null
     if (!user) return done(401, { error: 'verification_failed' })
 
-    // 確認値を使用済みにする・パスキーの使用回数を更新・ログインを発行、を1つのトランザクションで
+    // パスキーの使用回数は、記録より大きいときだけ進める（同時のログインで小さい値に戻さない）。
+    // 進められないのは、同じかより新しい回数の応答がすでに通ったとき（複製された鍵の疑い）なのでログインさせない。
+    // 回数を数えないパスキー（iCloud キーチェーンなど、いつも 0）は対象外
     const { newCounter, credentialBackedUp } = verification.authenticationInfo
+    if (newCounter > 0 && !(await advancePasskeyCounter(payload, passkey.id, newCounter))) {
+      console.warn('quickpost: passkey counter did not advance; refusing the login')
+      return done(401, { error: 'verification_failed' })
+    }
+
+    // 確認値を使用済みにする・パスキーの最終使用を記録・ログインを発行、を1つのトランザクションで
     let created
     try {
       created = await withTransaction(payload, async (txReq) => {
@@ -98,7 +107,6 @@ export async function POST(req: NextRequest) {
           collection: 'passkeys',
           id: passkey.id,
           data: {
-            counter: newCounter,
             backedUp: credentialBackedUp,
             lastUsedAt: new Date().toISOString(),
           },
