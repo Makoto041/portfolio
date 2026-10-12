@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   clearDraft,
+  DRAFT_PREFIX,
   DRAFT_TTL_MS,
-  DRAFTS_KEY,
   type Draft,
   type DraftStores,
   MAX_DRAFTS,
@@ -25,20 +25,26 @@ function memoryStore() {
       writes++
       map.delete(k)
     },
+    key: (i: number) => [...map.keys()][i] ?? null,
+    get length() {
+      return map.size
+    },
     get writes() {
       return writes
     },
   }
 }
 
-/** 同じ端末の localStorage を共有するタブ（sessionStorage はタブごと。読み込み直しても同じ） */
+/**
+ * 同じ端末の localStorage を共有するタブ（sessionStorage はタブごと。reload() は同じタブの読み込み直し）。
+ * withSession: false は sessionStorage が使えない（読み込むたびに新しいタブ）環境
+ */
 function device() {
   const local = memoryStore()
   let clock = 1_000_000
   const now = () => clock
-  /** 新しく開いたタブ。reload() は同じタブの読み込み直し */
-  const newTab = () => {
-    const stores: DraftStores = { local, session: memoryStore(), now }
+  const newTab = ({ withSession = true } = {}) => {
+    const stores: DraftStores = { local, session: withSession ? memoryStore() : null, now }
     const opened = openTab(stores)
     return {
       stores,
@@ -49,8 +55,13 @@ function device() {
       clear: (sent: Draft) => clearDraft(stores, opened.tab, sent),
     }
   }
+  /** 保存してある下書きの本文（新しい順。読むだけで保存先を変えない） */
   const texts = () =>
-    (JSON.parse(local.getItem(DRAFTS_KEY) ?? '[]') as Draft[]).map((d) => d.text)
+    Array.from({ length: local.length }, (_, i) => local.key(i) ?? '')
+      .filter((k) => k.startsWith(DRAFT_PREFIX))
+      .map((k) => JSON.parse(local.getItem(k) ?? '{}') as Draft & { savedAt: number })
+      .sort((a, b) => b.savedAt - a.savedAt)
+      .map((d) => d.text)
   return { local, newTab, texts, tick: (ms = 1000) => (clock += ms) }
 }
 
@@ -64,7 +75,7 @@ const draft = (key: string, text: string, extra: Partial<Draft> = {}): Draft => 
 })
 
 describe('タブごとの保存', () => {
-  it('タブは自分の分だけを書き換え、同じキーでもほかのタブの分には触らない', () => {
+  it('タブは自分のキーだけを書き換え、同じ下書きのキーでもほかのタブの分には触らない', () => {
     const d = device()
     const a = d.newTab()
     const b = d.newTab()
@@ -74,6 +85,8 @@ describe('タブごとの保存', () => {
     d.tick()
     a.save(draft('K', 'タブAを直した'))
     expect(d.texts()).toEqual(['タブAを直した', 'タブB'])
+    expect(d.local.getItem(DRAFT_PREFIX + a.id)).toContain('タブAを直した')
+    expect(d.local.getItem(DRAFT_PREFIX + b.id)).toContain('タブB')
   })
 
   it('何も書いていない下書きは、このタブの分を消す（無ければ書かない）', () => {
@@ -98,15 +111,16 @@ describe('タブごとの保存', () => {
     const writes = d.local.writes
     a.save(draft('A', 'あ'))
     expect(d.local.writes).toBe(writes)
-    expect(d.newTab().opened?.text).toBe('い')
+    expect(d.texts()).toEqual(['い', 'あ'])
   })
 
   it(`保存は新しい ${MAX_DRAFTS} 件まで、${DRAFT_TTL_MS / 86_400_000} 日を過ぎたものは読まない`, () => {
     const d = device()
-    for (let i = 0; i < MAX_DRAFTS + 2; i++) {
-      d.newTab().save(draft(`k${i}`, `本文${i}`))
+    const tabs = Array.from({ length: MAX_DRAFTS + 2 }, () => d.newTab())
+    tabs.forEach((t, i) => {
+      t.save(draft(`k${i}`, `本文${i}`))
       d.tick()
-    }
+    })
     const kept = d.texts()
     expect(kept).toHaveLength(MAX_DRAFTS)
     expect(kept[0]).toBe(`本文${MAX_DRAFTS + 1}`)
@@ -114,33 +128,51 @@ describe('タブごとの保存', () => {
 
     d.tick(DRAFT_TTL_MS)
     expect(d.newTab().opened).toBeNull()
+    expect(d.texts()).toEqual([])
+  })
+
+  it('開いたままの古い下書きでも、保存し直せば残る（期限切れの自分の分は書き直す）', () => {
+    const d = device()
+    const a = d.newTab()
+    a.save(draft('K', 'あ'))
+    d.tick(DRAFT_TTL_MS + 1)
+    a.save(draft('K', 'あ'))
+    expect(a.reload().draft).toEqual(draft('K', 'あ'))
   })
 })
 
 describe('openTab', () => {
-  it('新しく開いたタブは、いちばん新しい下書きを開き、自分の ID を覚える', () => {
+  it('新しく開いたタブは、いちばん新しい下書きを引き継ぐ（写さない。元のタブの分は無くなる）', () => {
     const d = device()
-    d.newTab().save(draft('A', '古い'))
+    const a = d.newTab()
+    const b = d.newTab()
+    a.save(draft('A', '古い'))
     d.tick()
-    d.newTab().save(draft('B', '新しい'))
+    b.save(draft('B', '新しい'))
     const c = d.newTab()
-    expect(c.opened?.text).toBe('新しい')
+    expect(c.opened).toEqual(draft('B', '新しい'))
     expect(c.stores.session?.getItem(TAB_ID_KEY)).toBe(c.id)
+    expect(d.texts()).toEqual(['新しい', '古い'])
+    expect(d.local.getItem(DRAFT_PREFIX + c.id)).toContain('新しい')
+    expect(d.local.getItem(DRAFT_PREFIX + b.id)).toBeNull()
+    expect(b.reload().draft).toBeNull()
   })
 
   it('読み込み直したタブは、ほかのタブがあとから保存した下書きではなく、自分の下書きを開く', () => {
     const d = device()
     const a = d.newTab()
+    const b = d.newTab()
     a.save(draft('A', 'タブA'))
     d.tick()
-    d.newTab().save(draft('B', 'タブB'))
+    b.save(draft('B', 'タブB'))
     expect(a.reload()).toEqual({ tab: a.id, draft: draft('A', 'タブA') })
   })
 
-  it('自分の下書きが無くなっていれば（全部消した・送った）、ほかのタブの下書きに乗り換えない', () => {
+  it('自分の下書きが無くなっていれば（全部消した・送った・引き継がれた）、ほかのタブの下書きに乗り換えない', () => {
     const d = device()
     const a = d.newTab()
-    d.newTab().save(draft('B', 'タブB'))
+    const b = d.newTab()
+    b.save(draft('B', 'タブB'))
     expect(a.reload().draft).toBeNull()
   })
 
@@ -149,8 +181,8 @@ describe('openTab', () => {
       throw new Error('denied')
     }
     const broken: DraftStores = {
-      local: { getItem: thrower, setItem: thrower, removeItem: thrower },
-      session: { getItem: thrower, setItem: thrower, removeItem: thrower },
+      local: { getItem: thrower, setItem: thrower, removeItem: thrower, key: thrower, length: 1 },
+      session: { getItem: thrower, setItem: thrower },
     }
     const opened = openTab(broken)
     expect(opened.draft).toBeNull()
@@ -158,30 +190,49 @@ describe('openTab', () => {
     expect(() => clearDraft(broken, opened.tab, draft('A', 'あ'))).not.toThrow()
 
     const garbage = memoryStore()
-    garbage.setItem(DRAFTS_KEY, '{not json')
+    garbage.setItem(`${DRAFT_PREFIX}x`, '{not json')
     expect(openTab({ local: garbage, session: null }).draft).toBeNull()
-    expect(openTab({ local: null, session: null }).tab).not.toBe(openTab({ local: null, session: null }).tab)
+    expect(garbage.getItem(`${DRAFT_PREFIX}x`)).toBeNull()
+    expect(openTab({ local: null, session: null }).tab).not.toBe(
+      openTab({ local: null, session: null }).tab,
+    )
   })
 })
 
 describe('clearDraft（投稿できたあと）', () => {
-  it('このタブの分と、同じ下書きを開いただけのタブの写しを消し、ほかの下書きは残す', () => {
+  it('引き継いだタブで直して送ると、元のタブの古い版は残らない（次に開いたタブは空で始まる）', () => {
     const d = device()
     const a = d.newTab()
-    a.save(draft('K', '送る本文'))
-    const copy = d.newTab()
-    expect(copy.opened).toEqual(draft('K', '送る本文'))
-    copy.save(copy.opened as Draft)
-    d.newTab().save(draft('B', '別の下書き'))
-    a.clear(draft('K', '送る本文'))
-    expect(d.texts()).toEqual(['別の下書き'])
+    a.save(draft('K', 'a'))
+    const b = d.newTab()
+    expect(b.opened).toEqual(draft('K', 'a'))
+    b.save(draft('K', 'ab'))
+    b.clear(draft('K', 'ab'))
+    expect(d.texts()).toEqual([])
+    expect(d.newTab().opened).toBeNull()
   })
 
-  it('開いただけのタブの写しは開いた時点で保存され、元の下書きが送られたら一緒に消える（読み込み直しても戻らない）', () => {
+  it('sessionStorage が消える端末（ホーム画面のアプリなど）で開き直しを重ねても、送ったあとに古い版が残らない', () => {
+    const d = device()
+    const first = d.newTab({ withSession: false })
+    first.save(draft('K', 'a'))
+    const second = d.newTab({ withSession: false })
+    second.save(draft('K', 'ab'))
+    const third = d.newTab({ withSession: false })
+    expect(third.opened).toEqual(draft('K', 'ab'))
+    third.save(draft('K', 'abc'))
+    third.clear(draft('K', 'abc'))
+    expect(d.texts()).toEqual([])
+    expect(d.newTab({ withSession: false }).opened).toBeNull()
+  })
+
+  it('同じ下書きを引き継いだタブがそのままなら、元のタブが送ると一緒に片付く', () => {
     const d = device()
     const a = d.newTab()
     a.save(draft('K', '送る本文'))
     const f = d.newTab()
+    // A は送る直前に自分の分を保存し直す（引き継がれたあとなので、もう一度書く）
+    a.save(draft('K', '送る本文'))
     expect(d.texts()).toEqual(['送る本文', '送る本文'])
     a.clear(draft('K', '送る本文'))
     expect(d.texts()).toEqual([])
@@ -194,11 +245,20 @@ describe('clearDraft（投稿できたあと）', () => {
     a.save(draft('K', 'hello'))
     const b = d.newTab()
     b.save(draft('K', 'bye'))
-    // A は古い「hello」のまま送り、送る直前に自分の分を保存する
     a.save(draft('K', 'hello'))
     a.clear(draft('K', 'hello'))
     expect(d.texts()).toEqual(['bye'])
     expect(b.reload().draft).toEqual(draft('K', 'bye'))
+  })
+
+  it('ほかの下書きには触らない', () => {
+    const d = device()
+    const a = d.newTab()
+    const b = d.newTab()
+    a.save(draft('A', '送る本文'))
+    b.save(draft('B', '別の下書き'))
+    a.clear(draft('A', '送る本文'))
+    expect(d.texts()).toEqual(['別の下書き'])
   })
 })
 

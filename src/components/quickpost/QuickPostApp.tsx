@@ -202,7 +202,7 @@ export default function QuickPostApp() {
   const tabRef = useRef('')
   /** 予約中の下書きの自動保存 */
   const autosaveRef = useRef<number | null>(null)
-  /** 開いたときの下書き（書き換えるまでは保存しない。開いただけのタブが、送られた下書きを書き戻さないように） */
+  /** 開いたときの下書き（書き換えるまでは保存しない。開いただけのタブが、ほかのタブで送られた下書きを書き戻さないように） */
   const openedDraftRef = useRef<Draft | null>(null)
 
   const limits: Limits = info?.limits ?? { ...LIMITS, photoBytes: 4 * 1024 * 1024 }
