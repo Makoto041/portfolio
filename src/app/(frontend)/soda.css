@@ -1,13 +1,15 @@
 /* ──────────────────────────────────────────────
    Soda Press ― サイト全体のデザインシステム
-   パステルの地 × 黒い1本線 × 大きな丸いロゴ。文字は写真に重ねず、写真の下の紙面に置く。
+   パステルの地 × 1本線（黒、群青のパレットでは深い群青）× 大きな丸いロゴ。文字は写真に重ねず、写真の下の紙面に置く。
    タイムライン（日記帳）が主役。
 
    トークン
    - 地色パレット（月替わり可）: --s-bg / --s-logo / --s-card を :root[data-palette] が持つ
    - 文字・線: --s-ink（主文字/罫線/ベタ面）--s-sub（補助）--s-faint（微メタ）
-     → どのパレットの --s-bg / --s-card / --s-paper 上でも AA(4.5:1) 以上
+     → どのパレットの --s-bg / --s-card / --s-paper 上でも AA(4.5:1) 以上（src/lib/__tests__/palette.test.ts で確認）
+     → 既定は黒系。パレットが --s-pal-ink / --s-pal-sub / --s-pal-faint を持てばその色（群青は深い群青）
    - 面: --s-paper（地色を白で薄めた紙面）--s-hot（いいね・LIVE の赤。非テキスト or 白文字太字）
+     --s-hot-inv（ベタ面の上の赤。パレットが --s-pal-hot-inv を持てばその色。群青は沈まないよう明るくする）
    - 角丸: --s-r-xl 26 / --s-r-l 20 / --s-r-m 14 / --s-r-s 6（ラベル）
    - 文字: --s-fs-cap 11 / meta 12.5 / ui 14 / body 16 / post 17 / h3 20（display は各要素の clamp）
    - 余白は 4px 系。ガター --s-gut は 16 / 32 / 44（760px / 1080px で切替）
@@ -20,7 +22,8 @@
   --s-logo: #74b088;
   --s-card: #fbf3dc;
 }
-:root[data-palette='gunjo'] { --s-bg: #e3e8f8; --s-logo: #95a1da; --s-card: #f0e6c0; }
+/* 群青: 深い群青を主役に、地・紙面・カードは同じ群青の濃淡（文字・線・ベタ面も群青にする） */
+:root[data-palette='gunjo'] { --s-bg: #e8edfa; --s-logo: #3354ad; --s-card: #d5def5; --s-pal-ink: #1b2a6b; --s-pal-sub: #3a4473; --s-pal-faint: #4f5884; --s-pal-hot-inv: #e27562; }
 :root[data-palette='ramune'] { --s-bg: #dbecf8; --s-logo: #8aaecd; --s-card: #f3e5a3; }
 :root[data-palette='melon'] { --s-bg: #e0f0e1; --s-logo: #7fb38a; --s-card: #f6dccd; }
 :root[data-palette='lemon'] { --s-bg: #f6f0cc; --s-logo: #c8b14f; --s-card: #d4e4f6; }
@@ -46,11 +49,14 @@
 @keyframes s-spin { to { transform: rotate(360deg); } }
 
 .soda {
-  --s-ink: #141414;
-  --s-sub: #42444b;
-  --s-faint: #5b5e66;
-  --s-paper: #f6f9f3;
+  --s-ink: var(--s-pal-ink, #141414);
+  --s-sub: var(--s-pal-sub, #42444b);
+  --s-faint: var(--s-pal-faint, #5b5e66);
+  --s-paper: #f7f8fa;
   --s-hot: #d63a1e;
+  /* ベタ面（--s-ink）の上の赤。既定は --s-hot のまま（黒の上で 3.9:1）。
+     群青はそのままの赤だと深い群青の上で 2.8:1 と沈むので、パレット側で明るい赤にする（4.4:1） */
+  --s-hot-inv: var(--s-pal-hot-inv, var(--s-hot));
   --s-r-xl: 26px;
   --s-r-l: 20px;
   --s-r-m: 14px;
@@ -441,7 +447,7 @@
   right: 14px;
   padding: 2px 10px;
   border-radius: 999px;
-  background: rgb(20 20 20 / 0.72);
+  background: var(--s-ink);
   color: #ffffff;
   font-size: 12px;
   letter-spacing: 0.04em;
@@ -606,7 +612,7 @@
   .soda .s-like:hover:not(:disabled) { background: color-mix(in srgb, var(--s-ink) 8%, transparent); }
 }
 .soda .s-like.is-on { background: var(--s-ink); color: var(--s-bg); cursor: default; }
-.soda .s-like.is-on .s-ico { fill: var(--s-hot); stroke: var(--s-hot); }
+.soda .s-like.is-on .s-ico { fill: var(--s-hot-inv); stroke: var(--s-hot-inv); }
 .soda .s-like.is-pop .s-ico { animation: s-beat 0.45s cubic-bezier(0.2, 1.6, 0.4, 1); }
 
 /* リンクプレビュー */
@@ -1087,7 +1093,7 @@
   font-family: var(--s-font);
 }
 .soda .s-drawer[open] { animation: s-fadein 0.2s ease-out; }
-.soda .s-drawer::backdrop { background: #141414; }
+.soda .s-drawer::backdrop { background: var(--s-pal-ink, #141414); }
 .soda .s-drawer a { color: var(--s-bg); text-decoration: none; }
 .soda .s-drawer :focus-visible { outline-color: var(--s-bg); }
 .soda .s-dtop {
@@ -1122,7 +1128,7 @@
   height: 9px;
   margin-left: 12px;
   border-radius: 50%;
-  background: var(--s-hot);
+  background: var(--s-hot-inv);
   vertical-align: middle;
 }
 /* SP: ドックと同じ位置の「閉じる」（PC は右上の × のみ） */
@@ -1177,8 +1183,9 @@
   padding: 0;
   border: 0;
   overflow: hidden;
-  /* 全面の dialog 自体を暗幕にする（::backdrop はカスタムプロパティを継承しない環境があるため使わない） */
-  background: rgb(20 20 20 / 0.94);
+  /* 全面の dialog 自体を暗幕にする（::backdrop はカスタムプロパティを継承しない環境があるため使わない）。
+     色は文字色を黒で沈めた色（群青ではごく深い群青、黒系のパレットではほぼ黒）。写真の色を邪魔しない暗さにする */
+  background: var(--s-ink);
   color: var(--s-bg);
 }
 .soda .imgmodal::backdrop { background: transparent; }
@@ -1455,6 +1462,8 @@
   .soda .s-prose code { border-color: color-mix(in srgb, var(--s-ink) 30%, transparent); }
   .soda .s-ftr-cols a { border-bottom-color: color-mix(in srgb, var(--s-bg) 30%, transparent); }
   .soda .s-dock { background: color-mix(in srgb, var(--s-bg) 86%, transparent); }
+  .soda .s-lead-count { background: color-mix(in srgb, var(--s-ink) 72%, transparent); }
+  .soda .imgmodal { background: color-mix(in srgb, color-mix(in srgb, var(--s-ink) 65%, #000000) 94%, transparent); }
   .soda .imgmodal-loading,
   .soda .imgmodal-error {
     border-color: color-mix(in srgb, var(--s-bg) 50%, transparent);
@@ -1464,7 +1473,7 @@
 
 /* ══════════════ さっと投稿（/post） ══════════════
    スマホから本文・写真・種類だけで投稿する自分専用の画面。サイトの外枠（ヘッダー・ドック）は使わず、
-   1段（最大 560px）の紙面に同じトークンで組む。赤は使わず、エラーは反転（黒地）で知らせる */
+   1段（最大 560px）の紙面に同じトークンで組む。赤は使わず、エラーは反転（ベタ面の地）で知らせる */
 .soda.s-qp { --s-qp-w: 560px; }
 .soda .s-qp-bar {
   position: sticky;
