@@ -5,8 +5,10 @@
 //     タブの ID は sessionStorage に持つ（読み込み直しても同じタブ）
 //   - 新しく開いたタブは、いちばん新しい下書きを引き継ぐ（写さずに、その下書きの持ち主をこのタブにする。
 //     下書きのキーも同じなので、元のタブと両方から送っても投稿は1件＝サーバーの受付票、内容が違えば画面が知らせる）。
-//     元のタブがこのあと書き換えた分は、別の下書きとして残る。引き継がれたあとに元のタブを読み込み直すと、新しい下書きになる
-//   - 投稿できたら、このタブの分と、ほかのタブにある「送った内容そのもの」を消す。同じ下書きをほかのタブで直した分は残す
+//     元のタブがこのあと書き換えた分は、別の下書きとして残る。引き継がれたあとに元のタブを読み込み直したときは、
+//     同じ下書き（キー）が残っていれば引き取り直す（引き継いだタブを閉じても、元のタブで続きを書ける）
+//   - 投稿できたら、このタブの分と、ほかのタブにある「送った内容そのもの」と、同じ下書きを引き継いだまま書き換えていない分を
+//     消す。同じ下書きをほかのタブで直した分は残す
 //   - 既知の制限: ブラウザの「タブを複製」は sessionStorage も写すので、複製した2つのタブは同じ下書きを書き合う
 //     （どちらから送っても投稿は1件。内容が違えば画面が知らせる）
 // 保存先は引数で受け取る（単体テストで差し替える）。使えない・例外のときは保存しないで続ける。
@@ -21,14 +23,16 @@ export type Draft = {
   key: string
 }
 
-type SavedDraft = Draft & { tab: string; savedAt: number }
+/** inherited: ほかのタブから引き継いだまま、このタブではまだ書き換えていない分 */
+type SavedDraft = Draft & { tab: string; savedAt: number; inherited: boolean }
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem' | 'key' | 'length'>
 type SessionStore = Pick<Storage, 'getItem' | 'setItem'>
 export type DraftStores = { local: Store | null; session: SessionStore | null; now?: () => number }
 
 /** タブの下書きのキー（後ろにタブの ID） */
 export const DRAFT_PREFIX = 'mk_post_draft:'
-export const TAB_ID_KEY = 'mk_post_tab'
+/** sessionStorage: このタブの ID と、いま書いている下書きのキー（{ tab, key }。空の下書き・投稿後は key なし） */
+export const TAB_KEY = 'mk_post_tab'
 export const MAX_DRAFTS = 10
 export const DRAFT_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
@@ -68,13 +72,15 @@ export const sameDraft = (a: Draft, b: Draft) =>
 
 const nowOf = (stores: DraftStores) => (stores.now ?? Date.now)()
 
-function readSaved(raw: string | null): (Draft & { savedAt: number }) | null {
+function readSaved(raw: string | null): (Draft & { savedAt: number; inherited: boolean }) | null {
   if (!raw) return null
   try {
     const v: unknown = JSON.parse(raw)
     const d = parseDraft(v)
-    const savedAt = Number((v as { savedAt?: unknown }).savedAt)
-    return d && Number.isFinite(savedAt) ? { ...d, savedAt } : null
+    const { savedAt, inherited } = (v ?? {}) as { savedAt?: unknown; inherited?: unknown }
+    return d && Number.isFinite(Number(savedAt))
+      ? { ...d, savedAt: Number(savedAt), inherited: inherited === true }
+      : null
   } catch {
     return null
   }
@@ -108,37 +114,69 @@ function readDrafts(stores: DraftStores): SavedDraft[] {
 }
 
 /**
- * このタブを開く。読み込み直したタブなら、前と同じタブの ID と自分の下書き（無ければ null = 新しい下書き）。
- * 新しく開いたタブなら、新しい ID と、いちばん新しい下書き（ほかのタブで書きかけのものも含む）を引き継ぐ。
- * 写さずに持ち主を付け替えるので、同じ下書きの古い版が端末に残らない（送ったあとに古い版が「書きかけ」として出てこない）
+ * 下書きの持ち主を付け替える（このタブの分として書いてから、元の分を消す。書けなければ元の分を残す）。
+ * 引き継いだ印を付ける（このタブで書き換えると印は消える。印のある分は、同じ下書きが送られたら一緒に片付ける）
+ */
+function moveDraft(stores: DraftStores, from: SavedDraft, tab: string) {
+  if (from.tab === tab) return
+  const draft = parseDraft(from)
+  try {
+    stores.local?.setItem(
+      DRAFT_PREFIX + tab,
+      JSON.stringify({ ...draft, savedAt: from.savedAt, inherited: true }),
+    )
+    stores.local?.removeItem(DRAFT_PREFIX + from.tab)
+  } catch {
+    // 付け替えられなくても、開いた下書きは画面に出す（書き換えたときに保存する）
+  }
+}
+
+function readTab(stores: DraftStores): { tab: string; key: string | null } | null {
+  try {
+    const v: unknown = JSON.parse(stores.session?.getItem(TAB_KEY) ?? 'null')
+    const { tab, key } = (v ?? {}) as { tab?: unknown; key?: unknown }
+    return typeof tab === 'string' && tab ? { tab, key: typeof key === 'string' ? key : null } : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * このタブで書いている下書きを覚える（タブの ID と下書きのキー。読み込み直したときに使う）。
+ * 空の下書き（投稿し終えた・全部消した）は、キーを覚えない（読み込み直しても、ほかのタブの下書きに乗り換えない）
+ */
+export function rememberTab(stores: DraftStores, tab: string, draft: Draft | null) {
+  try {
+    const key = draft && !isBlankDraft(draft) ? draft.key : null
+    stores.session?.setItem(TAB_KEY, JSON.stringify({ tab, key }))
+  } catch {
+    // 使えないときは、読み込み直すと新しく開いたタブとして扱われる
+  }
+}
+
+/**
+ * このタブを開く。
+ * - 読み込み直したタブ: 自分の下書き。無ければ、書いていた下書き（同じキー）がほかのタブに引き継がれたまま残っていれば
+ *   引き取り直す。それも無ければ null（新しい下書き。投稿し終えた・全部消したときはキーを覚えていないので乗り換えない）
+ * - 新しく開いたタブ: 新しい ID と、いちばん新しい下書き（ほかのタブで書きかけのものも含む）を引き継ぐ。写さずに持ち主を
+ *   付け替えるので、同じ下書きの古い版が端末に残らない（送ったあとに古い版が「書きかけ」として出てこない）
  */
 export function openTab(stores: DraftStores): { tab: string; draft: Draft | null } {
   const list = readDrafts(stores)
-  let tab: string | null = null
-  try {
-    tab = stores.session?.getItem(TAB_ID_KEY) ?? null
-  } catch {
-    // 使えないときは新しく開いたタブとして扱う
+  const saved = readTab(stores)
+  let found: SavedDraft | undefined
+  let tab: string
+  if (saved) {
+    tab = saved.tab
+    found =
+      list.find((d) => d.tab === tab) ?? (saved.key ? list.find((d) => d.key === saved.key) : undefined)
+  } else {
+    tab = crypto.randomUUID()
+    found = list[0]
   }
-  if (tab) {
-    const own = list.find((d) => d.tab === tab)
-    return { tab, draft: own ? parseDraft(own) : null }
-  }
-  tab = crypto.randomUUID()
-  try {
-    stores.session?.setItem(TAB_ID_KEY, tab)
-  } catch {
-    // 同上
-  }
-  const newest = list[0]
-  if (!newest) return { tab, draft: null }
-  const draft = parseDraft(newest)
-  try {
-    stores.local?.setItem(DRAFT_PREFIX + tab, JSON.stringify({ ...draft, savedAt: newest.savedAt }))
-    stores.local?.removeItem(DRAFT_PREFIX + newest.tab)
-  } catch {
-    // 引き継げなくても、開いた下書きは画面に出す（書き換えたときに保存する）
-  }
+  if (found) moveDraft(stores, found, tab)
+  const draft = found ? parseDraft(found) : null
+  rememberTab(stores, tab, draft)
   return { tab, draft }
 }
 
@@ -165,14 +203,17 @@ export function saveDraft(stores: DraftStores, tab: string, d: Draft) {
 }
 
 /**
- * 投稿できた下書きを片付ける。このタブの分と、ほかのタブにある「送った内容そのもの」（同じ下書きを開いただけの写し）を消す。
- * 同じ下書きをほかのタブで直した分は残す（そのタブから送れば、画面が「すでに投稿済み」と知らせる）
+ * 投稿できた下書きを片付ける。このタブの分と、ほかのタブにある「送った内容そのもの」と、同じ下書きを引き継いだまま
+ * 書き換えていない分（送った下書きの古い版を表示しているだけ）を消す。同じ下書きをほかのタブで直した分は残す
+ * （そのタブから送れば、画面が「すでに投稿済み」と知らせる）
  */
 export function clearDraft(stores: DraftStores, tab: string, sent: Draft) {
   try {
     stores.local?.removeItem(DRAFT_PREFIX + tab)
     for (const other of readDrafts(stores)) {
-      if (sameDraft(other, sent)) stores.local?.removeItem(DRAFT_PREFIX + other.tab)
+      if (sameDraft(other, sent) || (other.key === sent.key && other.inherited)) {
+        stores.local?.removeItem(DRAFT_PREFIX + other.tab)
+      }
     }
   } catch {
     // 同上

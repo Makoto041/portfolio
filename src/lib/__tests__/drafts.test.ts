@@ -8,8 +8,9 @@ import {
   MAX_DRAFTS,
   openTab,
   parseDraft,
+  rememberTab,
   saveDraft,
-  TAB_ID_KEY,
+  TAB_KEY,
 } from '../quickpost/drafts'
 
 function memoryStore() {
@@ -46,13 +47,20 @@ function device() {
   const newTab = ({ withSession = true } = {}) => {
     const stores: DraftStores = { local, session: withSession ? memoryStore() : null, now }
     const opened = openTab(stores)
+    // 画面と同じ順に呼ぶ: 書き換えたらキーを覚えて保存、投稿できたら片付けてキーを忘れる
     return {
       stores,
       id: opened.tab,
       opened: opened.draft,
       reload: () => openTab(stores),
-      save: (d: Draft) => saveDraft(stores, opened.tab, d),
-      clear: (sent: Draft) => clearDraft(stores, opened.tab, sent),
+      save: (d: Draft) => {
+        rememberTab(stores, opened.tab, d)
+        saveDraft(stores, opened.tab, d)
+      },
+      posted: (sent: Draft) => {
+        clearDraft(stores, opened.tab, sent)
+        rememberTab(stores, opened.tab, null)
+      },
     }
   }
   /** 保存してある下書きの本文（新しい順。読むだけで保存先を変えない） */
@@ -151,11 +159,23 @@ describe('openTab', () => {
     b.save(draft('B', '新しい'))
     const c = d.newTab()
     expect(c.opened).toEqual(draft('B', '新しい'))
-    expect(c.stores.session?.getItem(TAB_ID_KEY)).toBe(c.id)
+    expect(JSON.parse(c.stores.session?.getItem(TAB_KEY) ?? 'null')).toEqual({ tab: c.id, key: 'B' })
     expect(d.texts()).toEqual(['新しい', '古い'])
     expect(d.local.getItem(DRAFT_PREFIX + c.id)).toContain('新しい')
     expect(d.local.getItem(DRAFT_PREFIX + b.id)).toBeNull()
-    expect(b.reload().draft).toBeNull()
+  })
+
+  it('引き継がれたあとに元のタブを読み込み直すと、同じ下書きを引き取り直す（引き継いだタブを閉じても続きを書ける）', () => {
+    const d = device()
+    const a = d.newTab()
+    a.save(draft('K', '書きかけ'))
+    const b = d.newTab()
+    expect(b.opened).toEqual(draft('K', '書きかけ'))
+    // B を閉じてから A を読み込み直す
+    expect(a.reload()).toEqual({ tab: a.id, draft: draft('K', '書きかけ') })
+    expect(d.local.getItem(DRAFT_PREFIX + a.id)).toContain('書きかけ')
+    expect(d.local.getItem(DRAFT_PREFIX + b.id)).toBeNull()
+    expect(d.texts()).toEqual(['書きかけ'])
   })
 
   it('読み込み直したタブは、ほかのタブがあとから保存した下書きではなく、自分の下書きを開く', () => {
@@ -168,12 +188,30 @@ describe('openTab', () => {
     expect(a.reload()).toEqual({ tab: a.id, draft: draft('A', 'タブA') })
   })
 
-  it('自分の下書きが無くなっていれば（全部消した・送った・引き継がれた）、ほかのタブの下書きに乗り換えない', () => {
+  it('まだ何も書いていないタブを読み込み直しても、ほかのタブの下書きに乗り換えない', () => {
     const d = device()
     const a = d.newTab()
     const b = d.newTab()
     b.save(draft('B', 'タブB'))
     expect(a.reload().draft).toBeNull()
+  })
+
+  it('投稿し終えた・全部消したタブを読み込み直しても、同じ下書きのほかのタブの分に乗り換えない', () => {
+    const d = device()
+    const a = d.newTab()
+    const c = d.newTab()
+    a.save(draft('K', '送る本文'))
+    c.save(draft('K', 'ほかのタブで直した本文'))
+    a.posted(draft('K', '送る本文'))
+    expect(a.reload().draft).toBeNull()
+    expect(d.texts()).toEqual(['ほかのタブで直した本文'])
+
+    const e = d.newTab()
+    expect(e.opened).toEqual(draft('K', 'ほかのタブで直した本文'))
+    e.save(draft('K', ''))
+    const f = d.newTab()
+    f.save(draft('K2', 'f の下書き'))
+    expect(e.reload().draft).toBeNull()
   })
 
   it('保存先が使えない・壊れていても例外にしない（sessionStorage が無ければ毎回新しいタブ）', () => {
@@ -207,9 +245,35 @@ describe('clearDraft（投稿できたあと）', () => {
     const b = d.newTab()
     expect(b.opened).toEqual(draft('K', 'a'))
     b.save(draft('K', 'ab'))
-    b.clear(draft('K', 'ab'))
+    b.posted(draft('K', 'ab'))
     expect(d.texts()).toEqual([])
     expect(d.newTab().opened).toBeNull()
+  })
+
+  it('引き継いだタブが触らないまま、元のタブで書き足して送ると、引き継いだ分（古い版）も片付く', () => {
+    const d = device()
+    const a = d.newTab()
+    a.save(draft('K', 'hell'))
+    const b = d.newTab()
+    expect(b.opened).toEqual(draft('K', 'hell'))
+    d.tick()
+    a.save(draft('K', 'hello'))
+    expect(d.texts()).toEqual(['hello', 'hell'])
+    a.posted(draft('K', 'hello'))
+    expect(d.texts()).toEqual([])
+    expect(d.newTab().opened).toBeNull()
+    expect(b.reload().draft).toBeNull()
+  })
+
+  it('引き継いだタブで書き換えた分は、元のタブが送っても残る（印は書き換えると消える）', () => {
+    const d = device()
+    const a = d.newTab()
+    a.save(draft('K', 'hell'))
+    const b = d.newTab()
+    b.save(draft('K', 'hell!'))
+    a.save(draft('K', 'hello'))
+    a.posted(draft('K', 'hello'))
+    expect(d.texts()).toEqual(['hell!'])
   })
 
   it('sessionStorage が消える端末（ホーム画面のアプリなど）で開き直しを重ねても、送ったあとに古い版が残らない', () => {
@@ -221,7 +285,7 @@ describe('clearDraft（投稿できたあと）', () => {
     const third = d.newTab({ withSession: false })
     expect(third.opened).toEqual(draft('K', 'ab'))
     third.save(draft('K', 'abc'))
-    third.clear(draft('K', 'abc'))
+    third.posted(draft('K', 'abc'))
     expect(d.texts()).toEqual([])
     expect(d.newTab({ withSession: false }).opened).toBeNull()
   })
@@ -234,7 +298,7 @@ describe('clearDraft（投稿できたあと）', () => {
     // A は送る直前に自分の分を保存し直す（引き継がれたあとなので、もう一度書く）
     a.save(draft('K', '送る本文'))
     expect(d.texts()).toEqual(['送る本文', '送る本文'])
-    a.clear(draft('K', '送る本文'))
+    a.posted(draft('K', '送る本文'))
     expect(d.texts()).toEqual([])
     expect(f.reload().draft).toBeNull()
   })
@@ -246,7 +310,7 @@ describe('clearDraft（投稿できたあと）', () => {
     const b = d.newTab()
     b.save(draft('K', 'bye'))
     a.save(draft('K', 'hello'))
-    a.clear(draft('K', 'hello'))
+    a.posted(draft('K', 'hello'))
     expect(d.texts()).toEqual(['bye'])
     expect(b.reload().draft).toEqual(draft('K', 'bye'))
   })
@@ -257,7 +321,7 @@ describe('clearDraft（投稿できたあと）', () => {
     const b = d.newTab()
     a.save(draft('A', '送る本文'))
     b.save(draft('B', '別の下書き'))
-    a.clear(draft('A', '送る本文'))
+    a.posted(draft('A', '送る本文'))
     expect(d.texts()).toEqual(['別の下書き'])
   })
 })

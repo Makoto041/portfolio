@@ -18,6 +18,7 @@ import {
   clearDraft,
   freshDraft,
   openTab,
+  rememberTab,
   saveDraft,
   type Draft,
   type DraftStores,
@@ -248,9 +249,11 @@ export default function QuickPostApp() {
     void refresh()
   }, [refresh])
 
-  // 下書きを自動保存（少し間を置いてまとめて書く。このタブの分だけ。開いたままの下書きは書かない）
+  // 下書きを自動保存（少し間を置いてまとめて書く。このタブの分だけ。開いたままの下書きは書かない）。
+  // いま書いている下書きのキーは、すぐタブに覚える（読み込み直したときに引き取り直せるように）
   useEffect(() => {
     if (!draft || draft === openedDraftRef.current) return
+    rememberTab(draftStores(), tabRef.current, draft)
     const t = window.setTimeout(() => {
       autosaveRef.current = null
       saveDraft(draftStores(), tabRef.current, draft)
