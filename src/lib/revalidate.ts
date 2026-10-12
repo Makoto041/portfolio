@@ -5,7 +5,10 @@
 // 動的 import + try/catch で無害化する（時間ベースの revalidate=60 がフォールバックとして残る）。
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 
-async function revalidate(paths: (string | undefined | null)[]) {
+/** タイムラインの投稿が変わったときに作り直すページ（Home のダイジェストと専用タブ） */
+export const TIMELINE_PAGES = ['/', '/timeline']
+
+export async function revalidate(paths: (string | undefined | null)[]) {
   try {
     const { revalidatePath } = await import('next/cache')
     for (const p of paths) if (p) revalidatePath(p)

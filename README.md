@@ -48,13 +48,17 @@ src/
 │   │       ├── posts/         # ブログ（Lexical リッチテキスト）
 │   │       ├── gallery/       # 写真アーカイブ（masonry + 前後移動つき写真ビューア）
 │   │       ├── events/ products/ profile/ letter/
+│   ├── (post)/post/           # さっと投稿（スマホ用の投稿画面。専用ルートレイアウト・nonce つき CSP）
 │   ├── (payload)/             # Payload 管理画面 + REST API（/api/<collection>）
-│   └── api/                   # カスタム API（weather / letter / like / LINE webhook）
+│   └── api/                   # カスタム API（weather / letter / like / LINE webhook / quickpost）
 ├── collections/               # Payload コレクション定義
 ├── features/                  # ページのデータ取得・集計・表示モデル（home / site）
 ├── components/soda/           # Soda Press コンポーネント群（シェル・題字・タイムライン・カード）
 ├── components/gallery/        # 写真ビューア（<dialog>）とギャラリー
-└── lib/                       # date / palette / phrase / richtext / social / cfUrl などの純関数
+├── components/quickpost/      # さっと投稿の画面（パスキー・写真の縮小・下書き）
+├── lib/quickpost/             # さっと投稿のログイン・回数制限・入力チェック・写真の作り直し
+├── middleware.ts              # /post だけに nonce つき CSP
+└── lib/                       # date / palette / phrase / richtext / social / cfUrl / netguard などの純関数
 ```
 
 ### データフロー
@@ -68,6 +72,7 @@ src/
   をクライアントから直接叩く（`read: anyone` の公開コレクション）
 - LINE から Timeline へ投稿する webhook（`/api/line/webhook`）を持つ
   （詳細は `docs/LINE_TIMELINE_SETUP.md`）
+- スマホからの投稿は「さっと投稿」（`/post`・下記）
 
 ### Payload コレクション
 
@@ -81,6 +86,9 @@ src/
 | `notices` | おしらせ（ティッカー・TODAY カード） |
 | `letters` | 問い合わせフォーム送信 |
 | `users` | 管理者認証 |
+| `passkeys` | さっと投稿のパスキー（公開鍵のみ。管理画面で削除するとその鍵の端末もログアウト） |
+| `post-sessions` | さっと投稿にログイン中の端末（Cookie の SHA-256 だけを保存。削除 = その端末を即ログアウト） |
+| `quickpost-nonces` | さっと投稿の1回きりの記録（使用済みの確認値・投稿の受付票。管理画面には出さない） |
 | グローバル `site-settings` | プロフィール・ヒーロー文言・Spotify プレイリスト |
 
 ## ローカル開発
@@ -121,8 +129,42 @@ pnpm generate:types  # Payload スキーマ → TypeScript 型生成
 pnpm payload migrate:create <name>   # 生成してコミットするだけ
 ```
 
-適用（`pnpm payload migrate`）はデプロイ側に委ねる（ローカルの `.env` は本番 Neon を
-指すため、手元から本番へは適用しない）。
+適用は本番デプロイのビルドで自動で行う（`vercel.json` の buildCommand が
+`pnpm run migrate:deploy && pnpm run build`。中身は `scripts/migrate-on-deploy.ts`）。
+
+- Vercel の Production のビルドだけで動く。Preview・ローカルのビルドでは何もしない
+- dev mode でスキーマを直接書き換えた記録（`payload_migrations` の batch -1）があれば、適用せずにビルドを止める
+- 適用は1件ずつトランザクション。失敗したり未適用が残ったりしたらビルドを止める（そのデプロイは公開されず、今の本番が動き続ける）
+- 新しいコードの公開より先に適用されるので、マイグレーションは今の本番のコードとも両立する形（表や空でよい列の追加など）にする
+- Preview のビルドでは適用しないので、既存の表に列を足す PR の Preview は、Preview が本番と同じ DB を使っている場合、
+  マージまでその表を読むところが失敗する（例: `media.pending` を足した PR では `/api/media` や写真）。本番はビルドの最初に適用するので起きない
+- 前提: Vercel の「Automatically expose System Environment Variables」がオン（`VERCEL_ENV` で本番かを見分ける。無ければビルドを止める）
+- 本番ビルドが同時に2本走ると片方が失敗し、古いコミットの方が公開されることがある。そのときは新しい方を Redeploy する。
+  Instant Rollback は再ビルドしないので、前のコードが新しいスキーマの上で動く（追加だけのマイグレーションなら問題ない）
+
+ローカルの `.env` は本番 Neon を指すため、手元から本番へは手で適用しない。
+
+## さっと投稿（/post）
+
+スマホから本文・写真（3枚まで）・種類だけでタイムラインに投稿する自分専用の画面。
+ホーム画面に追加すると `/post` から開く（`public/post.webmanifest`）。
+
+- **ログイン**: Face ID / Touch ID のパスキー（WebAuthn・`@simplewebauthn`）。本人確認（UV）必須。
+  新しい端末の登録は、そのつど管理画面のメールアドレスとパスワードを確かめてから（5回失敗で10分ロック）
+- **ログイン状態**: 端末ごとに `post-sessions` に記録し、管理画面で削除すると即無効。
+  使わなければ 30 日・最長 90 日で切れる。Cookie は `__Host-`・HttpOnly・Secure・SameSite=Strict、
+  中身は 256bit 乱数（DB には SHA-256 のみ）。パスキーの確認値は HMAC 署名つきの 5 分 Cookie で持ち、
+  使い終えたら `quickpost-nonces` に記録して2回目を拒否（ログアウト後も残る）。登録・ログインの書き込みは1つのトランザクション
+- **送信**: すべての書き込みで Origin（と `Sec-Fetch-Site`）を確認。1台あたり 投稿 30件/時・写真 60枚/時
+  （1回の UPDATE で数えるので、同時に送られても上限を超えない）
+- **写真**: スマホで縮小してから送り、サーバーで作り直す（形式を中身で判定・向きを反映・位置情報など撮影データを削除・ランダムなファイル名）。
+  投稿に使うまでは「投稿待ち」（`media.pending`）の印を付け、ログインしていない人には `/api/media` や投稿の中の画像として出さない
+  （印は投稿の保存と同じトランザクションで外す）
+- **二重投稿**: 下書きごとの UUID で受付票（`quickpost-nonces`・一意）を取り、再送・二度押しでも1件
+- **画面**: `noindex`・`no-store`・nonce つき CSP（`src/middleware.ts`）・埋め込み禁止
+
+API: `GET /api/quickpost/session` / `POST /api/quickpost/{login,register}/{options,verify}` /
+`POST /api/quickpost/photo` / `POST /api/quickpost/posts` / `POST /api/quickpost/logout`
 
 ## 実装上の工夫
 
@@ -135,6 +177,8 @@ pnpm payload migrate:create <name>   # 生成してコミットするだけ
 - **プライバシー**: 訪問者の位置情報系の外部リクエストなし（天気は自サイトのプロキシ API・東京固定）
 - **画像**: next/image + AVIF/WebP、CloudFront 変換（`toCFUrl`）。外部 OGP 画像は
   `unoptimized` で直接参照し、画像オプティマイザを任意ホストへ開放しない
+- **リンクのプレビュー**: サーバーが取りに行く URL は `src/lib/netguard.ts` で検査し、
+  内部ネットワーク（localhost・プライベート IP・クラウドのメタデータ）へは接続しない（DNS の差し替え・リダイレクトも検査）
 
 ## 今後の改善予定
 

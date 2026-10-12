@@ -1,0 +1,19 @@
+{
+  "id": "/post",
+  "name": "MAKOTO 投稿",
+  "short_name": "投稿",
+  "start_url": "/post",
+  "scope": "/post",
+  "display": "standalone",
+  "background_color": "#e6f1de",
+  "theme_color": "#e6f1de",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "/myicon.png",
+      "sizes": "460x460",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

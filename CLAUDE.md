@@ -12,7 +12,7 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 2. **差分で実装**: 既存パターン（コンポーネント構成・Payloadコレクション・`src/app/(frontend)/soda.css`）に沿って、ゼロから作り直さず改修する。
 3. **Fable 5 レビュー**: 非自明な実装は Fable 5 をサブエージェント（Agentツール `model: fable`）に指名して設計/コードレビュー → 指摘修正 → 再確認のループを回す（専用 `advisor()` が使えない環境のため、Fableサブエージェントで代替）。
 4. **自走で PR → マージ**: 完了したらブランチを切って PR を作成（**main への直コミット禁止**）。CI（Vercelビルド）と PRレビュー（CodeRabbit）の完了を待ち、**指摘があれば修正して再確認、無ければ `gh pr merge --squash` でマージ**する。
-5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用（`pnpm payload migrate`）はデプロイ側に委ねる（`.env` は本番 Neon を指すためローカル/CIから本番へは適用しない）。
+5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用は本番デプロイのビルドで自動（`vercel.json` の buildCommand → `pnpm run migrate:deploy` = `scripts/migrate-on-deploy.ts`。Vercel の Production だけで動き、`VERCEL_ENV` が無い・dev mode の push の記録がある・適用に失敗した、のどれかならビルドを止めて公開しない）。ローカル/CI から本番へは手で適用しない（`.env` は本番 Neon を指すため）。新しいコードの公開より先に適用されるので、マイグレーションは今の本番のコードとも両立する形（表や空でよい列の追加など）にする。
 6. **検証**: `pnpm generate:types` / `pnpm build` / `pnpm lint` / `pnpm typecheck` / `pnpm test` をローカルで通してから PR にする。
 
 ## サーバー環境でのプレビュー（tailnet 経由で実機確認）
@@ -133,6 +133,14 @@ src/
 - `DELETE /api/timeline` - タイムライン投稿一括削除
 - `POST /api/timeline/[id]/like` - タイムライン投稿にいいね
 
+### さっと投稿（/post）
+- `GET /api/quickpost/session` - この端末のログイン状態・ほかの端末・パスキー
+- `POST /api/quickpost/login/options` / `login/verify` - パスキーでログイン
+- `POST /api/quickpost/register/options` / `register/verify` - 新しい端末の登録（管理画面のパスワード確認つき）
+- `POST /api/quickpost/photo` - 写真1枚（サーバーで作り直し・位置情報を削除）
+- `POST /api/quickpost/posts` - タイムラインに投稿（二重投稿防止キーつき）
+- `POST /api/quickpost/logout` - この端末 / すべての端末からログアウト
+
 ### その他のAPI
 - `/api/products` - 製品管理
 - `/api/letter` - コンタクトフォーム処理
@@ -147,6 +155,9 @@ src/
 5. **Letters** - コンタクトフォーム送信
 6. **Media** - 画像ファイルアップロード
 7. **Users** - 認証
+8. **Passkeys** - さっと投稿のパスキー（公開鍵）
+9. **PostSessions** - さっと投稿にログイン中の端末（Cookie のハッシュのみ。削除で即ログアウト）
+10. **QuickpostNonces** - さっと投稿の1回きりの記録（使用済みの確認値・投稿の受付票。管理画面には出さない）
 
 ## 環境変数
 
@@ -225,6 +236,8 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
+- DB マイグレーションを本番デプロイのビルドで自動で適用するようにした（`scripts/migrate-on-deploy.ts`。Production だけ・危ないときはビルドを止める）
+- スマホから投稿する「さっと投稿」（/post）を追加（パスキーでログイン・端末ごとのログイン管理・写真の位置情報削除・nonce つき CSP）。リンクのプレビュー取得に内部ネットワークへの接続防止（`src/lib/netguard.ts`）を追加
 - ホーム最上部のお知らせティッカー（流れるバー）を復活（最新のおしらせ3件＋最新の投稿4件・一時停止ボタンつき）
 - Soda Press から雑誌サイト（POPEYE）と同じに見える組み方を外した（ティッカー・ロゴの重なり・写真に重ねる段々のラベル・3段組をやめる）
 - デザインを Mist Terminal から Soda Press に全面刷新（タイムライン主役の表紙・SP ドック・写真ビューアの前後移動）
@@ -244,5 +257,5 @@ S3_REGION=                # Cloudflareリージョン
 
 デプロイメント問題の場合、以下を確認：
 1. 環境変数が設定されている
-2. データベースマイグレーションが適用されている
+2. データベースマイグレーションが適用されている（本番ビルドのログの `migrate-on-deploy:` の行。止まっていたら理由が出る）
 3. ビルドコマンドがローカルで成功している

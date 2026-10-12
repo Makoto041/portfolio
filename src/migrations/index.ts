@@ -4,6 +4,9 @@ import * as migration_20250706_074347_timeline_richtext_update from './20250706_
 import * as migration_20260703_155139_add_timeline_lifelog_fields from './20260703_155139_add_timeline_lifelog_fields';
 import * as migration_20260705_021042_notices_and_hero from './20260705_021042_notices_and_hero';
 import * as migration_20260705_031719_spotify_playlist from './20260705_031719_spotify_playlist';
+import * as migration_20261011_091225_quickpost from './20261011_091225_quickpost';
+import * as migration_20261011_234215_quickpost_receipt_digest from './20261011_234215_quickpost_receipt_digest';
+import * as migration_20261012_000445_quickpost_pending_media from './20261012_000445_quickpost_pending_media';
 
 export const migrations = [
   {
@@ -34,6 +37,21 @@ export const migrations = [
   {
     up: migration_20260705_031719_spotify_playlist.up,
     down: migration_20260705_031719_spotify_playlist.down,
-    name: '20260705_031719_spotify_playlist'
+    name: '20260705_031719_spotify_playlist',
+  },
+  {
+    up: migration_20261011_091225_quickpost.up,
+    down: migration_20261011_091225_quickpost.down,
+    name: '20261011_091225_quickpost',
+  },
+  {
+    up: migration_20261011_234215_quickpost_receipt_digest.up,
+    down: migration_20261011_234215_quickpost_receipt_digest.down,
+    name: '20261011_234215_quickpost_receipt_digest',
+  },
+  {
+    up: migration_20261012_000445_quickpost_pending_media.up,
+    down: migration_20261012_000445_quickpost_pending_media.down,
+    name: '20261012_000445_quickpost_pending_media'
   },
 ];

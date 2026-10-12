@@ -1,12 +1,13 @@
 // src/collections/Media.ts
 import type { CollectionConfig } from 'payload'
-import { anyone, adminOnly } from '@/lib/access'
+import { adminOnly, publishedMediaOnly } from '@/lib/access'
 import { makeRevalidate } from '@/lib/revalidate'
 
 export const Media: CollectionConfig = {
   slug: 'media',
   access: {
-    read: anyone,
+    // さっと投稿で上げて、まだ投稿に使っていない写真（pending）は、ログインしていない人には見せない
+    read: publishedMediaOnly,
     create: adminOnly, // アップロードは管理者のみ
     update: adminOnly,
     delete: adminOnly,
@@ -28,6 +29,16 @@ export const Media: CollectionConfig = {
       admin: {
         description:
           'チェックを入れるとギャラリーには表示されず、タイムラインのみに表示される画像になります',
+      },
+    },
+    {
+      name: 'pending',
+      type: 'checkbox',
+      label: '投稿待ち（さっと投稿）',
+      defaultValue: false,
+      admin: {
+        description:
+          'さっと投稿で上げて、まだ投稿に使っていない写真。投稿に使われるまで、公開の一覧や API には出ません（チェックを外すと公開されます）',
       },
     },
   ],

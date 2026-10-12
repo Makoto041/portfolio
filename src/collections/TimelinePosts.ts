@@ -3,10 +3,10 @@ import type { CollectionBeforeChangeHook, CollectionAfterChangeHook } from 'payl
 import { fetchUrlMetadata } from '@/lib/urlMetadata'
 import { extractUrlsFromRichText } from '@/lib/urlExtractor'
 import { anyone, adminOnly } from '@/lib/access'
-import { makeRevalidate } from '@/lib/revalidate'
+import { makeRevalidate, TIMELINE_PAGES } from '@/lib/revalidate'
 
 // タイムライン更新で Home（ダイジェスト/entries/streak）と専用タブを再検証
-const revalidateTimeline = makeRevalidate(['/', '/timeline'])
+const revalidateTimeline = makeRevalidate(TIMELINE_PAGES)
 
 interface TimelineData {
   text?: unknown
@@ -85,17 +85,23 @@ const afterChangeHook: CollectionAfterChangeHook = async ({ req, operation, doc 
     if ((req as any).timelineImageIds && (req as any).timelineImageIds.length > 0) {
       const payload = req.payload
 
-      // 各画像に対してisTimelineOnlyフラグをtrueに設定
+      // 各画像に対してisTimelineOnlyフラグをtrueに設定（さっと投稿の「投稿待ち」も外して公開する）
+      // req を渡して投稿の保存と同じトランザクションで更新する。渡さないと別トランザクションになり、
+      // 投稿側が保持する画像行のロック（images の外部キー）を待ち続けて保存が止まる
       for (const imageId of (req as any).timelineImageIds) {
+        const transactionBefore = req.transactionID
         try {
           await payload.update({
             collection: 'media',
             id: imageId,
-            data: { isTimelineOnly: true },
+            data: { isTimelineOnly: true, pending: false },
+            req,
           })
           console.log(`画像の更新成功: ${imageId}`)
         } catch (err) {
           console.error(`画像の更新に失敗: ${imageId}`, err)
+          // 失敗した更新はトランザクションごと取り消す（投稿も保存されない）。そのときは成功として返さない
+          if (transactionBefore && !req.transactionID) throw err
         }
       }
     }

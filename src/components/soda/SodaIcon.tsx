@@ -25,6 +25,10 @@ export type SodaIconName =
   | 'pencil'
   | 'pause'
   | 'play'
+  | 'face'
+  | 'lock'
+  | 'key'
+  | 'check'
 
 const PATHS: Record<SodaIconName, React.ReactNode> = {
   home: (
@@ -120,6 +124,26 @@ const PATHS: Record<SodaIconName, React.ReactNode> = {
   ),
   pause: <path d="M9 6v12M15 6v12" strokeWidth={2} />,
   play: <path d="M8.5 6.5v11l9-5.5z" />,
+  // Face ID（さっと投稿のログイン）
+  face: (
+    <>
+      <path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2" />
+      <path d="M9 9v1.5M15 9v1.5M12 9v4h-1M9.5 16c1.5 1 3.5 1 5 0" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="10.5" width="14" height="10" rx="2" />
+      <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    </>
+  ),
+  key: (
+    <>
+      <circle cx="8" cy="12" r="4" />
+      <path d="M12 12h9M18 12v3M21 12v2" />
+    </>
+  ),
+  check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
 }
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'name'> & { name: SodaIconName }

@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import SodaIcon from '@/components/soda/SodaIcon'
+import SodaPostLink from '@/components/soda/SodaPostLink'
 import { useSodaNav } from '@/components/soda/SodaNav'
 import { NAV, isActive } from '@/components/soda/nav'
 
@@ -61,6 +62,7 @@ export default function SodaHeader({ home = false }: { home?: boolean }) {
         })}
       </nav>
       <div className="s-hdr-right">
+        <SodaPostLink />
         <Link href="/letter" className="s-pill s-letterpill">
           <SodaIcon name="mail" />
           お便り

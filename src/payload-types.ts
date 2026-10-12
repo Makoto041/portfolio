@@ -76,6 +76,9 @@ export interface Config {
     events: Event;
     products: Product;
     notices: Notice;
+    passkeys: Passkey;
+    'post-sessions': PostSession;
+    'quickpost-nonces': QuickpostNonce;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -91,6 +94,9 @@ export interface Config {
     events: EventsSelect<false> | EventsSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     notices: NoticesSelect<false> | NoticesSelect<true>;
+    passkeys: PasskeysSelect<false> | PasskeysSelect<true>;
+    'post-sessions': PostSessionsSelect<false> | PostSessionsSelect<true>;
+    'quickpost-nonces': QuickpostNoncesSelect<false> | QuickpostNoncesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -160,6 +166,10 @@ export interface Media {
    * チェックを入れるとギャラリーには表示されず、タイムラインのみに表示される画像になります
    */
   isTimelineOnly?: boolean | null;
+  /**
+   * さっと投稿で上げて、まだ投稿に使っていない写真。投稿に使われるまで、公開の一覧や API には出ません（チェックを外すと公開されます）
+   */
+  pending?: boolean | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -344,6 +354,60 @@ export interface Notice {
   createdAt: string;
 }
 /**
+ * 投稿ページ（/post）に Face ID / Touch ID でログインするための鍵です。覚えのないものや、なくした端末のものは削除してください（その鍵でログイン中の端末もすぐログアウトします）。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "passkeys".
+ */
+export interface Passkey {
+  id: number;
+  name: string;
+  user: number | User;
+  credentialId: string;
+  publicKey: string;
+  counter?: number | null;
+  transports?: string | null;
+  backedUp?: boolean | null;
+  lastUsedAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * 投稿ページ（/post）にログイン中の端末です。削除すると、その端末はすぐに投稿できなくなります。すべて選んで削除すれば、全端末からログアウトします。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "post-sessions".
+ */
+export interface PostSession {
+  id: number;
+  name?: string | null;
+  user: number | User;
+  passkey?: (number | null) | Passkey;
+  tokenHash: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  lastPostAt?: string | null;
+  postCount?: number | null;
+  rlWindowStart?: string | null;
+  rlPosts?: number | null;
+  rlPhotos?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quickpost-nonces".
+ */
+export interface QuickpostNonce {
+  id: number;
+  key: string;
+  postId?: number | null;
+  digest?: string | null;
+  expiresAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
@@ -385,6 +449,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'notices';
         value: number | Notice;
+      } | null)
+    | ({
+        relationTo: 'passkeys';
+        value: number | Passkey;
+      } | null)
+    | ({
+        relationTo: 'post-sessions';
+        value: number | PostSession;
+      } | null)
+    | ({
+        relationTo: 'quickpost-nonces';
+        value: number | QuickpostNonce;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -451,6 +527,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   isTimelineOnly?: T;
+  pending?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -582,6 +659,53 @@ export interface NoticesSelect<T extends boolean = true> {
   date?: T;
   body?: T;
   isPublic?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "passkeys_select".
+ */
+export interface PasskeysSelect<T extends boolean = true> {
+  name?: T;
+  user?: T;
+  credentialId?: T;
+  publicKey?: T;
+  counter?: T;
+  transports?: T;
+  backedUp?: T;
+  lastUsedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "post-sessions_select".
+ */
+export interface PostSessionsSelect<T extends boolean = true> {
+  name?: T;
+  user?: T;
+  passkey?: T;
+  tokenHash?: T;
+  lastUsedAt?: T;
+  expiresAt?: T;
+  lastPostAt?: T;
+  postCount?: T;
+  rlWindowStart?: T;
+  rlPosts?: T;
+  rlPhotos?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quickpost-nonces_select".
+ */
+export interface QuickpostNoncesSelect<T extends boolean = true> {
+  key?: T;
+  postId?: T;
+  digest?: T;
+  expiresAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
