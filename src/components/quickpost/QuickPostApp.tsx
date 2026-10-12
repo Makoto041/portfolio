@@ -15,13 +15,10 @@ import {
 } from '@simplewebauthn/browser'
 import SodaIcon from '@/components/soda/SodaIcon'
 import {
-  canSaveBeforeSend,
   clearDraft,
   freshDraft,
-  loadDraft,
-  rememberTabDraft,
+  openTab,
   saveDraft,
-  storedDraft,
   type Draft,
   type DraftStores,
 } from '@/lib/quickpost/drafts'
@@ -201,8 +198,12 @@ export default function QuickPostApp() {
   const titleRef = useRef<HTMLInputElement>(null)
   const photosRef = useRef<Photo[]>([])
   photosRef.current = photos
-  /** このタブが最後に保存した（または読み込んだ）下書き。ほかのタブがあとから直したかを見分ける */
-  const lastSavedRef = useRef<Draft | null>(null)
+  /** このタブの ID（下書きはタブごとに保存する。src/lib/quickpost/drafts.ts） */
+  const tabRef = useRef('')
+  /** 予約中の下書きの自動保存 */
+  const autosaveRef = useRef<number | null>(null)
+  /** 開いたときの下書き（書き換えるまでは保存しない。開いただけのタブが、送られた下書きを書き戻さないように） */
+  const openedDraftRef = useRef<Draft | null>(null)
 
   const limits: Limits = info?.limits ?? { ...LIMITS, photoBytes: 4 * 1024 * 1024 }
 
@@ -239,21 +240,26 @@ export default function QuickPostApp() {
 
   useEffect(() => {
     setWebauthn(browserSupportsWebAuthn())
-    const loaded = loadDraft(draftStores())
-    lastSavedRef.current = loaded
-    setDraft(loaded ?? freshDraft())
+    const opened = openTab(draftStores())
+    const first = opened.draft ?? freshDraft()
+    tabRef.current = opened.tab
+    openedDraftRef.current = first
+    setDraft(first)
     void refresh()
   }, [refresh])
 
-  // 下書きを自動保存（少し間を置いてまとめて書く）。このタブの下書きのキーはすぐ覚える
+  // 下書きを自動保存（少し間を置いてまとめて書く。このタブの分だけ。開いたままの下書きは書かない）
   useEffect(() => {
-    if (!draft) return
-    rememberTabDraft(draftStores(), draft.key)
+    if (!draft || draft === openedDraftRef.current) return
     const t = window.setTimeout(() => {
-      saveDraft(draftStores(), draft)
-      lastSavedRef.current = draft
+      autosaveRef.current = null
+      saveDraft(draftStores(), tabRef.current, draft)
     }, 400)
-    return () => window.clearTimeout(t)
+    autosaveRef.current = t
+    return () => {
+      window.clearTimeout(t)
+      if (autosaveRef.current === t) autosaveRef.current = null
+    }
   }, [draft])
 
   const go = (v: View) => {
@@ -359,6 +365,14 @@ export default function QuickPostApp() {
       return
     }
     setError('')
+    // 送る前に、このタブの下書きをすぐ保存する（予約中の自動保存は止める。送っている間・片付けたあとに古い内容を書き戻さない）。
+    // 応答が届かないまま読み込み直しても、同じキーで送り直せるように
+    if (autosaveRef.current !== null) {
+      window.clearTimeout(autosaveRef.current)
+      autosaveRef.current = null
+    }
+    const stores = draftStores()
+    saveDraft(stores, tabRef.current, draft)
     const queue = [...photos]
     try {
       const ids: number[] = []
@@ -404,13 +418,6 @@ export default function QuickPostApp() {
         JSON.stringify([text, title ?? '', draft.postType, prints]),
       )
       const body = { text, title, postType: draft.postType, images: ids, key: draft.key, digest }
-      // 送る前に下書きをすぐ保存する（自動保存を待たない）。応答が届かないまま読み込み直しても、同じキーで送り直せるように。
-      // ただし、同じ下書きを開いたほかのタブがあとから直していたら、このタブの古い内容で上書きしない
-      const stores = draftStores()
-      if (canSaveBeforeSend(storedDraft(stores, draft.key), lastSavedRef.current)) {
-        saveDraft(stores, draft)
-        lastSavedRef.current = draft
-      }
       // 同じ下書きをまだ送っている途中（409）なら、少し待って送り直す（2回目以降は最初の投稿が返る）
       type Created = { id: number; duplicate?: boolean; digest?: string | null }
       let created: Created | null = null
@@ -427,10 +434,7 @@ export default function QuickPostApp() {
         // このキーではすでに別の内容が投稿されていた（応答だけが届かずに直して送り直した、または別のタブが先に送った）。
         // 今の内容は消さずに残し、別の投稿として送れるようキーを新しくする
         const next = { ...draft, key: crypto.randomUUID() }
-        clearDraft(stores, draft)
-        rememberTabDraft(stores, next.key)
-        saveDraft(stores, next)
-        lastSavedRef.current = next
+        saveDraft(stores, tabRef.current, next)
         setDraft(next)
         setError(
           '前に送った内容はすでに投稿されていました。直した内容も投稿するなら、もう一度「投稿する」を押してください。',
@@ -440,8 +444,7 @@ export default function QuickPostApp() {
 
       queue.forEach((p) => URL.revokeObjectURL(p.url))
       setPhotos([])
-      clearDraft(stores, draft)
-      lastSavedRef.current = null
+      clearDraft(stores, tabRef.current, draft)
       setDraft(freshDraft())
       setDoneId(created.id)
       go('done')
