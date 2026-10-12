@@ -11,9 +11,9 @@ const size = { width: 1200, height: 630 }
 const PALETTE = PALETTES[SITE_PALETTE === 'monthly' ? 'creamsoda' : SITE_PALETTE]
 const BG = PALETTE.bg
 const LOGO = PALETTE.logo
-const INK = '#141414'
+const INK = PALETTE.ink
 /** 補助の文字色（soda.css の --s-sub） */
-const SUB = '#42444b'
+const SUB = PALETTE.sub
 const WORD = 'MAKOTO'
 
 /** Google Fonts から必要な文字だけの TTF を取得（Satori は woff2 非対応のため TTF を要求） */

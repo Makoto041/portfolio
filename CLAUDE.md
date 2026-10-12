@@ -44,7 +44,7 @@ pnpm dev -H "$TS_IP"               # 既定 3000 番
 上記「開発フロー」に加え、環境を問わず守る規約。
 
 - **ライブ配信物に生成ツールの痕跡を残さない**: 公開サイトが配信する HTML/CSS/JS（第三者が DevTools/View Source で見える成果物）に、AI/ツール由来の文字列・メタ・可視コメント・attribution を残さない。本番ビルドは minify でコメント除去されるため通常は自然に満たされる。**GitHub のソース/コミット履歴は対象外**（判断基準は「通常のサイトから見えるか」だけ）。
-- **設計トークン体系（Soda Press）に沿う**: `src/app/(frontend)/soda.css` の `.soda` スコープに集約し、クラスは `s-` 接頭辞（Tailwind ユーティリティと衝突させない）。地色は「今月の色」パレット `--s-bg / --s-logo / --s-card`（`:root[data-palette]`。キーと固定/月替わりの切替は `src/lib/palette.ts`）。文字・線は `--s-ink / --s-sub / --s-faint`、面は `--s-paper`、赤は `--s-hot`（いいね・LIVE のみ）。タイポは `--s-fs-cap/meta/ui/body/post/h3`（display は各要素の `clamp`）、角丸は `--s-r-xl/l/m/s`、余白は 4px 系、ガターは `--s-gut`。書体はロゴ/英字見出し Bagel Fat One・欧文 DM Sans・和文 Zen Kaku Gothic New（`src/lib/sodaFonts.ts`）。本文テキストはどのパレットの地・カード・紙面上でも AA(4.5:1) 以上を維持。新規実装もゼロから色/寸法を足さずトークン経由で。大きな和文見出しは `<Phrase>`（語の切れ目で改行）を使う。
+- **設計トークン体系（Soda Press）に沿う**: `src/app/(frontend)/soda.css` の `.soda` スコープに集約し、クラスは `s-` 接頭辞（Tailwind ユーティリティと衝突させない）。地色は「今月の色」パレット `--s-bg / --s-logo / --s-card`（`:root[data-palette]`。キーと固定/月替わりの切替は `src/lib/palette.ts`）。文字・線は `--s-ink / --s-sub / --s-faint`（既定は黒系。パレットが `--s-pal-ink/sub/faint` を持てばその色で、いまの群青は深い群青）、面は `--s-paper`、赤は `--s-hot`（いいね・LIVE のみ。ベタ面の上は `--s-hot-inv`）。タイポは `--s-fs-cap/meta/ui/body/post/h3`（display は各要素の `clamp`）、角丸は `--s-r-xl/l/m/s`、余白は 4px 系、ガターは `--s-gut`。書体はロゴ/英字見出し Bagel Fat One・欧文 DM Sans・和文 Zen Kaku Gothic New（`src/lib/sodaFonts.ts`）。本文テキストはどのパレットの地・カード・紙面上でも AA(4.5:1) 以上を維持。新規実装もゼロから色/寸法を足さずトークン経由で。大きな和文見出しは `<Phrase>`（語の切れ目で改行）を使う。
 - **Fable 5 レビューを必須ゲートに**: 非自明な実装は Agent ツール（`model: fable`）でサブエージェント指名し設計/コードレビュー → Blocking/Should-fix を修正・再確認してから PR。
 
 ## 技術スタック
@@ -236,6 +236,7 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
+- 配色をクリームソーダ（緑）から群青に変更（文字・線・塗りのボタン・フッターまで深い群青、地・紙面・カードは同じ群青の濃淡。赤はいいね・LIVE だけ）
 - DB マイグレーションを本番デプロイのビルドで自動で適用するようにした（`scripts/migrate-on-deploy.ts`。Production だけ・危ないときはビルドを止める。dev mode の記録がある DB には、足すだけで二度目も通るマイグレーションだけを当てる）
 - スマホから投稿する「さっと投稿」（/post）を追加（パスキーでログイン・端末ごとのログイン管理・写真の位置情報削除・nonce つき CSP）。リンクのプレビュー取得に内部ネットワークへの接続防止（`src/lib/netguard.ts`）を追加
 - ホーム最上部のお知らせティッカー（流れるバー）を復活（最新のおしらせ3件＋最新の投稿4件・一時停止ボタンつき）
