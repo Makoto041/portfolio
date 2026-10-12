@@ -10,7 +10,7 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 
 1. **設計/UX を変える変更はまずモック**: Artifact で HTML モックを作り、方向性の合意を得てから実装に入る（既存の「Soda Press」トークン/意匠を踏襲）。**サーバー環境で作業していて Artifact が使えない/実機で見せたい場合は、下記「サーバー環境でのプレビュー」の tailnet 配信で URL を渡し、実機（iPhone / Mac など SP・PC 両方）で確認してもらう。**
 2. **差分で実装**: 既存パターン（コンポーネント構成・Payloadコレクション・`src/app/(frontend)/soda.css`）に沿って、ゼロから作り直さず改修する。
-3. **Fable 5 レビュー**: 非自明な実装は Fable 5 をサブエージェント（Agentツール `model: fable`）に指名して設計/コードレビュー → 指摘修正 → 再確認のループを回す（専用 `advisor()` が使えない環境のため、Fableサブエージェントで代替）。
+3. **Opus エージェントのレビュー**: 非自明な実装は Opus をサブエージェント（Agentツール `model: opus`）に指名して設計/コードレビュー → 指摘修正 → 再確認のループを回す（専用 `advisor()` が使えない環境のため、Opus サブエージェントで代替。Fable のレビューは使わない）。
 4. **自走で PR → マージ**: 完了したらブランチを切って PR を作成（**main への直コミット禁止**）。CI（Vercelビルド）と PRレビュー（CodeRabbit）の完了を待ち、**指摘があれば修正して再確認、無ければ `gh pr merge --squash` でマージ**する。
 5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用は本番デプロイのビルドで自動（`vercel.json` の buildCommand → `pnpm run migrate:deploy` = `scripts/migrate-on-deploy.ts`。Vercel の Production だけで動き、`VERCEL_ENV` が無い・適用に失敗した・dev mode の push の記録（batch -1）がある DB に「足すだけで二度目も通る」形でないマイグレーションが未適用、のどれかならビルドを止めて公開しない）。ローカル/CI から本番へは手で適用しない（本番の接続文字列は Vercel の Production にだけ置き、`.env` には開発用の DB（Neon の `dev` ブランチ）を書く。手順は README の「開発用の DB」。切り替えるまでは `.env` は本番を指しているものとして扱う）。手元で `pnpm payload migrate` を動かすのは開発用の DB だけ。「dev mode で動かしたことがある」という確認が出たら、本番か push を使った DB なので N で止める（開発用の DB は作ったときにこの記録を消すので確認は出ない）。確認に答えられないシェルでは何も当てずに成功で終わるので、当たったかは `pnpm payload migrate:status` で確かめる。新しいコードの公開より先に適用されるので、マイグレーションは今の本番のコードとも両立する形（表や空でよい列の追加など）にする。本番の DB には以前 `pnpm dev` を向けたときの dev mode の記録が残っているので、マイグレーションは生成したあと `ADD COLUMN` を `ADD COLUMN IF NOT EXISTS` に直すなど、足すだけで二度目も通る形にする（`src/lib/deployMigrate.ts` の `isAdditiveMigration` が確かめる）。`pnpm dev` は既定で DB の表を変えない（`PAYLOAD_DEV_PUSH=true` のときだけ Payload の push。開発用の DB でだけ使う）。
 6. **検証**: `pnpm generate:types` / `pnpm build` / `pnpm lint` / `pnpm typecheck` / `pnpm test` をローカルで通してから PR にする。
@@ -45,7 +45,7 @@ pnpm dev -H "$TS_IP"               # 既定 3000 番
 
 - **ライブ配信物に生成ツールの痕跡を残さない**: 公開サイトが配信する HTML/CSS/JS（第三者が DevTools/View Source で見える成果物）に、AI/ツール由来の文字列・メタ・可視コメント・attribution を残さない。本番ビルドは minify でコメント除去されるため通常は自然に満たされる。**GitHub のソース/コミット履歴は対象外**（判断基準は「通常のサイトから見えるか」だけ）。
 - **設計トークン体系（Soda Press）に沿う**: `src/app/(frontend)/soda.css` の `.soda` スコープに集約し、クラスは `s-` 接頭辞（Tailwind ユーティリティと衝突させない）。地色は「今月の色」パレット `--s-bg / --s-logo / --s-card`（`:root[data-palette]`。キーと固定/月替わりの切替は `src/lib/palette.ts`）。文字・線は `--s-ink / --s-sub / --s-faint`（既定は黒系。パレットが `--s-pal-ink/sub/faint` を持てばその色で、いまの群青は深い群青）、面は `--s-paper`、赤は `--s-hot`（いいね・LIVE のみ。ベタ面の上は `--s-hot-inv`）。タイポは `--s-fs-cap/meta/ui/body/post/h3`（display は各要素の `clamp`）、角丸は `--s-r-xl/l/m/s`、余白は 4px 系、ガターは `--s-gut`。書体はロゴ/英字見出し Bagel Fat One・欧文 DM Sans・和文 Zen Kaku Gothic New（`src/lib/sodaFonts.ts`）。本文テキストはどのパレットの地・カード・紙面上でも AA(4.5:1) 以上を維持。新規実装もゼロから色/寸法を足さずトークン経由で。大きな和文見出しは `<Phrase>`（語の切れ目で改行）を使う。
-- **Fable 5 レビューを必須ゲートに**: 非自明な実装は Agent ツール（`model: fable`）でサブエージェント指名し設計/コードレビュー → Blocking/Should-fix を修正・再確認してから PR。
+- **Opus エージェントのレビューを必須ゲートに**: 非自明な実装は Agent ツール（`model: opus`）でサブエージェント指名し設計/コードレビュー → Blocking/Should-fix を修正・再確認してから PR（Fable のレビューは使わない）。
 
 ## 技術スタック
 
@@ -237,6 +237,7 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
+- 設計/コードレビューの担当を Fable 5 から Opus エージェントに変更（開発フローの手順3・コード規約）
 - 開発用の DB を本番と分けられるようにした（手順は README の「開発用の DB」。手元と Preview は Neon の `dev` ブランチ。`pnpm dev` は `PAYLOAD_DEV_PUSH=true` のときだけ DB の表を変える）。レビューの残りの指摘を修正（ログに確認値や投稿データを出さない・パスキーの名前変更で使用回数を戻さない・maskable アイコン など）
 - 配色をクリームソーダ（緑）から群青に変更（文字・線・塗りのボタン・フッターまで深い群青、地・紙面・カードは同じ群青の濃淡。赤はいいね・LIVE だけ）
 - DB マイグレーションを本番デプロイのビルドで自動で適用するようにした（`scripts/migrate-on-deploy.ts`。Production だけ・危ないときはビルドを止める。dev mode の記録がある DB には、足すだけで二度目も通るマイグレーションだけを当てる）
