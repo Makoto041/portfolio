@@ -58,9 +58,16 @@ type Photo = {
 
 type Sending = { step: 'photos'; done: number; total: number } | { step: 'post' }
 
-const DRAFT_KEY = 'mk_post_draft_v1'
+/** 下書きの保存先（端末の中だけ）。下書きのキーごとに1件ずつ持ち、ほかのタブの下書きを上書きしない */
+const DRAFTS_KEY = 'mk_post_drafts_v2'
+/** このタブで書いている下書きのキー（タブごと。読み込み直しても残る） */
+const TAB_DRAFT_KEY = 'mk_post_tab_draft'
+const MAX_DRAFTS = 10
+const DRAFT_TTL_MS = 30 * 24 * 60 * 60 * 1000
 /** 写真1枚の送信上限（サーバーの上限から少し余裕を取る） */
 const PHOTO_MARGIN = 64 * 1024
+
+type SavedDraft = Draft & { savedAt: number }
 
 const freshDraft = (): Draft => ({
   text: '',
@@ -70,33 +77,21 @@ const freshDraft = (): Draft => ({
   key: crypto.randomUUID(),
 })
 
-/** まだ何も書いていない下書きか（開いたばかり・投稿し終えた直後） */
+/** まだ何も書いていない下書きか（開いたばかり・投稿し終えた直後・全部消した） */
 const isBlankDraft = (d: Draft) => !d.text && !d.title && !d.showTitle && d.postType === 'diary'
 
-function parseDraft(raw: string | null): Draft | null {
-  if (!raw) return null
-  try {
-    const d = JSON.parse(raw) as Partial<Draft>
-    if (typeof d.text !== 'string' || typeof d.key !== 'string') return null
-    return {
-      text: d.text,
-      title: typeof d.title === 'string' ? d.title : '',
-      showTitle: Boolean(d.showTitle),
-      postType: (POST_TYPES as readonly string[]).includes(d.postType ?? '')
-        ? (d.postType as string)
-        : 'diary',
-      key: d.key,
-    }
-  } catch {
-    return null
-  }
-}
-
-function loadDraft(): Draft | null {
-  try {
-    return parseDraft(localStorage.getItem(DRAFT_KEY))
-  } catch {
-    return null
+function parseDraft(v: unknown): Draft | null {
+  if (!v || typeof v !== 'object') return null
+  const d = v as Partial<Draft>
+  if (typeof d.text !== 'string' || typeof d.key !== 'string') return null
+  return {
+    text: d.text,
+    title: typeof d.title === 'string' ? d.title : '',
+    showTitle: Boolean(d.showTitle),
+    postType: (POST_TYPES as readonly string[]).includes(d.postType ?? '')
+      ? (d.postType as string)
+      : 'diary',
+    key: d.key,
   }
 }
 
@@ -107,21 +102,79 @@ const sameDraft = (a: Draft, b: Draft) =>
   a.showTitle === b.showTitle &&
   a.postType === b.postType
 
-function saveDraft(d: Draft) {
+/** 保存してある下書き（新しい順。期限を過ぎたものは除く） */
+function readDrafts(): SavedDraft[] {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(d))
+    const list: unknown = JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? '[]')
+    if (!Array.isArray(list)) return []
+    const since = Date.now() - DRAFT_TTL_MS
+    return list
+      .flatMap((v): SavedDraft[] => {
+        const d = parseDraft(v)
+        const savedAt = Number((v as { savedAt?: unknown } | null)?.savedAt)
+        return d && savedAt > since ? [{ ...d, savedAt }] : []
+      })
+      .sort((a, b) => b.savedAt - a.savedAt)
+  } catch {
+    return []
+  }
+}
+
+function writeDrafts(list: SavedDraft[]) {
+  try {
+    if (list.length === 0) localStorage.removeItem(DRAFTS_KEY)
+    else localStorage.setItem(DRAFTS_KEY, JSON.stringify(list.slice(0, MAX_DRAFTS)))
   } catch {
     // 保存できない（プライベートモードなど）ときは下書きなしで続ける
   }
 }
 
-/** 投稿できた下書きを消す。送っている間にほかのタブが同じ枠に別の下書き（別のキー）を保存していたら、それは残す */
-function clearDraft(key: string) {
+/**
+ * このタブで開く下書き。読み込み直す前にこのタブで書いていた下書きがあればそれ（なければ新しい下書き）。
+ * 新しく開いたタブなら、いちばん新しく保存した下書き（ほかのタブで書きかけのものも含む）
+ */
+function loadDraft(): Draft | null {
+  const list = readDrafts()
+  let tabKey: string | null = null
   try {
-    if (loadDraft()?.key === key) localStorage.removeItem(DRAFT_KEY)
+    tabKey = sessionStorage.getItem(TAB_DRAFT_KEY)
+  } catch {
+    // 使えないときは新しく開いたタブとして扱う
+  }
+  const found = tabKey ? list.find((d) => d.key === tabKey) : list[0]
+  return found ? parseDraft(found) : null
+}
+
+/** このタブで書いている下書きのキーを覚える（読み込み直したときに、ほかのタブの下書きと取り違えない） */
+function rememberTabDraft(key: string) {
+  try {
+    sessionStorage.setItem(TAB_DRAFT_KEY, key)
   } catch {
     // 同上
   }
+}
+
+/**
+ * 下書きを保存する。同じキーの分だけを書き換え、ほかのキーの下書きには触らない。何も書いていなければ、そのキーの分を消す。
+ * 中身が変わっていなければ書かない（開いただけ・読み込み直しただけで「いちばん新しい下書き」にならないように）
+ */
+function saveDraft(d: Draft) {
+  const list = readDrafts()
+  const current = list.find((x) => x.key === d.key)
+  if (current && sameDraft(current, d)) return
+  const others = list.filter((x) => x.key !== d.key)
+  if (!isBlankDraft(d)) writeDrafts([{ ...d, savedAt: Date.now() }, ...others])
+  else if (others.length !== list.length) writeDrafts(others)
+}
+
+/**
+ * 送った下書きを消す。そのキーの分が送った内容そのもののときだけ消す
+ * （送っている間に、同じ下書きを開いたほかのタブが直していたら、それは残す。ほかのキーの下書きには触らない）
+ */
+function clearDraft(sent: Draft) {
+  const list = readDrafts()
+  const next = list.filter((x) => !sameDraft(x, sent))
+  if (next.length !== list.length) writeDrafts(next)
 }
 
 class ApiError extends Error {
@@ -285,30 +338,12 @@ export default function QuickPostApp() {
     void refresh()
   }, [refresh])
 
-  // 下書きを自動保存（少し間を置いてまとめて書く）。何も書いていない下書きで、ほかのタブの下書き（別のキー）は上書きしない
-  // （投稿し終えた直後の空の下書きが、ほかのタブで書きかけの下書きを消さないように。自分の下書きを全部消したときは保存する）
+  // 下書きを自動保存（少し間を置いてまとめて書く）。このタブの下書きのキーはすぐ覚える
   useEffect(() => {
     if (!draft) return
-    const t = window.setTimeout(() => {
-      if (isBlankDraft(draft) && loadDraft()?.key !== draft.key) return
-      saveDraft(draft)
-    }, 400)
+    rememberTabDraft(draft.key)
+    const t = window.setTimeout(() => saveDraft(draft), 400)
     return () => window.clearTimeout(t)
-  }, [draft])
-
-  // 下書きの保存先は1つなので、ほかのタブが送る直前に自分の下書きで上書きし、投稿できたら消す。
-  // 消されたら、このタブの書きかけを保存し直す（このタブを読み込み直しても残るように）。
-  // 消されたのがこのタブと同じ下書き（送られた内容そのもの）なら保存し直さない
-  useEffect(() => {
-    if (!draft || isBlankDraft(draft)) return
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== DRAFT_KEY || e.newValue !== null) return
-      const removed = parseDraft(e.oldValue)
-      if (removed && sameDraft(removed, draft)) return
-      saveDraft(draft)
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
   }, [draft])
 
   const go = (v: View) => {
@@ -477,8 +512,10 @@ export default function QuickPostApp() {
         // このキーではすでに別の内容が投稿されていた（応答だけが届かずに直して送り直した、または別のタブが先に送った）。
         // 今の内容は消さずに残し、別の投稿として送れるようキーを新しくする
         const next = { ...draft, key: crypto.randomUUID() }
-        setDraft(next)
+        clearDraft(draft)
+        rememberTabDraft(next.key)
         saveDraft(next)
+        setDraft(next)
         setError(
           '前に送った内容はすでに投稿されていました。直した内容も投稿するなら、もう一度「投稿する」を押してください。',
         )
@@ -487,7 +524,7 @@ export default function QuickPostApp() {
 
       queue.forEach((p) => URL.revokeObjectURL(p.url))
       setPhotos([])
-      clearDraft(draft.key)
+      clearDraft(draft)
       setDraft(freshDraft())
       setDoneId(created.id)
       go('done')

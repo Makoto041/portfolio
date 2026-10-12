@@ -167,7 +167,7 @@ export interface Media {
    */
   isTimelineOnly?: boolean | null;
   /**
-   * さっと投稿で上げて、まだ投稿に使っていない写真。投稿に使われるまで、公開の一覧や API には出ません
+   * さっと投稿で上げて、まだ投稿に使っていない写真。投稿に使われるまで、公開の一覧や API には出ません（チェックを外すと公開されます）
    */
   pending?: boolean | null;
   updatedAt: string;

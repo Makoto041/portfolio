@@ -446,14 +446,16 @@ export type ReceiptClaim =
 
 /**
  * 下書きのキーで受付票を取る。最初の1回だけ new、すでに投稿できていれば done（その投稿と、最初に送った内容の指紋を返す）、
- * 同じ下書きをいま送っている途中なら busy。指紋は最初に受付票を取った送信のものだけが残る（一意制約で1つに決まる）
+ * 同じ下書きをいま送っている途中なら busy。指紋は最初に受付票を取った送信のものだけが残る（一意制約で1つに決まる）。
+ * 受付票はユーザーごと（同じ端末で別のユーザーに切り替えて同じ下書きを送っても、前のユーザーの投稿を返さない）
  */
 export async function claimPostReceipt(
   payload: Payload,
+  userId: ID,
   key: string,
   digest: string,
 ): Promise<ReceiptClaim> {
-  const receiptKey = `post:${key}`
+  const receiptKey = `post:${userId}:${key}`
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const doc = await payload.create({

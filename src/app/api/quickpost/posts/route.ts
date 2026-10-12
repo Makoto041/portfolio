@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     const { payload, session, user } = active
 
     // 再送なら作った投稿を返し、同じ下書きをいま送っている途中なら待ってもらう（回数制限も使わない）
-    const claim = await claimPostReceipt(payload, input.key, input.digest)
+    const claim = await claimPostReceipt(payload, user.id, input.key, input.digest)
     if (claim.status === 'done') {
       // 投稿は前の送信で確定済み。確定の直後に止まっていた場合に備えて、ページの作り直しだけやり直す。
       // 最初に送った内容の指紋も返す（画面が、直して送り直したかを見分ける）

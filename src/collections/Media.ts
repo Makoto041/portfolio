@@ -37,9 +37,8 @@ export const Media: CollectionConfig = {
       label: '投稿待ち（さっと投稿）',
       defaultValue: false,
       admin: {
-        readOnly: true,
         description:
-          'さっと投稿で上げて、まだ投稿に使っていない写真。投稿に使われるまで、公開の一覧や API には出ません',
+          'さっと投稿で上げて、まだ投稿に使っていない写真。投稿に使われるまで、公開の一覧や API には出ません（チェックを外すと公開されます）',
       },
     },
   ],
