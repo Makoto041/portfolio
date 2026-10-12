@@ -2,10 +2,29 @@
 // さっと投稿（/post）に Face ID / Touch ID でログインするためのパスキー（公開鍵）。
 // 作成は /api/quickpost/register/verify だけ（管理画面のパスワード確認 + 端末での本人確認のあと）。
 // 管理画面では一覧・名前の変更・削除だけができる。削除すると、そのパスキーでログイン中の端末もログアウトする。
-import type { CollectionBeforeDeleteHook, CollectionConfig } from 'payload'
+import type {
+  CollectionBeforeChangeHook,
+  CollectionBeforeDeleteHook,
+  CollectionConfig,
+} from 'payload'
 import { adminOnly } from '@/lib/access'
 
 const never = () => false
+
+/**
+ * 名前の変更など、管理画面からの更新では使用回数（counter）・同期の有無・最後に使った日時を書かない。
+ * これらはログインのときに生の SQL で進める（src/lib/quickpost/server.ts の recordPasskeyUse）。
+ * Payload の更新は、書き換えられない項目も保存してある値で補って書き戻すので、名前の変更と同時に
+ * 別の端末がログインすると、進んだ counter を古い値に戻してしまう。ここで外せば、その列は書かれない
+ */
+export const keepLoginFields: CollectionBeforeChangeHook = ({ data, operation }) => {
+  if (operation === 'update') {
+    delete data.counter
+    delete data.backedUp
+    delete data.lastUsedAt
+  }
+  return data
+}
 
 /**
  * パスキーを消すときは、そのパスキーでログインした端末も締め出す。
@@ -36,7 +55,7 @@ export const Passkeys: CollectionConfig = {
     update: adminOnly,
     delete: adminOnly,
   },
-  hooks: { beforeDelete: [revokeSessions] },
+  hooks: { beforeChange: [keepLoginFields], beforeDelete: [revokeSessions] },
   fields: [
     { name: 'name', type: 'text', label: '名前', required: true },
     {

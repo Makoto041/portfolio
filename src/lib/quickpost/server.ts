@@ -12,13 +12,13 @@ import {
   createLocalReq,
   initTransaction,
   killTransaction,
-  ValidationError,
   type Payload,
   type PayloadRequest,
 } from 'payload'
 import { getPayloadClient } from '@/lib/payloadClient'
 import type { PostSession } from '@/payload-types'
 import { COOKIE_BASE, QP } from './config'
+import { isUniqueViolation } from './dbErrors'
 import {
   createIpLimiter,
   isSameOriginRequest,
@@ -268,15 +268,8 @@ export async function withTransaction<T>(
   }
 }
 
-/**
- * 一意制約（unique）で断られた書き込みか。Postgres の一意制約違反は、Payload が項目名つきの
- * ValidationError に変えて投げる。DB の障害などはこれに当たらないので、呼び出し側でそのまま 500 にする
- */
-export function isUniqueViolation(e: unknown, field: string): boolean {
-  if (!(e instanceof ValidationError)) return false
-  const errors = (e.data as { errors?: { path?: unknown }[] } | null)?.errors
-  return Array.isArray(errors) && errors.some((x) => x?.path === field)
-}
+// 一意制約で断られた書き込みかの判定は、単体テストのため ./dbErrors に置く
+export { isUniqueViolation }
 
 /**
  * トランザクションがまだ生きているか確かめる。Payload は失敗した操作のトランザクションを取り消して

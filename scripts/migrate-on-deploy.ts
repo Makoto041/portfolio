@@ -4,7 +4,7 @@
 // - Vercel の Production のビルドだけで適用し、Preview・development では何もしない。VERCEL_ENV が無ければ止める
 //   （src/lib/deployMigrate.ts。ローカルの pnpm build はこのスクリプトを通らない）
 // - 未適用が無ければ何もしない（dev mode の記録があっても止めない）
-// - dev mode でスキーマを直接書き換えた記録（batch -1。pnpm dev をその DB に向けて動かすと付く）があるときは、
+// - dev mode でスキーマを直接書き換えた記録（batch -1。PAYLOAD_DEV_PUSH=true の pnpm dev をその DB に向けて動かすと付く）があるときは、
 //   未適用が全部「足すだけで、二度目も通る」形（src/migrations/<名前>.ts の up を isAdditiveMigration で確かめる）の
 //   ときだけ当てる。1つでも違えば何も当てずに止める（データが消える確認を自動で通さない）
 // - 適用は Payload の migrate と同じ手順（1件ずつトランザクション。失敗したらその1件は戻る）。

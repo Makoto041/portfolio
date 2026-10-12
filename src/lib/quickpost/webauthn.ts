@@ -77,3 +77,15 @@ export function asRegistrationResponse(body: unknown): RegistrationResponseJSON 
     authenticatorAttachment: attachment(b.authenticatorAttachment),
   }
 }
+
+/**
+ * パスキーの検証に失敗した理由をログ用の短い文にする。@simplewebauthn/server の例外の文には、
+ * 確認値（challenge）やオリジンなどの値が "…" で入るので、その中身を伏せて形だけ残す
+ */
+export function describeWebAuthnError(e: unknown): string {
+  const message = e instanceof Error ? e.message : String(e)
+  return message
+    .replace(/"[^"]*"/g, '"…"')
+    .replace(/'[^']*'/g, "'…'")
+    .slice(0, 200)
+}

@@ -22,7 +22,11 @@ import {
   relId,
   setSessionCookies,
 } from '@/lib/quickpost/server'
-import { asAuthenticationResponse, parseTransports } from '@/lib/quickpost/webauthn'
+import {
+  asAuthenticationResponse,
+  describeWebAuthnError,
+  parseTransports,
+} from '@/lib/quickpost/webauthn'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,7 +76,7 @@ export async function POST(req: NextRequest) {
         requireUserVerification: true,
       })
     } catch (e) {
-      console.warn('quickpost: passkey verification failed:', e instanceof Error ? e.message : e)
+      console.warn('quickpost: passkey verification failed:', describeWebAuthnError(e))
       return done(401, { error: 'verification_failed' })
     }
     if (!verification.verified) return done(401, { error: 'verification_failed' })

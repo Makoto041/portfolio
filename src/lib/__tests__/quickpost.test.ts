@@ -29,6 +29,7 @@ import { photoPrint } from '@/components/quickpost/photo'
 import {
   asAuthenticationResponse,
   asRegistrationResponse,
+  describeWebAuthnError,
   parseTransports,
 } from '@/lib/quickpost/webauthn'
 
@@ -411,5 +412,21 @@ describe('contentDigest', () => {
     expect(a).toMatch(/^[0-9a-f]{64}$/)
     expect(await contentDigest(JSON.stringify(['本文', '', 'diary', []]))).toBe(a)
     expect(await contentDigest(JSON.stringify(['本文を直した', '', 'diary', []]))).not.toBe(a)
+  })
+})
+
+describe('パスキーの検証の失敗理由（ログ用）', () => {
+  it('確認値やオリジンなどの値を伏せて、文の形だけ残す', () => {
+    const e = new Error(
+      'Unexpected authentication response challenge "abcDEF123", expected "xyz789"',
+    )
+    expect(describeWebAuthnError(e)).toBe(
+      'Unexpected authentication response challenge "…", expected "…"',
+    )
+    expect(describeWebAuthnError(new Error("Unexpected RP ID hash 'deadbeef'"))).toBe(
+      "Unexpected RP ID hash '…'",
+    )
+    expect(describeWebAuthnError('plain')).toBe('plain')
+    expect(describeWebAuthnError(new Error('x'.repeat(500)))).toHaveLength(200)
   })
 })
