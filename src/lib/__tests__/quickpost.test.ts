@@ -416,23 +416,34 @@ describe('contentDigest', () => {
 })
 
 describe('パスキーの検証の失敗理由（ログ用）', () => {
-  it('最初の引用符から後ろ（確認値やオリジンなどの値）を捨てて、失敗の種類だけ残す', () => {
-    const e = new Error(
-      'Unexpected authentication response challenge "abcDEF123", expected "xyz789"',
-    )
-    expect(describeWebAuthnError(e)).toBe('Unexpected authentication response challenge')
-    expect(describeWebAuthnError(new Error("Unexpected RP ID hash 'deadbeef'"))).toBe(
-      'Unexpected RP ID hash',
-    )
-    expect(describeWebAuthnError('plain')).toBe('plain')
-    expect(describeWebAuthnError(new Error('x'.repeat(500)))).toHaveLength(200)
+  it('ライブラリの失敗の文の書き出しから、決まった名前にする（値は出さない）', () => {
+    const cases: Array<[string, string]> = [
+      ['Unexpected authentication response challenge "abc", expected "SERVER"', 'challenge'],
+      ['Unexpected registration response challenge "abc", expected "SERVER"', 'challenge'],
+      ['Unexpected authentication response origin "https://x", expected "https://y"', 'origin'],
+      ['Unexpected RP ID hash', 'rp-id'],
+      ['Unexpected authentication response type: webauthn.create', 'type'],
+      ['Unexpected registration response type "webauthn.get", expected "webauthn.create"', 'type'],
+      ['User not present during authentication', 'user-presence'],
+      ['User presence was required, but user was not present', 'user-presence'],
+      ['User verification required, but user could not be verified', 'user-verification'],
+      ['User verification was required, but user could not be verified', 'user-verification'],
+      ['Response counter value 1 was lower than expected 5', 'counter'],
+      ['Unexpected public key alg "-8", expected one of "-7, -257"', 'algorithm'],
+    ]
+    for (const [message, name] of cases) {
+      expect(describeWebAuthnError(new Error(message))).toBe(name)
+    }
   })
 
-  it('端末から届いた値に引用符が入っていても、サーバーの確認値は出ない。改行は空白にする', () => {
-    const e = new Error(
-      'Unexpected authentication response challenge "x"", expected "SERVERCHALLENGE"',
-    )
-    expect(describeWebAuthnError(e)).not.toContain('SERVERCHALLENGE')
-    expect(describeWebAuthnError(new Error('line1\nline2\tend'))).toBe('line1 line2 end')
+  it('端末から届いた値（引用符・改行・ほかの種類の言葉を含んでも）はログに出ず、名前も変わらない', () => {
+    const e = new Error('Unexpected authentication response type: challenge "SECRET"\nforged line')
+    expect(describeWebAuthnError(e)).toBe('type')
+  })
+
+  it('知らない失敗や Error でないものは other', () => {
+    expect(describeWebAuthnError(new Error('Something else "SECRET"'))).toBe('other')
+    expect(describeWebAuthnError('Unexpected RP ID hash')).toBe('other')
+    expect(describeWebAuthnError(undefined)).toBe('other')
   })
 })
