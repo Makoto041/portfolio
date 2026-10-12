@@ -116,7 +116,8 @@ function readDrafts(stores: DraftStores): SavedDraft[] {
 
 /**
  * 下書きの持ち主を付け替える（このタブの分として書いてから、元の分を消す。書けなければ元の分を残す）。
- * 引き継いだ印を付ける（このタブで書き換えると印は消える。印のある分は、同じ下書きが送られたら一緒に片付ける）
+ * 引き継いだ印を付ける（このタブで書き換えると印は消える。印のある分は、同じ下書きが送られたら一緒に片付ける）。
+ * 元の分は、読んだときのままのときだけ消す（その間に元のタブが書き換えていたら、そのタブの下書きとして残す）
  */
 function moveDraft(stores: DraftStores, from: SavedDraft, tab: string) {
   if (from.tab === tab) return
@@ -126,7 +127,11 @@ function moveDraft(stores: DraftStores, from: SavedDraft, tab: string) {
       DRAFT_PREFIX + tab,
       JSON.stringify({ ...draft, savedAt: from.savedAt, inherited: true }),
     )
-    stores.local?.removeItem(DRAFT_PREFIX + from.tab)
+    const source = DRAFT_PREFIX + from.tab
+    const current = readSaved(stores.local?.getItem(source) ?? null)
+    if (current && current.savedAt === from.savedAt && sameDraft(current, from)) {
+      stores.local?.removeItem(source)
+    }
   } catch {
     // 付け替えられなくても、開いた下書きは画面に出す（書き換えたときに保存する）
   }

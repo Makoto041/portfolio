@@ -189,6 +189,28 @@ describe('openTab', () => {
     expect(b.reload().draft).toEqual(draft('K', '書きかけをBで直した'))
   })
 
+  it('引き継ぎの途中で元のタブが書き換えたら、元のタブの分は消さない', () => {
+    const d = device()
+    const a = d.newTab()
+    a.save(draft('K', '古い版'))
+    d.tick()
+    // 引き継ぐタブが自分の分を書いた直後に、元のタブの保存が割り込む
+    const realSet = d.local.setItem
+    let interleaved = false
+    d.local.setItem = (k: string, v: string) => {
+      realSet(k, v)
+      if (!interleaved && k.startsWith(DRAFT_PREFIX) && k !== DRAFT_PREFIX + a.id) {
+        interleaved = true
+        a.save(draft('K', '割り込んで直した版'))
+      }
+    }
+    const b = d.newTab()
+    d.local.setItem = realSet
+    expect(interleaved).toBe(true)
+    expect(b.opened).toEqual(draft('K', '古い版'))
+    expect(a.reload().draft).toEqual(draft('K', '割り込んで直した版'))
+  })
+
   it('読み込み直したタブは、ほかのタブがあとから保存した下書きではなく、自分の下書きを開く', () => {
     const d = device()
     const a = d.newTab()
