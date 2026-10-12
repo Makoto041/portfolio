@@ -304,6 +304,24 @@ describe('clearDraft（投稿できたあと）', () => {
     expect(q.reload().draft).toEqual(draft('K', 'v1-P'))
   })
 
+  it('送っている間に引き継がれて自分の分が無くても、送った版とその古い版は片付く', () => {
+    const d = device()
+    const a = d.newTab()
+    a.save(draft('K', 'hell'))
+    d.tick()
+    const b = d.newTab()
+    d.tick()
+    a.save(draft('K', 'hello'))
+    d.tick()
+    const c = d.newTab()
+    expect(c.opened).toEqual(draft('K', 'hello'))
+    expect(d.local.getItem(DRAFT_PREFIX + a.id)).toBeNull()
+    a.posted(draft('K', 'hello'))
+    expect(d.texts()).toEqual([])
+    expect(b.reload().draft).toBeNull()
+    expect(c.reload().draft).toBeNull()
+  })
+
   it('sessionStorage が消える端末（ホーム画面のアプリなど）で開き直しを重ねても、送ったあとに古い版が残らない', () => {
     const d = device()
     const first = d.newTab({ withSession: false })
