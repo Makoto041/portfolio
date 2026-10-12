@@ -101,6 +101,13 @@
   .soda { --s-gut: 44px; }
 }
 
+/* 文字を選んだときの色（文字色の面に地色の文字） */
+.soda::selection,
+.soda ::selection {
+  background: var(--s-ink);
+  color: var(--s-bg);
+}
+
 .soda a { color: inherit; }
 .soda p { text-wrap: pretty; }
 .soda img { max-width: 100%; }
