@@ -52,6 +52,8 @@
   --s-ink: var(--s-pal-ink, #141414);
   --s-sub: var(--s-pal-sub, #42444b);
   --s-faint: var(--s-pal-faint, #5b5e66);
+  /* color-mix の使えないブラウザ向けの予備（ふつうは下の @supports で地色から作る）。
+     いまのサイトのパレット（群青）の紙面に近い色にしてある。パレットを変えたら合わせる */
   --s-paper: #f7f8fa;
   --s-hot: #d63a1e;
   /* ベタ面（--s-ink）の上の赤。既定は --s-hot のまま（黒の上で 3.9:1）。

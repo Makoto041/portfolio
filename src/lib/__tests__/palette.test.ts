@@ -58,6 +58,18 @@ describe('PALETTES と soda.css の色値', () => {
       }
     })
 
+    it(`${key}: ベタ面（文字色の面）の上の明るい文字（地色・カードの色）が AA(4.5:1) 以上`, () => {
+      // フッター・メニュー・塗りのボタンなどは、文字色の面に地色・カードの色で文字を置く
+      const decls = block(key)
+      const ink = value(decls, 'pal-ink') ?? fallback('ink')
+      expect(ink).toBeDefined()
+      for (const name of ['bg', 'card']) {
+        const light = value(decls, name)
+        expect(light).toBeDefined()
+        expect(contrast(light!, ink!)).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+
     it(`${key}: ベタ面（文字色の面）の上の赤が 3:1 以上`, () => {
       const ink = value(block(key), 'pal-ink') ?? fallback('ink')
       // パレットが --s-pal-hot-inv を持てばその色、なければ --s-hot（.soda の --s-hot-inv の既定）
