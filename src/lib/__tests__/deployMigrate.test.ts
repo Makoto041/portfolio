@@ -182,6 +182,9 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
       'ALTER TABLE "x" ADD COLUMN IF NOT EXISTS "y" integer, SET SCHEMA "attic";',
       'ALTER TABLE "x" ADD COLUMN IF NOT EXISTS "y" integer -- note\n, ENABLE ROW LEVEL SECURITY;',
       'ALTER TABLE "x" ADD COLUMN IF NOT EXISTS "y" integer, ADD COLUMN "z" integer;',
+      // 文字列やコメントの中の対応しない括弧で , を隠した形
+      `ALTER TABLE "t" ADD COLUMN IF NOT EXISTS "c" varchar DEFAULT '(', ALTER "y" TYPE varchar USING ')';`,
+      'ALTER TABLE "t" ADD COLUMN IF NOT EXISTS "c" int -- (\n, ALTER "y" TYPE text USING NULL -- )\n;',
       // 表の定義のあとに続けた形
       'CREATE TABLE IF NOT EXISTS "x" ("a" integer) INHERITS ("media");',
       'CREATE TABLE IF NOT EXISTS "x" ("id") AS SELECT "id" FROM "media";',

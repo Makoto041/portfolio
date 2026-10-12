@@ -121,15 +121,17 @@ const stripParens = (s: string) => {
 const isAdditiveStatement = (statement: string, allowed: readonly RegExp[]) => {
   const s = statement.replace(/\s+/g, ' ').trim()
   if (!allowed.some((re) => re.test(s))) return false
+  // SQL のコメント（-- や /* */）は Payload が出さない。括弧や , を隠せるので、あれば断る
+  if (/--|\/\*/.test(s)) return false
+  // 文字列（'...'。'' は中の '）を空にしてから括弧を取り除く。括弧や ' が残れば（対応が取れていない）断る
+  const flat = stripParens(s.replace(/'(?:[^']|'')*'/g, "''")).trim()
+  if (/[()']/.test(flat.replace(/''/g, ''))) return false
   // CREATE TABLE は表の名前と定義（括弧）だけ（INHERITS / AS SELECT などの続きは断る）
-  if (
-    CREATE_TABLE.test(s) &&
-    !new RegExp(`^CREATE TABLE IF NOT EXISTS ${IDENT}$`).test(stripParens(s).trim())
-  ) {
+  if (CREATE_TABLE.test(s) && !new RegExp(`^CREATE TABLE IF NOT EXISTS ${IDENT}$`).test(flat)) {
     return false
   }
   // ALTER TABLE は操作1つだけ（..., ALTER "x" TYPE text / SET SCHEMA / ENABLE ROW LEVEL SECURITY などを , で続けた形は断る）
-  if (s.startsWith('ALTER TABLE ') && stripParens(s).includes(',')) return false
+  if (s.startsWith('ALTER TABLE ') && flat.includes(',')) return false
   return !DESTRUCTIVE.test(s.replace(FK_ACTIONS, ''))
 }
 
