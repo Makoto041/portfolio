@@ -133,7 +133,16 @@ pnpm payload migrate:create <name>   # 生成してコミットするだけ
 `pnpm run migrate:deploy && pnpm run build`。中身は `scripts/migrate-on-deploy.ts`）。
 
 - Vercel の Production のビルドだけで動く。Preview・ローカルのビルドでは何もしない
-- dev mode でスキーマを直接書き換えた記録（`payload_migrations` の batch -1）があれば、適用せずにビルドを止める
+- 未適用が無ければ何もしない
+- dev mode でスキーマを直接書き換えた記録（`payload_migrations` の batch -1。`pnpm dev` をその DB に向けて動かすと付く）が
+  あるときは、未適用が全部「足すだけで、二度目も通る」形のときだけ当てる。表・列・索引を `IF NOT EXISTS` で足す文と、
+  すでにあれば何もしない外部キー・列挙型（`DO $$ … WHEN duplicate_object THEN null; END $$;`）だけの形で、
+  `src/lib/deployMigrate.ts` の `isAdditiveMigration` が up の SQL を確かめる。1つでも違えば何も当てずにビルドを止める（手で確かめる）
+- そのため、マイグレーションは生成したあと `ADD COLUMN` を `ADD COLUMN IF NOT EXISTS` に、選択肢の追加
+  （`ALTER TYPE … ADD VALUE`）を `ADD VALUE IF NOT EXISTS` に直すなどして、足すだけで二度目も通る形にしておく
+  （`.env` が本番を指したまま `pnpm dev` を動かすと本番の DB に dev mode の記録が付き、この形でないと本番デプロイが止まる）
+- 今ある表に必須の列（`NOT NULL`）を足すときは `DEFAULT` も付ける（無いと行のある表で失敗し、本番デプロイが止まる）
+- 足した選択肢（`ADD VALUE`）は、同じマイグレーションの中ではまだ使えない（列の既定値にするなどは、次のマイグレーションに分ける）
 - 適用は1件ずつトランザクション。失敗したり未適用が残ったりしたらビルドを止める（そのデプロイは公開されず、今の本番が動き続ける）
 - 新しいコードの公開より先に適用されるので、マイグレーションは今の本番のコードとも両立する形（表や空でよい列の追加など）にする
 - Preview のビルドでは適用しないので、既存の表に列を足す PR の Preview は、Preview が本番と同じ DB を使っている場合、
@@ -143,6 +152,9 @@ pnpm payload migrate:create <name>   # 生成してコミットするだけ
   Instant Rollback は再ビルドしないので、前のコードが新しいスキーマの上で動く（追加だけのマイグレーションなら問題ない）
 
 ローカルの `.env` は本番 Neon を指すため、手元から本番へは手で適用しない。
+また `pnpm dev` は、`.env` の DB のスキーマをコードに合わせて直接書き換える（Payload の dev mode の push）。
+本番の DB に向けて古いブランチを動かすと、新しい表や列を消してよいかの確認（DATA LOSS WARNING）が出る。
+その確認には No で答える（No なら `pnpm dev` はスキーマを変えずに終わる。Yes にすると本番の表や列が消える）。
 
 ## さっと投稿（/post）
 
