@@ -98,9 +98,10 @@ function saveDraft(d: Draft) {
   }
 }
 
-function clearDraft() {
+/** 投稿できた下書きを消す。ほかのタブが同じ枠に別の下書き（別のキー）を保存していたら、それは残す */
+function clearDraft(key: string) {
   try {
-    localStorage.removeItem(DRAFT_KEY)
+    if (loadDraft()?.key === key) localStorage.removeItem(DRAFT_KEY)
   } catch {
     // 同上
   }
@@ -450,7 +451,7 @@ export default function QuickPostApp() {
 
       queue.forEach((p) => URL.revokeObjectURL(p.url))
       setPhotos([])
-      clearDraft()
+      clearDraft(draft.key)
       setDraft(freshDraft())
       setDoneId(created.id)
       go('done')

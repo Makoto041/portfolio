@@ -66,7 +66,7 @@ export type QuickPostInput = {
    * 送った内容の指紋（画面で計算した SHA-256 の16進 64 文字）。受付票に残し、同じキーの送り直しで
    * 「すでに投稿済み」と返すときに一緒に返す（画面が、直して送り直したかを見分ける）
    */
-  digest?: string
+  digest: string
 }
 
 export type ParseResult = { ok: true; value: QuickPostInput } | { ok: false; error: string }
@@ -119,13 +119,10 @@ export function parseQuickPost(body: unknown): ParseResult {
 
   if (typeof b.key !== 'string' || !UUID_V4.test(b.key)) return { ok: false, error: 'invalid_key' }
 
-  let digest: string | undefined
-  if (b.digest !== undefined && b.digest !== null) {
-    if (typeof b.digest !== 'string' || !SHA256_HEX.test(b.digest)) {
-      return { ok: false, error: 'invalid_digest' }
-    }
-    digest = b.digest
+  if (typeof b.digest !== 'string' || !SHA256_HEX.test(b.digest)) {
+    return { ok: false, error: 'invalid_digest' }
   }
+  const digest = b.digest
 
   return {
     ok: true,

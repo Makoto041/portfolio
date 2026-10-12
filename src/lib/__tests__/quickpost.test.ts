@@ -168,6 +168,7 @@ describe('送信元の確認（CSRF）', () => {
 
 describe('投稿の入力チェック', () => {
   const key = '9b2c3f4e-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
+  const digest = 'a'.repeat(64)
 
   it('本文・種類・写真・キーを受け付け、正規化する', () => {
     const r = parseQuickPost({
@@ -175,6 +176,7 @@ describe('投稿の入力チェック', () => {
       postType: 'travel',
       images: [3, 3, 5],
       key: key.toUpperCase(),
+      digest,
     })
     expect(r).toEqual({
       ok: true,
@@ -184,20 +186,18 @@ describe('投稿の入力チェック', () => {
         postType: 'travel',
         images: [3, 5],
         key,
+        digest,
       },
     })
   })
 
-  it('送った内容の指紋（SHA-256 の16進）を受け付ける。無くてもよい', () => {
-    const digest = 'a'.repeat(64)
+  it('送った内容の指紋（SHA-256 の16進）を受け付ける', () => {
     const r = parseQuickPost({ text: 'a', key, digest })
     expect(r.ok && r.value.digest).toBe(digest)
-    const none = parseQuickPost({ text: 'a', key })
-    expect(none.ok && none.value.digest).toBeUndefined()
   })
 
   it('種類が無ければ日記にする。タイトルは1行にまとめる', () => {
-    const r = parseQuickPost({ text: 'a', title: ' 見出し\n2行目 ', key })
+    const r = parseQuickPost({ text: 'a', title: ' 見出し\n2行目 ', key, digest })
     expect(r.ok && r.value.postType).toBe('diary')
     expect(r.ok && r.value.title).toBe('見出し 2行目')
   })
@@ -214,6 +214,7 @@ describe('投稿の入力チェック', () => {
     [{ text: 'a', images: [1.5], key }, 'invalid_images'],
     [{ text: 'a' }, 'invalid_key'],
     [{ text: 'a', key: 'abc' }, 'invalid_key'],
+    [{ text: 'a', key }, 'invalid_digest'],
     [{ text: 'a', key, digest: 'abc' }, 'invalid_digest'],
     [{ text: 'a', key, digest: 'A'.repeat(64) }, 'invalid_digest'],
     [{ text: 'a', key, digest: 1 }, 'invalid_digest'],
@@ -224,7 +225,7 @@ describe('投稿の入力チェック', () => {
   })
 
   it('絵文字は1文字と数える', () => {
-    expect(parseQuickPost({ text: '😀'.repeat(5000), key }).ok).toBe(true)
+    expect(parseQuickPost({ text: '😀'.repeat(5000), key, digest }).ok).toBe(true)
   })
 
   it('制御文字を除く（改行とタブは残す）', () => {

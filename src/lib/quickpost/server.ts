@@ -232,13 +232,11 @@ export async function touchSession(active: ActiveSession): Promise<boolean> {
   const { payload, session } = active
   if (!shouldTouch(session.lastUsedAt, QP.touchEveryMs)) return false
   const lastUsedAt = new Date().toISOString()
-  await payload.update({
-    collection: 'post-sessions',
-    id: session.id,
-    data: { lastUsedAt },
-    depth: 0,
-    overrideAccess: true,
-  })
+  // 使った日時だけを書く。Payload の update は行の全部の列を書き戻すので、同時に走る回数制限・投稿数の
+  // 加算（consumeRate・recordPost の SQL）を打ち消してしまう
+  await payload.db.drizzle.execute(sql`
+    UPDATE post_sessions SET last_used_at = ${lastUsedAt}, updated_at = ${lastUsedAt}
+    WHERE id = ${session.id}`)
   session.lastUsedAt = lastUsedAt
   return true
 }
@@ -408,19 +406,26 @@ export async function recordPost(payload: Payload, sessionId: ID, at: string): P
 }
 
 /**
- * パスキーの使用回数を、記録より大きいときだけ進める（1回の UPDATE で原子的に）。進めたら true。
- * 同時のログインで小さい値に戻さない。進められないのは、同じかより新しい回数の応答がすでに通ったとき
- * （複製された鍵の疑い）なので、呼び出し側はログインさせない。トランザクションの外で呼ぶこと
+ * ログインに使ったパスキーを記録する（使用回数・バックアップの有無・最後に使った日時を1回の UPDATE で）。
+ * 使用回数は記録より大きいときだけ進める（同時のログインで小さい値に戻さない）。進められないのは、同じか
+ * より新しい回数の応答がすでに通ったとき（複製された鍵の疑い）なので false を返し、呼び出し側はログインさせない。
+ * 回数を数えないパスキー（いつも 0）は回数の条件なしで記録する。Payload の update は行の全部の列を書き戻し、
+ * 同時のログインで古い回数に戻しうるので、ログインではこの行をここ以外で書かない。トランザクションの外で呼ぶこと
  */
-export async function advancePasskeyCounter(
+export async function recordPasskeyUse(
   payload: Payload,
   passkeyId: ID,
-  counter: number,
+  { counter, backedUp }: { counter: number; backedUp: boolean },
 ): Promise<boolean> {
   const at = new Date().toISOString()
   const result = await payload.db.drizzle.execute(sql`
-    UPDATE passkeys SET counter = ${counter}, updated_at = ${at}
-    WHERE id = ${passkeyId} AND COALESCE(counter, 0) < ${counter}
+    UPDATE passkeys SET
+      counter = GREATEST(COALESCE(counter, 0), ${counter}::numeric),
+      backed_up = ${backedUp},
+      last_used_at = ${at},
+      updated_at = ${at}
+    WHERE id = ${passkeyId}
+      AND (${counter}::numeric = 0 OR COALESCE(counter, 0) < ${counter}::numeric)
     RETURNING id`)
   return result.rows.length > 0
 }
@@ -442,7 +447,7 @@ export type ReceiptClaim =
 export async function claimPostReceipt(
   payload: Payload,
   key: string,
-  digest?: string,
+  digest: string,
 ): Promise<ReceiptClaim> {
   const receiptKey = `post:${key}`
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -451,7 +456,7 @@ export async function claimPostReceipt(
         collection: 'quickpost-nonces',
         data: {
           key: receiptKey,
-          digest: digest ?? null,
+          digest,
           expiresAt: new Date(Date.now() + 30 * DAY).toISOString(),
         },
         depth: 0,

@@ -8,7 +8,6 @@ import { getPayloadClient } from '@/lib/payloadClient'
 import { QP } from '@/lib/quickpost/config'
 import { deviceLabel } from '@/lib/quickpost/input'
 import {
-  advancePasskeyCounter,
   clearChallengeCookie,
   createSession,
   json,
@@ -17,6 +16,7 @@ import {
   withTransaction,
   readChallenge,
   readJson,
+  recordPasskeyUse,
   rejectCrossSite,
   rejectTooManyFromIp,
   relId,
@@ -89,31 +89,25 @@ export async function POST(req: NextRequest) {
       : null
     if (!user) return done(401, { error: 'verification_failed' })
 
-    // パスキーの使用回数は、記録より大きいときだけ進める（同時のログインで小さい値に戻さない）。
-    // 進められないのは、同じかより新しい回数の応答がすでに通ったとき（複製された鍵の疑い）なのでログインさせない。
-    // 回数を数えないパスキー（iCloud キーチェーンなど、いつも 0）は対象外
+    // パスキーの使用回数・バックアップの有無・最後に使った日時を、1回の UPDATE で記録する。使用回数は記録より
+    // 大きいときだけ進め、進められない（同じかより新しい回数の応答がすでに通った＝複製された鍵の疑い）ならログインさせない。
+    // この行はトランザクションの中では書かない（Payload の update は全部の列を書き戻し、同時のログインで古い回数に戻しうる）
     const { newCounter, credentialBackedUp } = verification.authenticationInfo
-    if (newCounter > 0 && !(await advancePasskeyCounter(payload, passkey.id, newCounter))) {
+    if (
+      !(await recordPasskeyUse(payload, passkey.id, {
+        counter: newCounter,
+        backedUp: credentialBackedUp,
+      }))
+    ) {
       console.warn('quickpost: passkey counter did not advance; refusing the login')
       return done(401, { error: 'verification_failed' })
     }
 
-    // 確認値を使用済みにする・パスキーの最終使用を記録・ログインを発行、を1つのトランザクションで
+    // 確認値を使用済みにする・ログインを発行、を1つのトランザクションで
     let created
     try {
       created = await withTransaction(payload, async (txReq) => {
         await markChallengeUsed(payload, 'login', ticket.c, txReq)
-        await payload.update({
-          collection: 'passkeys',
-          id: passkey.id,
-          data: {
-            backedUp: credentialBackedUp,
-            lastUsedAt: new Date().toISOString(),
-          },
-          depth: 0,
-          overrideAccess: true,
-          req: txReq,
-        })
         return createSession(
           payload,
           {
