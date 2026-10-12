@@ -1,5 +1,7 @@
 import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-vercel-postgres'
 
+// up は足すだけで、二度目も通る形（列も IF NOT EXISTS）にしてある。dev mode で同じ表や列をすでに作った DB にも当てられる
+// （本番デプロイの自動適用が src/lib/deployMigrate.ts の isAdditiveMigration で確かめる）
 export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
    CREATE TABLE IF NOT EXISTS "passkeys" (
@@ -42,9 +44,9 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
   	"created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
   );
   
-  ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "passkeys_id" integer;
-  ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "post_sessions_id" integer;
-  ALTER TABLE "payload_locked_documents_rels" ADD COLUMN "quickpost_nonces_id" integer;
+  ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "passkeys_id" integer;
+  ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "post_sessions_id" integer;
+  ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "quickpost_nonces_id" integer;
   DO $$ BEGIN
    ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;
   EXCEPTION
