@@ -1,6 +1,7 @@
 // src/lib/quickpost/webauthn.ts
 // 端末から届いたパスキーの応答（JSON）の形を確かめ、知っている項目だけで組み直す（純粋な関数。単体テストあり）。
 // 署名などの中身の検証は @simplewebauthn/server が行う。ここでは DB を引く前の門前払いをする。
+// 検証に失敗した理由を、ログ用の決まった名前にする関数（describeWebAuthnError）もここに置く。
 import type {
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,
@@ -76,4 +77,27 @@ export function asRegistrationResponse(body: unknown): RegistrationResponseJSON 
     clientExtensionResults: {},
     authenticatorAttachment: attachment(b.authenticatorAttachment),
   }
+}
+
+/**
+ * パスキーの検証に失敗した理由（@simplewebauthn/server の失敗の文の書き出し）と、ログに出す名前。
+ * 失敗の文には確認値（challenge）や端末から届いた値がそのまま入る（引用符で囲まないものもある）ので、
+ * 文そのものは出さない。書き出しはライブラリが書く決まった部分で、端末から届いた値はその後ろにしか来ない
+ */
+const WEBAUTHN_FAILURES: ReadonlyArray<readonly [RegExp, string]> = [
+  [/^Unexpected (authentication|registration) response challenge /, 'challenge'],
+  [/^Custom challenge verifier /, 'challenge'],
+  [/^Unexpected (authentication|registration) response origin /, 'origin'],
+  [/^Unexpected RP ID hash/, 'rp-id'],
+  [/^Unexpected (authentication|registration) response type/, 'type'],
+  [/^User (not present|presence was required)/, 'user-presence'],
+  [/^User verification (was )?required/, 'user-verification'],
+  [/^Response counter value /, 'counter'],
+  [/^Unexpected public key alg /, 'algorithm'],
+]
+
+/** パスキーの検証に失敗した理由を、ログ用の決まった名前にする（知らない失敗は 'other'） */
+export function describeWebAuthnError(e: unknown): string {
+  const message = e instanceof Error ? e.message : ''
+  return WEBAUTHN_FAILURES.find(([pattern]) => pattern.test(message))?.[1] ?? 'other'
 }

@@ -77,6 +77,9 @@ export default buildConfig({
   globals: [SiteSettings],
   // DB 設定
   db: vercelPostgresAdapter({
+    // pnpm dev がコレクションの変更を DB の表へそのまま反映する（Payload の dev mode の push）のは
+    // PAYLOAD_DEV_PUSH=true のときだけ。.env が本番を指していても、表や列を変えたり消したりしないように既定は止める
+    push: process.env.PAYLOAD_DEV_PUSH === 'true',
     pool: {
       connectionString: process.env.POSTGRES_URL!,
       max: 10,

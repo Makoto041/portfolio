@@ -95,7 +95,8 @@ src/
 
 ```bash
 pnpm install
-cp .env.example .env   # 下記の環境変数を設定
+cp .env.example .env   # 下記の環境変数を設定（DB は開発用。下の「開発用の DB」）
+pnpm payload migrate   # 空の DB なら、最初に表を作る
 pnpm dev               # http://localhost:3000（管理画面は /admin）
 ```
 
@@ -103,8 +104,9 @@ pnpm dev               # http://localhost:3000（管理画面は /admin）
 
 | 変数 | 用途 |
 | --- | --- |
-| `POSTGRES_URL` | Neon (PostgreSQL) 接続文字列 |
-| `PAYLOAD_SECRET` | Payload の暗号化シークレット |
+| `POSTGRES_URL` | Neon (PostgreSQL) 接続文字列。手元と Preview は開発用の DB（下の「開発用の DB」）。本番の接続文字列は Vercel の Production にだけ置く |
+| `PAYLOAD_DEV_PUSH` | `true` のときだけ `pnpm dev` がコレクションの変更を DB の表へそのまま反映する（Payload の push）。開発用の DB でだけ使う |
+| `PAYLOAD_SECRET` | Payload の暗号化シークレット（ログインの鍵の署名にも使う。手元と Preview は本番と別の値） |
 | `S3_ENDPOINT` / `S3_ACCESS_KEY_ID` / `S3_SECRET_ACCESS_KEY` / `S3_BUCKET` / `S3_REGION` | Cloudflare R2（S3 互換） |
 | `NEXT_PUBLIC_CLOUDFRONT_DOMAIN` | 画像配信 CDN ドメイン（未設定なら相対 URL のまま） |
 | `NEXT_PUBLIC_SITE_URL` | CORS / CSRF の許可オリジン |
@@ -134,27 +136,63 @@ pnpm payload migrate:create <name>   # 生成してコミットするだけ
 
 - Vercel の Production のビルドだけで動く。Preview・ローカルのビルドでは何もしない
 - 未適用が無ければ何もしない
-- dev mode でスキーマを直接書き換えた記録（`payload_migrations` の batch -1。`pnpm dev` をその DB に向けて動かすと付く）が
+- dev mode でスキーマを直接書き換えた記録（`payload_migrations` の batch -1。`PAYLOAD_DEV_PUSH=true` の `pnpm dev` をその DB に向けて動かすと付く）が
   あるときは、未適用が全部「足すだけで、二度目も通る」形のときだけ当てる。表・列・索引を `IF NOT EXISTS` で足す文と、
   すでにあれば何もしない外部キー・列挙型（`DO $$ … WHEN duplicate_object THEN null; END $$;`）だけの形で、
   `src/lib/deployMigrate.ts` の `isAdditiveMigration` が up の SQL を確かめる。1つでも違えば何も当てずにビルドを止める（手で確かめる）
 - そのため、マイグレーションは生成したあと `ADD COLUMN` を `ADD COLUMN IF NOT EXISTS` に、選択肢の追加
   （`ALTER TYPE … ADD VALUE`）を `ADD VALUE IF NOT EXISTS` に直すなどして、足すだけで二度目も通る形にしておく
-  （`.env` が本番を指したまま `pnpm dev` を動かすと本番の DB に dev mode の記録が付き、この形でないと本番デプロイが止まる）
+  （本番の DB には、以前 `.env` が本番を指したまま `pnpm dev` を動かしたときの dev mode の記録が残っていて、この形でないと本番デプロイが止まる）
 - 今ある表に必須の列（`NOT NULL`）を足すときは `DEFAULT` も付ける（無いと行のある表で失敗し、本番デプロイが止まる）
 - 足した選択肢（`ADD VALUE`）は、同じマイグレーションの中ではまだ使えない（列の既定値にするなどは、次のマイグレーションに分ける）
 - 適用は1件ずつトランザクション。失敗したり未適用が残ったりしたらビルドを止める（そのデプロイは公開されず、今の本番が動き続ける）
 - 新しいコードの公開より先に適用されるので、マイグレーションは今の本番のコードとも両立する形（表や空でよい列の追加など）にする
-- Preview のビルドでは適用しないので、既存の表に列を足す PR の Preview は、Preview が本番と同じ DB を使っている場合、
-  マージまでその表を読むところが失敗する（例: `media.pending` を足した PR では `/api/media` や写真）。本番はビルドの最初に適用するので起きない
+- Preview のビルドでは適用しないので、既存の表に列を足す PR の Preview は、開発用の DB に当てるまで
+  その表を読むところが失敗する（例: `media.pending` を足した PR では `/api/media` や写真）。本番はビルドの最初に適用するので起きない
 - 前提: Vercel の「Automatically expose System Environment Variables」がオン（`VERCEL_ENV` で本番かを見分ける。無ければビルドを止める）
 - 本番ビルドが同時に2本走ると片方が失敗し、古いコミットの方が公開されることがある。そのときは新しい方を Redeploy する。
   Instant Rollback は再ビルドしないので、前のコードが新しいスキーマの上で動く（追加だけのマイグレーションなら問題ない）
 
-ローカルの `.env` は本番 Neon を指すため、手元から本番へは手で適用しない。
-また `pnpm dev` は、`.env` の DB のスキーマをコードに合わせて直接書き換える（Payload の dev mode の push）。
-本番の DB に向けて古いブランチを動かすと、新しい表や列を消してよいかの確認（DATA LOSS WARNING）が出る。
-その確認には No で答える（No なら `pnpm dev` はスキーマを変えずに終わる。Yes にすると本番の表や列が消える）。
+手元から本番へは手で適用しない（本番の接続文字列は手元に置かない）。
+
+### 開発用の DB
+
+手元（`.env`）と Vercel の Preview / Development は、本番とは別の DB を使う。
+本番の接続文字列は Vercel の Production の環境変数にだけ置く。下の手順で切り替えるまでは、手元の `.env` は本番を指しているものとして扱う。
+
+1. Neon のコンソールで、本番のブランチから開発用のブランチ（`dev`）を作る（その時点の本番の表とデータを写した、別の DB になる）。
+   本番のロール（DB のユーザー）もそのまま写るので、`dev` のロールのパスワードをリセットして本番と別にする（リセットはブランチごと）
+2. Neon の SQL Editor で `dev` ブランチを選び、本番から写った dev mode の記録を消す（本番のブランチでは実行しない）
+
+   ```sql
+   DELETE FROM payload_migrations WHERE batch = -1;
+   ```
+
+   これで、開発用の DB では `pnpm payload migrate` が確認なしで進み、確認が出るのは本番（や push を使った DB）だけになる
+3. `dev` の接続文字列（Connect の画面で Connection pooling をオンにした、ホストに `-pooler` が付く方）を、手元の `.env` の
+   `POSTGRES_URL` に書く（`.env.local` があればそちらが優先されるので、同じく直す）
+4. Vercel の Settings → Environment Variables で `POSTGRES_URL` を、Production は本番のまま、Preview と Development は `dev` の接続文字列にする。
+   Vercel の Storage（Neon の連携）が入れた変数でここから書き換えられないときは、連携の設定で Preview / Development へのつなぎ方を変える。
+   変えたあとの Preview は、再デプロイすると新しい値を使う
+5. `PAYLOAD_SECRET` も、手元と Vercel の Preview / Development は本番と別の値にする（`openssl rand -hex 32` などで作る）。
+   同じ値だと、開発用の DB や Preview で作ったログインの鍵（トークン）が、本番でもそのまま通ってしまう。
+   別の値にしても、管理画面のパスワードはそのまま使える
+
+`dev` を本番の最新に合わせ直したいときは、Neon の Reset from parent を使う（本番の記録も写り直すので、2 をもう一度行う）。
+
+写真のファイル（R2）は本番と同じバケットのまま。開発用の DB（手元・Preview）では、管理画面から写真（media・blog-media）を
+消さない・差し替えない・上げない。消したり差し替えたりすると本番の同じ写真が表示されなくなり、上げると同じ名前の本番のファイルを
+上書きすることがある（名前が重ならないかは、それぞれの DB の中でしか確かめない）。さっと投稿の写真は毎回ちがう名前なので、上げてよい。
+
+`pnpm dev` は、既定では DB の表を変えない。コレクションを変えたら `pnpm payload migrate:create <name>` で作った
+マイグレーションを、`pnpm payload migrate` で開発用の DB に当てて確かめる（本番には本番デプロイのビルドが当てる）。
+
+- `pnpm payload migrate` が「dev mode で動かしたことがある。続けるか」と確認を出したら、N で止める。
+  本番を指しているか、push を使った DB（開発用の DB なら、2 の DELETE をしてからやり直す）
+- 確認に答えられない環境（エージェントのシェルなど）では、確認が出ると何も当てずに成功として終わる。
+  当たったかは `pnpm payload migrate:status` で確かめる
+- 開発用の DB で表を手早くコードに合わせたいときだけ `PAYLOAD_DEV_PUSH=true pnpm dev` にする（Payload の dev mode の push。DB に dev mode の記録が付く）。
+  古いブランチで使うと、新しい表や列を消してよいかの確認（DATA LOSS WARNING）が出る。その確認には No で答える（No なら `pnpm dev` は表を変えずに終わる）
 
 ## さっと投稿（/post）
 

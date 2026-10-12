@@ -21,7 +21,7 @@ import {
   rejectTooManyFromIp,
   setSessionCookies,
 } from '@/lib/quickpost/server'
-import { asRegistrationResponse } from '@/lib/quickpost/webauthn'
+import { asRegistrationResponse, describeWebAuthnError } from '@/lib/quickpost/webauthn'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         requireUserVerification: true,
       })
     } catch (e) {
-      console.warn('quickpost: passkey registration failed:', e instanceof Error ? e.message : e)
+      console.warn('quickpost: passkey registration failed:', describeWebAuthnError(e))
       return done(400, { error: 'verification_failed' })
     }
     if (!verification.verified) return done(400, { error: 'verification_failed' })

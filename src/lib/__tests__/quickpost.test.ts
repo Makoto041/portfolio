@@ -29,6 +29,7 @@ import { photoPrint } from '@/components/quickpost/photo'
 import {
   asAuthenticationResponse,
   asRegistrationResponse,
+  describeWebAuthnError,
   parseTransports,
 } from '@/lib/quickpost/webauthn'
 
@@ -411,5 +412,38 @@ describe('contentDigest', () => {
     expect(a).toMatch(/^[0-9a-f]{64}$/)
     expect(await contentDigest(JSON.stringify(['本文', '', 'diary', []]))).toBe(a)
     expect(await contentDigest(JSON.stringify(['本文を直した', '', 'diary', []]))).not.toBe(a)
+  })
+})
+
+describe('パスキーの検証の失敗理由（ログ用）', () => {
+  it('ライブラリの失敗の文の書き出しから、決まった名前にする（値は出さない）', () => {
+    const cases: Array<[string, string]> = [
+      ['Unexpected authentication response challenge "abc", expected "SERVER"', 'challenge'],
+      ['Unexpected registration response challenge "abc", expected "SERVER"', 'challenge'],
+      ['Unexpected authentication response origin "https://x", expected "https://y"', 'origin'],
+      ['Unexpected RP ID hash', 'rp-id'],
+      ['Unexpected authentication response type: webauthn.create', 'type'],
+      ['Unexpected registration response type "webauthn.get", expected "webauthn.create"', 'type'],
+      ['User not present during authentication', 'user-presence'],
+      ['User presence was required, but user was not present', 'user-presence'],
+      ['User verification required, but user could not be verified', 'user-verification'],
+      ['User verification was required, but user could not be verified', 'user-verification'],
+      ['Response counter value 1 was lower than expected 5', 'counter'],
+      ['Unexpected public key alg "-8", expected one of "-7, -257"', 'algorithm'],
+    ]
+    for (const [message, name] of cases) {
+      expect(describeWebAuthnError(new Error(message))).toBe(name)
+    }
+  })
+
+  it('端末から届いた値（引用符・改行・ほかの種類の言葉を含んでも）はログに出ず、名前も変わらない', () => {
+    const e = new Error('Unexpected authentication response type: challenge "SECRET"\nforged line')
+    expect(describeWebAuthnError(e)).toBe('type')
+  })
+
+  it('知らない失敗や Error でないものは other', () => {
+    expect(describeWebAuthnError(new Error('Something else "SECRET"'))).toBe('other')
+    expect(describeWebAuthnError('Unexpected RP ID hash')).toBe('other')
+    expect(describeWebAuthnError(undefined)).toBe('other')
   })
 })

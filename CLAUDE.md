@@ -12,7 +12,7 @@ Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリ�
 2. **差分で実装**: 既存パターン（コンポーネント構成・Payloadコレクション・`src/app/(frontend)/soda.css`）に沿って、ゼロから作り直さず改修する。
 3. **Fable 5 レビュー**: 非自明な実装は Fable 5 をサブエージェント（Agentツール `model: fable`）に指名して設計/コードレビュー → 指摘修正 → 再確認のループを回す（専用 `advisor()` が使えない環境のため、Fableサブエージェントで代替）。
 4. **自走で PR → マージ**: 完了したらブランチを切って PR を作成（**main への直コミット禁止**）。CI（Vercelビルド）と PRレビュー（CodeRabbit）の完了を待ち、**指摘があれば修正して再確認、無ければ `gh pr merge --squash` でマージ**する。
-5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用は本番デプロイのビルドで自動（`vercel.json` の buildCommand → `pnpm run migrate:deploy` = `scripts/migrate-on-deploy.ts`。Vercel の Production だけで動き、`VERCEL_ENV` が無い・適用に失敗した・dev mode の push の記録（batch -1）がある DB に「足すだけで二度目も通る」形でないマイグレーションが未適用、のどれかならビルドを止めて公開しない）。ローカル/CI から本番へは手で適用しない（`.env` は本番 Neon を指すため）。新しいコードの公開より先に適用されるので、マイグレーションは今の本番のコードとも両立する形（表や空でよい列の追加など）にする。`pnpm dev` を本番の DB に向けると dev mode の記録が付くので、マイグレーションは生成したあと `ADD COLUMN` を `ADD COLUMN IF NOT EXISTS` に直すなど、足すだけで二度目も通る形にする（`src/lib/deployMigrate.ts` の `isAdditiveMigration` が確かめる）。
+5. **DBマイグレーション**: コレクション/グローバルのフィールド変更は `pnpm payload migrate:create <name>` で**生成してコミットするだけ**。適用は本番デプロイのビルドで自動（`vercel.json` の buildCommand → `pnpm run migrate:deploy` = `scripts/migrate-on-deploy.ts`。Vercel の Production だけで動き、`VERCEL_ENV` が無い・適用に失敗した・dev mode の push の記録（batch -1）がある DB に「足すだけで二度目も通る」形でないマイグレーションが未適用、のどれかならビルドを止めて公開しない）。ローカル/CI から本番へは手で適用しない（本番の接続文字列は Vercel の Production にだけ置き、`.env` には開発用の DB（Neon の `dev` ブランチ）を書く。手順は README の「開発用の DB」。切り替えるまでは `.env` は本番を指しているものとして扱う）。手元で `pnpm payload migrate` を動かすのは開発用の DB だけ。「dev mode で動かしたことがある」という確認が出たら、本番か push を使った DB なので N で止める（開発用の DB は作ったときにこの記録を消すので確認は出ない）。確認に答えられないシェルでは何も当てずに成功で終わるので、当たったかは `pnpm payload migrate:status` で確かめる。新しいコードの公開より先に適用されるので、マイグレーションは今の本番のコードとも両立する形（表や空でよい列の追加など）にする。本番の DB には以前 `pnpm dev` を向けたときの dev mode の記録が残っているので、マイグレーションは生成したあと `ADD COLUMN` を `ADD COLUMN IF NOT EXISTS` に直すなど、足すだけで二度目も通る形にする（`src/lib/deployMigrate.ts` の `isAdditiveMigration` が確かめる）。`pnpm dev` は既定で DB の表を変えない（`PAYLOAD_DEV_PUSH=true` のときだけ Payload の push。開発用の DB でだけ使う）。
 6. **検証**: `pnpm generate:types` / `pnpm build` / `pnpm lint` / `pnpm typecheck` / `pnpm test` をローカルで通してから PR にする。
 
 ## サーバー環境でのプレビュー（tailnet 経由で実機確認）
@@ -163,8 +163,9 @@ src/
 
 必要な環境変数：
 ```
-DATABASE_URL=              # Vercel Postgres接続
-PAYLOAD_SECRET=           # PayloadCMSシークレットキー
+POSTGRES_URL=              # Neon 接続（手元と Preview は開発用の dev ブランチ。本番の接続文字列は Vercel の Production だけ）
+PAYLOAD_DEV_PUSH=          # true のときだけ pnpm dev が DB の表を変える（開発用の DB でだけ）
+PAYLOAD_SECRET=           # PayloadCMSシークレットキー（手元と Preview は本番と別の値）
 S3_ENDPOINT=              # Cloudflare R2エンドポイント
 S3_ACCESS_KEY_ID=         # Cloudflareアクセスキー
 S3_SECRET_ACCESS_KEY=     # Cloudflareシークレットキー
@@ -236,6 +237,7 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
+- 開発用の DB を本番と分けられるようにした（手順は README の「開発用の DB」。手元と Preview は Neon の `dev` ブランチ。`pnpm dev` は `PAYLOAD_DEV_PUSH=true` のときだけ DB の表を変える）。レビューの残りの指摘を修正（ログに確認値や投稿データを出さない・パスキーの名前変更で使用回数を戻さない・maskable アイコン など）
 - 配色をクリームソーダ（緑）から群青に変更（文字・線・塗りのボタン・フッターまで深い群青、地・紙面・カードは同じ群青の濃淡。赤はいいね・LIVE だけ）
 - DB マイグレーションを本番デプロイのビルドで自動で適用するようにした（`scripts/migrate-on-deploy.ts`。Production だけ・危ないときはビルドを止める。dev mode の記録がある DB には、足すだけで二度目も通るマイグレーションだけを当てる）
 - スマホから投稿する「さっと投稿」（/post）を追加（パスキーでログイン・端末ごとのログイン管理・写真の位置情報削除・nonce つき CSP）。リンクのプレビュー取得に内部ネットワークへの接続防止（`src/lib/netguard.ts`）を追加
