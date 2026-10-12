@@ -3,7 +3,7 @@
 //   ログイン（Face ID / Touch ID のパスキー）→ 投稿 → 送信中 → 完了、ログイン状態の確認・ログアウト。
 //   新しい端末の登録は、管理画面のメールアドレスとパスワードを確かめてからパスキーを作る。
 // ログイン状態は /api/quickpost/session で確かめる（Cookie は HttpOnly なので画面からは読めない）。
-// 下書き（本文・タイトル・種類）はこの端末の localStorage にだけ保存し、投稿できたら消す。
+// 下書き（本文・タイトル・種類）はこの端末にだけ保存し、投稿できたら消す（src/lib/quickpost/drafts.ts）。
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -14,6 +14,17 @@ import {
   startRegistration,
 } from '@simplewebauthn/browser'
 import SodaIcon from '@/components/soda/SodaIcon'
+import {
+  canSaveBeforeSend,
+  clearDraft,
+  freshDraft,
+  loadDraft,
+  rememberTabDraft,
+  saveDraft,
+  storedDraft,
+  type Draft,
+  type DraftStores,
+} from '@/lib/quickpost/drafts'
 import { LIMITS, photoTypeOf, POST_TYPES } from '@/lib/quickpost/input'
 import { TYPE_LABELS } from '@/lib/timeline'
 import { contentDigest } from './digest'
@@ -37,15 +48,6 @@ type SessionInfo = {
 
 type View = 'loading' | 'login' | 'register' | 'compose' | 'done' | 'account' | 'offline'
 
-type Draft = {
-  text: string
-  title: string
-  showTitle: boolean
-  postType: string
-  /** 二重投稿を防ぐキー（この下書きを送るたびに同じものを使う） */
-  key: string
-}
-
 type Photo = {
   id: string
   file: File
@@ -58,123 +60,24 @@ type Photo = {
 
 type Sending = { step: 'photos'; done: number; total: number } | { step: 'post' }
 
-/** 下書きの保存先（端末の中だけ）。下書きのキーごとに1件ずつ持ち、ほかのタブの下書きを上書きしない */
-const DRAFTS_KEY = 'mk_post_drafts_v2'
-/** このタブで書いている下書きのキー（タブごと。読み込み直しても残る） */
-const TAB_DRAFT_KEY = 'mk_post_tab_draft'
-const MAX_DRAFTS = 10
-const DRAFT_TTL_MS = 30 * 24 * 60 * 60 * 1000
 /** 写真1枚の送信上限（サーバーの上限から少し余裕を取る） */
 const PHOTO_MARGIN = 64 * 1024
 
-type SavedDraft = Draft & { savedAt: number }
-
-const freshDraft = (): Draft => ({
-  text: '',
-  title: '',
-  showTitle: false,
-  postType: 'diary',
-  key: crypto.randomUUID(),
-})
-
-/** まだ何も書いていない下書きか（開いたばかり・投稿し終えた直後・全部消した） */
-const isBlankDraft = (d: Draft) => !d.text && !d.title && !d.showTitle && d.postType === 'diary'
-
-function parseDraft(v: unknown): Draft | null {
-  if (!v || typeof v !== 'object') return null
-  const d = v as Partial<Draft>
-  if (typeof d.text !== 'string' || typeof d.key !== 'string') return null
-  return {
-    text: d.text,
-    title: typeof d.title === 'string' ? d.title : '',
-    showTitle: Boolean(d.showTitle),
-    postType: (POST_TYPES as readonly string[]).includes(d.postType ?? '')
-      ? (d.postType as string)
-      : 'diary',
-    key: d.key,
-  }
-}
-
-const sameDraft = (a: Draft, b: Draft) =>
-  a.key === b.key &&
-  a.text === b.text &&
-  a.title === b.title &&
-  a.showTitle === b.showTitle &&
-  a.postType === b.postType
-
-/** 保存してある下書き（新しい順。期限を過ぎたものは除く） */
-function readDrafts(): SavedDraft[] {
+/** 下書きの保存先（ブラウザの外ではどちらも無し。使えない設定のときに例外になることがある） */
+function draftStores(): DraftStores {
+  let local: Storage | null = null
+  let session: Storage | null = null
   try {
-    const list: unknown = JSON.parse(localStorage.getItem(DRAFTS_KEY) ?? '[]')
-    if (!Array.isArray(list)) return []
-    const since = Date.now() - DRAFT_TTL_MS
-    return list
-      .flatMap((v): SavedDraft[] => {
-        const d = parseDraft(v)
-        const savedAt = Number((v as { savedAt?: unknown } | null)?.savedAt)
-        return d && savedAt > since ? [{ ...d, savedAt }] : []
-      })
-      .sort((a, b) => b.savedAt - a.savedAt)
+    local = window.localStorage
   } catch {
-    return []
+    // 使えないときは保存しない
   }
-}
-
-function writeDrafts(list: SavedDraft[]) {
   try {
-    if (list.length === 0) localStorage.removeItem(DRAFTS_KEY)
-    else localStorage.setItem(DRAFTS_KEY, JSON.stringify(list.slice(0, MAX_DRAFTS)))
-  } catch {
-    // 保存できない（プライベートモードなど）ときは下書きなしで続ける
-  }
-}
-
-/**
- * このタブで開く下書き。読み込み直す前にこのタブで書いていた下書きがあればそれ（なければ新しい下書き）。
- * 新しく開いたタブなら、いちばん新しく保存した下書き（ほかのタブで書きかけのものも含む）
- */
-function loadDraft(): Draft | null {
-  const list = readDrafts()
-  let tabKey: string | null = null
-  try {
-    tabKey = sessionStorage.getItem(TAB_DRAFT_KEY)
-  } catch {
-    // 使えないときは新しく開いたタブとして扱う
-  }
-  const found = tabKey ? list.find((d) => d.key === tabKey) : list[0]
-  return found ? parseDraft(found) : null
-}
-
-/** このタブで書いている下書きのキーを覚える（読み込み直したときに、ほかのタブの下書きと取り違えない） */
-function rememberTabDraft(key: string) {
-  try {
-    sessionStorage.setItem(TAB_DRAFT_KEY, key)
+    session = window.sessionStorage
   } catch {
     // 同上
   }
-}
-
-/**
- * 下書きを保存する。同じキーの分だけを書き換え、ほかのキーの下書きには触らない。何も書いていなければ、そのキーの分を消す。
- * 中身が変わっていなければ書かない（開いただけ・読み込み直しただけで「いちばん新しい下書き」にならないように）
- */
-function saveDraft(d: Draft) {
-  const list = readDrafts()
-  const current = list.find((x) => x.key === d.key)
-  if (current && sameDraft(current, d)) return
-  const others = list.filter((x) => x.key !== d.key)
-  if (!isBlankDraft(d)) writeDrafts([{ ...d, savedAt: Date.now() }, ...others])
-  else if (others.length !== list.length) writeDrafts(others)
-}
-
-/**
- * 送った下書きを消す。そのキーの分が送った内容そのもののときだけ消す
- * （送っている間に、同じ下書きを開いたほかのタブが直していたら、それは残す。ほかのキーの下書きには触らない）
- */
-function clearDraft(sent: Draft) {
-  const list = readDrafts()
-  const next = list.filter((x) => !sameDraft(x, sent))
-  if (next.length !== list.length) writeDrafts(next)
+  return { local, session }
 }
 
 class ApiError extends Error {
@@ -298,6 +201,8 @@ export default function QuickPostApp() {
   const titleRef = useRef<HTMLInputElement>(null)
   const photosRef = useRef<Photo[]>([])
   photosRef.current = photos
+  /** このタブが最後に保存した（または読み込んだ）下書き。ほかのタブがあとから直したかを見分ける */
+  const lastSavedRef = useRef<Draft | null>(null)
 
   const limits: Limits = info?.limits ?? { ...LIMITS, photoBytes: 4 * 1024 * 1024 }
 
@@ -334,15 +239,20 @@ export default function QuickPostApp() {
 
   useEffect(() => {
     setWebauthn(browserSupportsWebAuthn())
-    setDraft(loadDraft() ?? freshDraft())
+    const loaded = loadDraft(draftStores())
+    lastSavedRef.current = loaded
+    setDraft(loaded ?? freshDraft())
     void refresh()
   }, [refresh])
 
   // 下書きを自動保存（少し間を置いてまとめて書く）。このタブの下書きのキーはすぐ覚える
   useEffect(() => {
     if (!draft) return
-    rememberTabDraft(draft.key)
-    const t = window.setTimeout(() => saveDraft(draft), 400)
+    rememberTabDraft(draftStores(), draft.key)
+    const t = window.setTimeout(() => {
+      saveDraft(draftStores(), draft)
+      lastSavedRef.current = draft
+    }, 400)
     return () => window.clearTimeout(t)
   }, [draft])
 
@@ -494,8 +404,13 @@ export default function QuickPostApp() {
         JSON.stringify([text, title ?? '', draft.postType, prints]),
       )
       const body = { text, title, postType: draft.postType, images: ids, key: draft.key, digest }
-      // 送る前に下書きをすぐ保存する（自動保存を待たない）。応答が届かないまま読み込み直しても、同じキーで送り直せるように
-      saveDraft(draft)
+      // 送る前に下書きをすぐ保存する（自動保存を待たない）。応答が届かないまま読み込み直しても、同じキーで送り直せるように。
+      // ただし、同じ下書きを開いたほかのタブがあとから直していたら、このタブの古い内容で上書きしない
+      const stores = draftStores()
+      if (canSaveBeforeSend(storedDraft(stores, draft.key), lastSavedRef.current)) {
+        saveDraft(stores, draft)
+        lastSavedRef.current = draft
+      }
       // 同じ下書きをまだ送っている途中（409）なら、少し待って送り直す（2回目以降は最初の投稿が返る）
       type Created = { id: number; duplicate?: boolean; digest?: string | null }
       let created: Created | null = null
@@ -512,9 +427,10 @@ export default function QuickPostApp() {
         // このキーではすでに別の内容が投稿されていた（応答だけが届かずに直して送り直した、または別のタブが先に送った）。
         // 今の内容は消さずに残し、別の投稿として送れるようキーを新しくする
         const next = { ...draft, key: crypto.randomUUID() }
-        clearDraft(draft)
-        rememberTabDraft(next.key)
-        saveDraft(next)
+        clearDraft(stores, draft)
+        rememberTabDraft(stores, next.key)
+        saveDraft(stores, next)
+        lastSavedRef.current = next
         setDraft(next)
         setError(
           '前に送った内容はすでに投稿されていました。直した内容も投稿するなら、もう一度「投稿する」を押してください。',
@@ -524,7 +440,8 @@ export default function QuickPostApp() {
 
       queue.forEach((p) => URL.revokeObjectURL(p.url))
       setPhotos([])
-      clearDraft(draft)
+      clearDraft(stores, draft)
+      lastSavedRef.current = null
       setDraft(freshDraft())
       setDoneId(created.id)
       go('done')
