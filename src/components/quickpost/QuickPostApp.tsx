@@ -70,10 +70,12 @@ const freshDraft = (): Draft => ({
   key: crypto.randomUUID(),
 })
 
-function loadDraft(): Draft | null {
+/** まだ何も書いていない下書きか（開いたばかり・投稿し終えた直後） */
+const isBlankDraft = (d: Draft) => !d.text && !d.title && !d.showTitle && d.postType === 'diary'
+
+function parseDraft(raw: string | null): Draft | null {
+  if (!raw) return null
   try {
-    const raw = localStorage.getItem(DRAFT_KEY)
-    if (!raw) return null
     const d = JSON.parse(raw) as Partial<Draft>
     if (typeof d.text !== 'string' || typeof d.key !== 'string') return null
     return {
@@ -90,6 +92,21 @@ function loadDraft(): Draft | null {
   }
 }
 
+function loadDraft(): Draft | null {
+  try {
+    return parseDraft(localStorage.getItem(DRAFT_KEY))
+  } catch {
+    return null
+  }
+}
+
+const sameDraft = (a: Draft, b: Draft) =>
+  a.key === b.key &&
+  a.text === b.text &&
+  a.title === b.title &&
+  a.showTitle === b.showTitle &&
+  a.postType === b.postType
+
 function saveDraft(d: Draft) {
   try {
     localStorage.setItem(DRAFT_KEY, JSON.stringify(d))
@@ -98,7 +115,7 @@ function saveDraft(d: Draft) {
   }
 }
 
-/** 投稿できた下書きを消す。ほかのタブが同じ枠に別の下書き（別のキー）を保存していたら、それは残す */
+/** 投稿できた下書きを消す。送っている間にほかのタブが同じ枠に別の下書き（別のキー）を保存していたら、それは残す */
 function clearDraft(key: string) {
   try {
     if (loadDraft()?.key === key) localStorage.removeItem(DRAFT_KEY)
@@ -268,11 +285,30 @@ export default function QuickPostApp() {
     void refresh()
   }, [refresh])
 
-  // 下書きを自動保存（少し間を置いてまとめて書く）
+  // 下書きを自動保存（少し間を置いてまとめて書く）。何も書いていない下書きで、ほかのタブの下書き（別のキー）は上書きしない
+  // （投稿し終えた直後の空の下書きが、ほかのタブで書きかけの下書きを消さないように。自分の下書きを全部消したときは保存する）
   useEffect(() => {
     if (!draft) return
-    const t = window.setTimeout(() => saveDraft(draft), 400)
+    const t = window.setTimeout(() => {
+      if (isBlankDraft(draft) && loadDraft()?.key !== draft.key) return
+      saveDraft(draft)
+    }, 400)
     return () => window.clearTimeout(t)
+  }, [draft])
+
+  // 下書きの保存先は1つなので、ほかのタブが送る直前に自分の下書きで上書きし、投稿できたら消す。
+  // 消されたら、このタブの書きかけを保存し直す（このタブを読み込み直しても残るように）。
+  // 消されたのがこのタブと同じ下書き（送られた内容そのもの）なら保存し直さない
+  useEffect(() => {
+    if (!draft || isBlankDraft(draft)) return
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== DRAFT_KEY || e.newValue !== null) return
+      const removed = parseDraft(e.oldValue)
+      if (removed && sameDraft(removed, draft)) return
+      saveDraft(draft)
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [draft])
 
   const go = (v: View) => {

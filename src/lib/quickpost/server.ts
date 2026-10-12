@@ -407,9 +407,10 @@ export async function recordPost(payload: Payload, sessionId: ID, at: string): P
 
 /**
  * ログインに使ったパスキーを記録する（使用回数・バックアップの有無・最後に使った日時を1回の UPDATE で）。
- * 使用回数は記録より大きいときだけ進める（同時のログインで小さい値に戻さない）。進められないのは、同じか
- * より新しい回数の応答がすでに通ったとき（複製された鍵の疑い）なので false を返し、呼び出し側はログインさせない。
- * 回数を数えないパスキー（いつも 0）は回数の条件なしで記録する。Payload の update は行の全部の列を書き戻し、
+ * 使用回数は記録より大きいときだけ進める（同時のログインで小さい値に戻さない）。回数を数えないパスキー（いつも 0）は、
+ * 記録も 0 のときだけ通す（記録が進んでいるのに 0 が返るのは、数える鍵の複製の疑い）。判定は @simplewebauthn と同じ規則を、
+ * 読み取りから書き込みまでの間にほかのログインが割り込んでも崩れないよう、この UPDATE の条件で確かめ直す。
+ * 通せないときは false を返し、呼び出し側はログインさせない。Payload の update は行の全部の列を書き戻し、
  * 同時のログインで古い回数に戻しうるので、ログインではこの行をここ以外で書かない。トランザクションの外で呼ぶこと
  */
 export async function recordPasskeyUse(
@@ -420,12 +421,15 @@ export async function recordPasskeyUse(
   const at = new Date().toISOString()
   const result = await payload.db.drizzle.execute(sql`
     UPDATE passkeys SET
-      counter = GREATEST(COALESCE(counter, 0), ${counter}::numeric),
+      counter = ${counter}::numeric,
       backed_up = ${backedUp},
       last_used_at = ${at},
       updated_at = ${at}
     WHERE id = ${passkeyId}
-      AND (${counter}::numeric = 0 OR COALESCE(counter, 0) < ${counter}::numeric)
+      AND (
+        (${counter}::numeric = 0 AND COALESCE(counter, 0) = 0)
+        OR COALESCE(counter, 0) < ${counter}::numeric
+      )
     RETURNING id`)
   return result.rows.length > 0
 }

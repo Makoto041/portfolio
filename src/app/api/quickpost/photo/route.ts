@@ -58,7 +58,8 @@ export async function POST(req: NextRequest) {
 
     const media = await payload.create({
       collection: 'media',
-      data: { alt: '', isTimelineOnly: true },
+      // 投稿に使われるまでは公開しない（投稿の保存と同じトランザクションで pending を外す。TimelinePosts のフック）
+      data: { alt: '', isTimelineOnly: true, pending: true },
       // 元のファイル名は使わない（端末の情報を残さない・推測されにくい名前にする）
       file: {
         data: photo,

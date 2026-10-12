@@ -166,6 +166,10 @@ export interface Media {
    * チェックを入れるとギャラリーには表示されず、タイムラインのみに表示される画像になります
    */
   isTimelineOnly?: boolean | null;
+  /**
+   * さっと投稿で上げて、まだ投稿に使っていない写真。投稿に使われるまで、公開の一覧や API には出ません
+   */
+  pending?: boolean | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -523,6 +527,7 @@ export interface UsersSelect<T extends boolean = true> {
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   isTimelineOnly?: T;
+  pending?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
