@@ -5,7 +5,8 @@
  * 一意制約（unique）で断られた書き込みか。Payload は Postgres の一意制約違反を、項目名つきの
  * ValidationError（status 400、data.errors[].path に項目名）に変えて投げる。
  * クラスの照合（instanceof）はバンドルでクラスが二重になると外れるので、形（status と errors[].path）で見る。
- * DB の障害などはこの形にならないので false（呼び出し側でそのまま 500 にする）
+ * DB の障害などはこの形にならないので false（呼び出し側でそのまま 500 にする）。
+ * 項目名は Payload が索引の名前から引く。Payload を上げたときは、一意制約の違反がまだこの形で届くかを確かめる
  */
 export function isUniqueViolation(e: unknown, field: string): boolean {
   if (typeof e !== 'object' || e === null) return false

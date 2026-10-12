@@ -12,10 +12,11 @@ import { adminOnly } from '@/lib/access'
 const never = () => false
 
 /**
- * 名前の変更など、管理画面からの更新では使用回数（counter）・同期の有無・最後に使った日時を書かない。
- * これらはログインのときに生の SQL で進める（src/lib/quickpost/server.ts の recordPasskeyUse）。
+ * Payload を通す更新（管理画面での名前の変更・API・payload.update）では、使用回数（counter）・同期の有無・
+ * 最後に使った日時を書かない。これらはログインのときに生の SQL で進める（src/lib/quickpost/server.ts の recordPasskeyUse）。
  * Payload の更新は、書き換えられない項目も保存してある値で補って書き戻すので、名前の変更と同時に
  * 別の端末がログインすると、進んだ counter を古い値に戻してしまう。ここで外せば、その列は書かれない
+ * （直す必要があるときは SQL で直す）
  */
 export const keepLoginFields: CollectionBeforeChangeHook = ({ data, operation }) => {
   if (operation === 'update') {

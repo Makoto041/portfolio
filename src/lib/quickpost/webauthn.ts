@@ -1,6 +1,7 @@
 // src/lib/quickpost/webauthn.ts
 // 端末から届いたパスキーの応答（JSON）の形を確かめ、知っている項目だけで組み直す（純粋な関数。単体テストあり）。
 // 署名などの中身の検証は @simplewebauthn/server が行う。ここでは DB を引く前の門前払いをする。
+// 検証に失敗した理由をログに出すときの伏せ方（describeWebAuthnError）もここに置く。
 import type {
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,
@@ -79,13 +80,11 @@ export function asRegistrationResponse(body: unknown): RegistrationResponseJSON 
 }
 
 /**
- * パスキーの検証に失敗した理由をログ用の短い文にする。@simplewebauthn/server の例外の文には、
- * 確認値（challenge）やオリジンなどの値が "…" で入るので、その中身を伏せて形だけ残す
+ * パスキーの検証に失敗した理由をログ用の短い文にする。@simplewebauthn/server の失敗の文は、
+ * 確認値（challenge）やオリジンなどの値を引用符で囲んで含むので、最初の引用符から後ろを捨てて
+ * 失敗の種類だけを残す（端末から届いた値に引用符が入っていても、確認値は出ない）。改行などは空白にする
  */
 export function describeWebAuthnError(e: unknown): string {
   const message = e instanceof Error ? e.message : String(e)
-  return message
-    .replace(/"[^"]*"/g, '"…"')
-    .replace(/'[^']*'/g, "'…'")
-    .slice(0, 200)
+  return message.split(/["']/)[0].replace(/\s+/g, ' ').trim().slice(0, 200)
 }

@@ -11,7 +11,6 @@ export async function fetchProducts(): Promise<Product[]> {
         sort: 'order',
         limit: 100,
       })
-      console.log('Products fetched directly from Payload:', docs.length)
       return docs as Product[]
     } catch (error) {
       console.error('Direct fetchProducts error', error)
@@ -27,7 +26,6 @@ export async function fetchProducts(): Promise<Product[]> {
   }
   
   const url = `${base.replace(/\/$/, '')}/api/products?sort=order&limit=100`
-  console.log('Fetching products from:', url)
   try {
     const res = await fetch(url, { next: { revalidate: 300 } })
     if (!res.ok) {
@@ -35,8 +33,6 @@ export async function fetchProducts(): Promise<Product[]> {
       return []
     }
     const json = await res.json()
-    console.log('Products API response:', json)
-    console.log('Products count:', json.docs?.length || 0)
     return json.docs as Product[]
   } catch (e) {
     console.error('fetchProducts API error', e)

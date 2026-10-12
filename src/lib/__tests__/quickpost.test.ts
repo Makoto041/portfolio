@@ -416,17 +416,23 @@ describe('contentDigest', () => {
 })
 
 describe('パスキーの検証の失敗理由（ログ用）', () => {
-  it('確認値やオリジンなどの値を伏せて、文の形だけ残す', () => {
+  it('最初の引用符から後ろ（確認値やオリジンなどの値）を捨てて、失敗の種類だけ残す', () => {
     const e = new Error(
       'Unexpected authentication response challenge "abcDEF123", expected "xyz789"',
     )
-    expect(describeWebAuthnError(e)).toBe(
-      'Unexpected authentication response challenge "…", expected "…"',
-    )
+    expect(describeWebAuthnError(e)).toBe('Unexpected authentication response challenge')
     expect(describeWebAuthnError(new Error("Unexpected RP ID hash 'deadbeef'"))).toBe(
-      "Unexpected RP ID hash '…'",
+      'Unexpected RP ID hash',
     )
     expect(describeWebAuthnError('plain')).toBe('plain')
     expect(describeWebAuthnError(new Error('x'.repeat(500)))).toHaveLength(200)
+  })
+
+  it('端末から届いた値に引用符が入っていても、サーバーの確認値は出ない。改行は空白にする', () => {
+    const e = new Error(
+      'Unexpected authentication response challenge "x"", expected "SERVERCHALLENGE"',
+    )
+    expect(describeWebAuthnError(e)).not.toContain('SERVERCHALLENGE')
+    expect(describeWebAuthnError(new Error('line1\nline2\tend'))).toBe('line1 line2 end')
   })
 })
