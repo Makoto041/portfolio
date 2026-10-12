@@ -178,6 +178,17 @@ describe('openTab', () => {
     expect(d.texts()).toEqual(['書きかけ'])
   })
 
+  it('引き継いだタブで書き換えた分は、元のタブを読み込み直しても引き取らない（そのタブの下書きとして残る）', () => {
+    const d = device()
+    const a = d.newTab()
+    a.save(draft('K', '書きかけ'))
+    const b = d.newTab()
+    b.save(draft('K', '書きかけをBで直した'))
+    expect(a.reload().draft).toBeNull()
+    expect(d.local.getItem(DRAFT_PREFIX + b.id)).toContain('書きかけをBで直した')
+    expect(b.reload().draft).toEqual(draft('K', '書きかけをBで直した'))
+  })
+
   it('読み込み直したタブは、ほかのタブがあとから保存した下書きではなく、自分の下書きを開く', () => {
     const d = device()
     const a = d.newTab()
@@ -274,6 +285,23 @@ describe('clearDraft（投稿できたあと）', () => {
     a.save(draft('K', 'hello'))
     a.posted(draft('K', 'hello'))
     expect(d.texts()).toEqual(['hell!'])
+  })
+
+  it('送った版より新しい内容を引き継いだまま触っていない分は残す（ほかのタブで分かれた編集を消さない）', () => {
+    const d = device()
+    const p = d.newTab()
+    p.save(draft('K', 'v1'))
+    d.tick()
+    const r = d.newTab()
+    r.save(draft('K', 'v1-R'))
+    d.tick()
+    p.save(draft('K', 'v1-P'))
+    d.tick()
+    const q = d.newTab()
+    expect(q.opened).toEqual(draft('K', 'v1-P'))
+    r.posted(draft('K', 'v1-R'))
+    expect(d.texts()).toEqual(['v1-P'])
+    expect(q.reload().draft).toEqual(draft('K', 'v1-P'))
   })
 
   it('sessionStorage が消える端末（ホーム画面のアプリなど）で開き直しを重ねても、送ったあとに古い版が残らない', () => {

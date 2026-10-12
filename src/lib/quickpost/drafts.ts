@@ -6,7 +6,8 @@
 //   - 新しく開いたタブは、いちばん新しい下書きを引き継ぐ（写さずに、その下書きの持ち主をこのタブにする。
 //     下書きのキーも同じなので、元のタブと両方から送っても投稿は1件＝サーバーの受付票、内容が違えば画面が知らせる）。
 //     元のタブがこのあと書き換えた分は、別の下書きとして残る。引き継がれたあとに元のタブを読み込み直したときは、
-//     同じ下書き（キー）が残っていれば引き取り直す（引き継いだタブを閉じても、元のタブで続きを書ける）
+//     同じ下書き（キー）が引き継がれたまま触られずに残っていれば引き取り直す（引き継いだタブを閉じても、元のタブで
+//     続きを書ける）。引き継いだタブで書き換えた分はそのタブの下書きなので、引き取らない
 //   - 投稿できたら、このタブの分と、ほかのタブにある「送った内容そのもの」と、同じ下書きを引き継いだまま書き換えていない分を
 //     消す。同じ下書きをほかのタブで直した分は残す
 //   - 既知の制限: ブラウザの「タブを複製」は sessionStorage も写すので、複製した2つのタブは同じ下書きを書き合う
@@ -156,8 +157,9 @@ export function rememberTab(stores: DraftStores, tab: string, draft: Draft | nul
 
 /**
  * このタブを開く。
- * - 読み込み直したタブ: 自分の下書き。無ければ、書いていた下書き（同じキー）がほかのタブに引き継がれたまま残っていれば
- *   引き取り直す。それも無ければ null（新しい下書き。投稿し終えた・全部消したときはキーを覚えていないので乗り換えない）
+ * - 読み込み直したタブ: 自分の下書き。無ければ、書いていた下書き（同じキー）がほかのタブに引き継がれたまま触られずに
+ *   残っていれば引き取り直す（引き継いだタブで書き換えた分は、そのタブの下書きなので引き取らない）。それも無ければ null
+ *   （新しい下書き。投稿し終えた・全部消したときはキーを覚えていないので乗り換えない）
  * - 新しく開いたタブ: 新しい ID と、いちばん新しい下書き（ほかのタブで書きかけのものも含む）を引き継ぐ。写さずに持ち主を
  *   付け替えるので、同じ下書きの古い版が端末に残らない（送ったあとに古い版が「書きかけ」として出てこない）
  */
@@ -169,7 +171,8 @@ export function openTab(stores: DraftStores): { tab: string; draft: Draft | null
   if (saved) {
     tab = saved.tab
     found =
-      list.find((d) => d.tab === tab) ?? (saved.key ? list.find((d) => d.key === saved.key) : undefined)
+      list.find((d) => d.tab === tab) ??
+      (saved.key ? list.find((d) => d.key === saved.key && d.inherited) : undefined)
   } else {
     tab = crypto.randomUUID()
     found = list[0]
@@ -209,9 +212,13 @@ export function saveDraft(stores: DraftStores, tab: string, d: Draft) {
  */
 export function clearDraft(stores: DraftStores, tab: string, sent: Draft) {
   try {
+    // 送った版を書いた時刻。引き継いだ分のうち、これより新しいものは送った版より新しい内容（祖先ではない）なので残す
+    const own = readSaved(stores.local?.getItem(DRAFT_PREFIX + tab) ?? null)
+    const sentAt = own?.savedAt ?? nowOf(stores)
     stores.local?.removeItem(DRAFT_PREFIX + tab)
     for (const other of readDrafts(stores)) {
-      if (sameDraft(other, sent) || (other.key === sent.key && other.inherited)) {
+      const olderInherited = other.key === sent.key && other.inherited && other.savedAt <= sentAt
+      if (sameDraft(other, sent) || olderInherited) {
         stores.local?.removeItem(DRAFT_PREFIX + other.tab)
       }
     }
