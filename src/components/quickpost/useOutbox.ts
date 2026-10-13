@@ -1,11 +1,13 @@
 // src/components/quickpost/useOutbox.ts
 // さっと投稿（/post）の送信待ち。「投稿する」を押したら端末に保存し（src/components/quickpost/outboxDb.ts）、
 // 押した順に1件ずつ送る（写真 → 投稿）。画面はすぐ次を書ける。決まりごとは src/lib/quickpost/outbox.ts。
+//   - 送信待ちは1件ごとに ID を持つ（端末に保存するキー）。受付番号（下書きのキー）はサーバーで二重投稿を防ぐためのもので、
+//     下書きを引き継いだ別のタブの送信待ちと同じこともある（内容が違えばサーバーが知らせ、帯で選んでもらう）
 //   - 送れなかったら、通信の失敗などは時間を空けて自動で送り直す（電波が戻った・画面に戻ったときはすぐ）
 //   - ログインが切れたら止め、ログインし直したら続きから送る
-//   - 受付番号（下書きのキー）はそのまま使うので、送り直しても投稿は1件（サーバーの受付票）
+//   - 受付番号はそのまま使うので、送り直しても投稿は1件（サーバーの受付票）。受付票が消える前（25日）までしか自動では送らない
 //   - iPhone の Safari は画面を閉じたあとに送り続ける仕組み（Background Sync）に対応していないため、
-//     閉じている間は止まり、次に開いたときに続きから送る
+//     閉じている間は止まり、次に開いたときに続きから送る（投稿の送信だけは keepalive で、離れても届く）
 //   - 複数のタブで開いていても、送るのは1つのタブだけ（Web Locks）。ほかのタブには変更を知らせる（BroadcastChannel）
 'use client'
 
@@ -14,6 +16,7 @@ import {
   asNewPost,
   byCreated,
   classify,
+  isExpired,
   markFailed,
   nextToSend,
   nextWakeAt,
@@ -26,8 +29,14 @@ import {
 import { ApiError, call, uploadPhoto } from './api'
 import { deleteItem, loadItems, loadPhoto, saveItem, savePhoto } from './outboxDb'
 
-/** 画面から送信待ちに渡す写真（縮小した写真と、選んだ時点で始めた送信） */
-export type HandoffPhoto = { id: string; blob: Blob; upload?: Promise<number> }
+/** 画面から送信待ちに渡す写真（縮小した写真と、選んだ時点で始めた送信・その送り具合） */
+export type HandoffPhoto = {
+  id: string
+  blob: Blob
+  upload?: Promise<number>
+  /** 送り具合を受け取る（受け取るのをやめるときは返り値を呼ぶ） */
+  onProgress?: (cb: (fraction: number) => void) => () => void
+}
 
 /** 「直す」の結果（ok: 画面に戻す / busy: いま送っている最中 / gone: もう送信待ちに無い） */
 export type TakeBack =
@@ -38,6 +47,8 @@ export type TakeBack =
     }
   | { status: 'busy' }
   | { status: 'gone' }
+
+type Live = Pick<HandoffPhoto, 'onProgress'> & { upload: Promise<number> }
 
 type Created = { id: number; duplicate?: boolean; digest?: string | null }
 
@@ -59,15 +70,16 @@ async function withLock(fn: () => Promise<void>): Promise<void> {
 export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
   const [items, setItems] = useState<OutboxItem[]>([])
   const [progress, setProgress] = useState<SendProgress | null>(null)
-  const [resumed, setResumed] = useState(false)
-  const [done, setDone] = useState<{ postId: number; until: number } | null>(null)
+  /** 開いたときに残っていた送信待ち（前回の続き）の ID */
+  const [resumedIds, setResumedIds] = useState<ReadonlySet<string>>(() => new Set())
+  const [done, setDone] = useState<{ postId: number } | null>(null)
 
   const itemsRef = useRef<OutboxItem[]>([])
   /** 選んだ時点で始めた写真の送信（写真の ID ごと。送信待ちが受け持つ） */
-  const liveRef = useRef(new Map<string, Promise<number>>())
-  /** 端末に保存できなかった送信待ち（読み直したときに消さない） */
+  const liveRef = useRef(new Map<string, Live>())
+  /** 端末に保存できなかった送信待ちの ID（読み直したときに消さない） */
   const unsavedRef = useRef(new Set<string>())
-  const sendingKeyRef = useRef<string | null>(null)
+  const sendingIdRef = useRef<string | null>(null)
   const runningRef = useRef(false)
   /** このタブが送信のロックを持っている間 */
   const holdingRef = useRef(false)
@@ -76,6 +88,8 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
   const authResumeRef = useRef(false)
   const timerRef = useRef<number | null>(null)
   const doneTimerRef = useRef<number | null>(null)
+  /** 入力欄を使っている間は「投稿しました」を下げない（帯が消えて、書いている入力欄がずれないように） */
+  const holdDoneRef = useRef(false)
   const channelRef = useRef<BroadcastChannel | null>(null)
   const loggedInRef = useRef(opts.loggedIn)
   loggedInRef.current = opts.loggedIn
@@ -86,7 +100,6 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
   const publish = useCallback((next: OutboxItem[]) => {
     itemsRef.current = [...next].sort(byCreated)
     setItems(itemsRef.current)
-    if (itemsRef.current.length === 0) setResumed(false)
   }, [])
 
   /** 「投稿しました」を下げる（あとで送れなかった・画面に戻したときに、前の「投稿しました」を出し直さない） */
@@ -94,6 +107,22 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     if (doneTimerRef.current !== null) window.clearTimeout(doneTimerRef.current)
     doneTimerRef.current = null
     setDone(null)
+  }, [])
+
+  /** 「投稿しました」を出す。DONE_MS たったら下げる（入力欄を使っている間は、離れるまで出しておく） */
+  const showDone = useCallback((postId: number) => {
+    if (doneTimerRef.current !== null) window.clearTimeout(doneTimerRef.current)
+    setDone({ postId })
+    doneTimerRef.current = window.setTimeout(() => {
+      doneTimerRef.current = null
+      if (!holdDoneRef.current) setDone(null)
+    }, DONE_MS)
+  }, [])
+
+  /** 入力欄を使い始めた・離れた。離れたとき、出しておく時間を過ぎた「投稿しました」を下げる */
+  const holdDone = useCallback((hold: boolean) => {
+    holdDoneRef.current = hold
+    if (!hold && doneTimerRef.current === null) setDone(null)
   }, [])
 
   const notifyOthers = useCallback(() => {
@@ -104,17 +133,14 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     }
   }, [])
 
-  /** 1件を書き換えて保存する（受付番号が変わったときは previousKey の分と入れ替える） */
+  /** 1件を書き換えて保存する（送れた・画面に戻したあとに届いた書き換えで、消したものを保存し直さない） */
   const update = useCallback(
-    async (next: OutboxItem, previousKey?: string) => {
-      const target = previousKey ?? next.key
-      // 送れた・画面に戻したあとに届いた書き換えで、消したものを保存し直さない
-      if (!itemsRef.current.some((i) => i.key === target)) return
-      publish(itemsRef.current.map((i) => (i.key === target ? next : i)))
-      const saved = await saveItem(next, previousKey)
-      if (previousKey) unsavedRef.current.delete(previousKey)
-      if (saved) unsavedRef.current.delete(next.key)
-      else unsavedRef.current.add(next.key)
+    async (next: OutboxItem) => {
+      if (!itemsRef.current.some((i) => i.id === next.id)) return
+      publish(itemsRef.current.map((i) => (i.id === next.id ? next : i)))
+      const saved = await saveItem(next)
+      if (saved) unsavedRef.current.delete(next.id)
+      else unsavedRef.current.add(next.id)
       notifyOthers()
     },
     [notifyOthers, publish],
@@ -122,8 +148,8 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
 
   const remove = useCallback(
     async (item: OutboxItem) => {
-      publish(itemsRef.current.filter((i) => i.key !== item.key))
-      unsavedRef.current.delete(item.key)
+      publish(itemsRef.current.filter((i) => i.id !== item.id))
+      unsavedRef.current.delete(item.id)
       for (const p of item.photos) liveRef.current.delete(p.id)
       await deleteItem(item)
       notifyOthers()
@@ -131,13 +157,15 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     [notifyOthers, publish],
   )
 
-  /** 保存した中身から読み直す（ほかのタブが送った・直した分を反映。保存できなかった分は残す） */
+  /**
+   * 保存した中身から読み直す（ほかのタブが送った・直した分を反映。保存できなかった分は残す）。
+   * 読み出しに失敗したときは、いまの一覧のまま（読めなかった分を消したことにしない）
+   */
   const reload = useCallback(async () => {
     const stored = await loadItems()
-    const keys = new Set(stored.map((i) => i.key))
-    const unsaved = itemsRef.current.filter(
-      (i) => unsavedRef.current.has(i.key) && !keys.has(i.key),
-    )
+    if (stored === null) return
+    const ids = new Set(stored.map((i) => i.id))
+    const unsaved = itemsRef.current.filter((i) => unsavedRef.current.has(i.id) && !ids.has(i.id))
     let next = [...stored, ...unsaved]
     if (wakeRef.current) {
       wakeRef.current = false
@@ -170,26 +198,31 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     async (item: OutboxItem): Promise<'next' | 'stop'> => {
       let cur = item
       const total = cur.photos.length
-      sendingKeyRef.current = cur.key
-      const report = (p: Omit<SendProgress, 'key' | 'total'>) =>
-        setProgress({ key: cur.key, total, ...p })
+      sendingIdRef.current = cur.id
+      const report = (p: Omit<SendProgress, 'id' | 'total'>) =>
+        setProgress({ id: cur.id, total, ...p })
       try {
         for (let i = 0; i < total; i++) {
           // 選んだ時点の送信が終わって写真の ID が残っていれば、それを使う（上げ直さない）
-          cur = itemsRef.current.find((x) => x.key === cur.key) ?? cur
+          cur = itemsRef.current.find((x) => x.id === cur.id) ?? cur
           const photo = cur.photos[i]
           if (photo.mediaId) continue
           report({ phase: 'photos', done: i, fraction: 0 })
           let mediaId: number | null = null
           const live = liveRef.current.get(photo.id)
           if (live) {
+            // 選んだ時点で始めた送信の送り具合を、帯に出す
+            const stop = live.onProgress?.((fraction) =>
+              report({ phase: 'photos', done: i, fraction }),
+            )
             try {
-              mediaId = await live
+              mediaId = await live.upload
             } catch (e) {
               // 写真そのものの誤り（大きすぎる・読めない）は、送り直しても同じなのでそのまま扱う。
               // ほか（通信の失敗・ログインし直す前のログイン切れ など）は、保存した写真から送り直す
               if (e instanceof ApiError && (e.status === 413 || e.status === 415)) throw e
             } finally {
+              stop?.()
               liveRef.current.delete(photo.id)
             }
           }
@@ -201,7 +234,7 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
               report({ phase: 'photos', done: i, fraction }),
             ).promise
           }
-          const latest = itemsRef.current.find((x) => x.key === cur.key) ?? cur
+          const latest = itemsRef.current.find((x) => x.id === cur.id) ?? cur
           const got = mediaId
           cur = {
             ...latest,
@@ -227,18 +260,17 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
         )
         if (created.duplicate && created.digest !== cur.digest) {
           // この受付番号では、すでに違う内容が投稿されていた（応答が届かないまま直して送った・別のタブが先に送った）
+          clearDone()
           await update({ ...cur, problem: 'conflict', code: undefined, nextAt: 0 })
           return 'next'
         }
         await remove(cur)
-        if (doneTimerRef.current !== null) window.clearTimeout(doneTimerRef.current)
-        setDone({ postId: created.id, until: Date.now() + DONE_MS })
-        doneTimerRef.current = window.setTimeout(() => setDone(null), DONE_MS)
+        showDone(created.id)
         return 'next'
       } catch (e) {
         const status = e instanceof ApiError ? e.status : 0
         const code = e instanceof ApiError ? e.code : undefined
-        const latest = itemsRef.current.find((x) => x.key === cur.key) ?? cur
+        const latest = itemsRef.current.find((x) => x.id === cur.id) ?? cur
         // 写真が見つからない（古くなって片付けられた など）: 一度だけ、端末に残した写真から上げ直す
         if (status === 400 && code === 'invalid_images' && !latest.reuploaded) {
           await update({
@@ -259,10 +291,10 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
         }
         return 'next'
       } finally {
-        sendingKeyRef.current = null
+        sendingIdRef.current = null
       }
     },
-    [clearDone, remove, update],
+    [clearDone, remove, showDone, update],
   )
 
   const schedule = useCallback(() => {
@@ -292,8 +324,14 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
           await reload()
           for (;;) {
             if (!loggedInRef.current) break
-            const next = nextToSend(itemsRef.current, Date.now())
+            const now = Date.now()
+            const next = nextToSend(itemsRef.current, now)
             if (!next) break
+            // 受付票が消える前に送れなかったものは自動では送らない（二重投稿を防げないため。確かめて「直す」から）
+            if (isExpired(next, now)) {
+              await update(markFailed(next, 'expired', now))
+              continue
+            }
             if ((await sendOne(next)) === 'stop') break
           }
         } finally {
@@ -311,7 +349,7 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
         void runRef.current()
       }
     }
-  }, [reload, schedule, sendOne])
+  }, [reload, schedule, sendOne, update])
   runRef.current = run
 
   // 開いたとき: 前回の送りかけを読み込む。ほかのタブの変更・電波・画面の切り替えを見張る
@@ -320,8 +358,10 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     void (async () => {
       const stored = await loadItems()
       if (!alive) return
-      publish(stored)
-      if (stored.length) setResumed(true)
+      if (stored) {
+        publish(stored)
+        if (stored.length) setResumedIds(new Set(stored.map((i) => i.id)))
+      }
       void runRef.current()
     })()
 
@@ -368,22 +408,24 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     async (item: OutboxItem, photos: HandoffPhoto[]): Promise<boolean> => {
       for (const p of photos) {
         if (!p.upload) continue
-        liveRef.current.set(p.id, p.upload)
+        liveRef.current.set(p.id, { upload: p.upload, onProgress: p.onProgress })
         p.upload.then(
           (mediaId) => void recordMediaId(p.id, mediaId),
           () => undefined,
         )
       }
       // 保存し終えるまでは「保存できていない」扱いにする（その間に読み直しても消さない）
-      unsavedRef.current.add(item.key)
-      publish([...itemsRef.current.filter((i) => i.key !== item.key), item])
+      unsavedRef.current.add(item.id)
+      publish([...itemsRef.current.filter((i) => i.id !== item.id), item])
       const photosSaved = (await Promise.all(photos.map((p) => savePhoto(p.id, p.blob)))).every(
         Boolean,
       )
+      // 保存を待つ間に送り終えていたら（電波が戻った などで先に送った）、保存し直さない
+      const latest = itemsRef.current.find((i) => i.id === item.id)
+      if (!latest) return true
       // 保存を待つ間に写真の送信が終わっていれば、その ID も一緒に保存する
-      const latest = itemsRef.current.find((i) => i.key === item.key) ?? item
       const saved = await saveItem(latest)
-      if (saved && photosSaved) unsavedRef.current.delete(item.key)
+      if (saved && photosSaved) unsavedRef.current.delete(item.id)
       notifyOthers()
       void runRef.current()
       return saved && photosSaved
@@ -393,8 +435,8 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
 
   /** 「もう一度」 */
   const retry = useCallback(
-    async (key: string) => {
-      const item = itemsRef.current.find((i) => i.key === key)
+    async (id: string) => {
+      const item = itemsRef.current.find((i) => i.id === id)
       if (!item) return
       await update(retryNow(item))
       void runRef.current()
@@ -404,10 +446,10 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
 
   /** 「別の投稿として送る」（受付番号が重なっていたとき。新しい受付番号で送る） */
   const resend = useCallback(
-    async (key: string) => {
-      const item = itemsRef.current.find((i) => i.key === key)
+    async (id: string) => {
+      const item = itemsRef.current.find((i) => i.id === id)
       if (!item) return
-      await update(asNewPost(item, crypto.randomUUID()), key)
+      await update(asNewPost(item, crypto.randomUUID()))
       void runRef.current()
     },
     [update],
@@ -419,13 +461,13 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
    * 受付番号が重なっていたものは、新しい受付番号で戻す（直して送ったら別の投稿になる）
    */
   const takeBack = useCallback(
-    async (key: string): Promise<TakeBack> => {
-      if (sendingKeyRef.current === key) return { status: 'busy' }
+    async (id: string): Promise<TakeBack> => {
+      if (sendingIdRef.current === id) return { status: 'busy' }
       const work = async (): Promise<TakeBack> => {
-        const item = itemsRef.current.find((i) => i.key === key)
+        const item = itemsRef.current.find((i) => i.id === id)
         if (!item) return { status: 'gone' }
         // 先に送信待ちから外す（写真を読み出している間に送り始めないように）
-        publish(itemsRef.current.filter((i) => i.key !== key))
+        publish(itemsRef.current.filter((i) => i.id !== id))
         const photos: { id: string; blob: Blob; print: string; mediaId: number | null }[] = []
         for (const p of item.photos) {
           const blob = await loadPhoto(p.id)
@@ -433,8 +475,8 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
         }
         await remove(item)
         clearDone()
-        const fresh = item.problem === 'conflict' ? crypto.randomUUID() : item.key
-        return { status: 'ok', item: { ...item, key: fresh }, photos }
+        const key = item.problem === 'conflict' ? crypto.randomUUID() : item.key
+        return { status: 'ok', item: { ...item, key }, photos }
       }
       // このタブが送っている最中なら、送っていない投稿はそのまま戻せる
       if (holdingRef.current) return work()
@@ -450,5 +492,15 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     [clearDone, publish, reload, remove],
   )
 
-  return { items, progress, resumed, done, enqueue, retry, resend, takeBack }
+  return {
+    items,
+    progress,
+    resumedIds,
+    done,
+    enqueue,
+    retry,
+    resend,
+    takeBack,
+    holdDone,
+  }
 }

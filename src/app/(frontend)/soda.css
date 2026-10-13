@@ -1639,7 +1639,8 @@
   gap: 4px;
   width: 100%;
   height: 100%;
-  padding: 36px 8px 8px;
+  /* 上は外すボタン、下は送り具合の丸の分をあける */
+  padding: 28px 8px 34px;
   font-size: var(--s-fs-cap);
   color: var(--s-sub);
   text-align: center;
@@ -1730,7 +1731,7 @@
   margin-inline: auto;
 }
 .soda .s-qp-strip .s-ico { width: 18px; height: 18px; }
-.soda .s-qp-strip-txt { margin: 0; min-width: 0; font-size: 13.5px; font-weight: 700; line-height: 1.6; }
+.soda .s-qp-strip-txt { margin: 0; min-width: 0; font-size: var(--s-fs-ui); font-weight: 700; line-height: 1.6; }
 .soda .s-qp-strip-more { font-size: var(--s-fs-meta); color: var(--s-sub); white-space: nowrap; }
 .soda .s-qp-strip .s-qp-track { grid-column: 1 / -1; }
 .soda .s-qp-strip.is-done,
@@ -1768,9 +1769,8 @@
   border: 2px solid var(--s-card);
   border-top-color: var(--s-ink);
   border-radius: 50%;
-  animation: s-qp-spin 0.9s linear infinite;
+  animation: s-spin 0.9s linear infinite;
 }
-@keyframes s-qp-spin { to { transform: rotate(360deg); } }
 /* 写真の送り具合（左下の丸）: 送っている間は輪が伸び、送り終えたら ✓、送れなかったら ! */
 .soda .s-qp-up {
   position: absolute;

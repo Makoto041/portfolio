@@ -7,9 +7,10 @@ import type { StripView } from '@/lib/quickpost/outbox'
 
 type Props = {
   view: StripView
-  onRetry: (key: string) => void
-  onResend: (key: string) => void
-  onEdit: (key: string) => void
+  /** ボタンには送信待ちの中での ID を渡す */
+  onRetry: (id: string) => void
+  onResend: (id: string) => void
+  onEdit: (id: string) => void
 }
 
 export default function SendStrip({ view, onRetry, onResend, onEdit }: Props) {
@@ -17,7 +18,7 @@ export default function SendStrip({ view, onRetry, onResend, onEdit }: Props) {
 
   if (view.kind === 'sending') {
     return (
-      <div className="s-qp-strip is-sending">
+      <section className="s-qp-strip is-sending" aria-label="送信の状況">
         <div className="s-qp-strip-in">
           <span className="s-qp-spin" aria-hidden="true" />
           <p className="s-qp-strip-txt">{view.label}</p>
@@ -26,13 +27,13 @@ export default function SendStrip({ view, onRetry, onResend, onEdit }: Props) {
             <i style={{ width: `${view.pct}%` }} />
           </div>
         </div>
-      </div>
+      </section>
     )
   }
 
   if (view.kind === 'done') {
     return (
-      <div className="s-qp-strip is-done">
+      <section className="s-qp-strip is-done" aria-label="送信の状況">
         <div className="s-qp-strip-in">
           <SodaIcon name="check" />
           <p className="s-qp-strip-txt">投稿しました</p>
@@ -40,12 +41,12 @@ export default function SendStrip({ view, onRetry, onResend, onEdit }: Props) {
             タイムラインで見る
           </a>
         </div>
-      </div>
+      </section>
     )
   }
 
   return (
-    <div className="s-qp-strip is-failed">
+    <section className="s-qp-strip is-failed" aria-label="送信の状況">
       <div className="s-qp-strip-in">
         <SodaIcon name="alert" />
         <p className="s-qp-strip-txt">{view.message}</p>
@@ -53,23 +54,23 @@ export default function SendStrip({ view, onRetry, onResend, onEdit }: Props) {
         {(view.retry || view.resend || view.edit) && (
           <div className="s-qp-strip-act">
             {view.retry && (
-              <button type="button" className="is-solid" onClick={() => onRetry(view.key)}>
+              <button type="button" className="is-solid" onClick={() => onRetry(view.id)}>
                 もう一度
               </button>
             )}
             {view.resend && (
-              <button type="button" className="is-solid" onClick={() => onResend(view.key)}>
+              <button type="button" className="is-solid" onClick={() => onResend(view.id)}>
                 別の投稿として送る
               </button>
             )}
             {view.edit && (
-              <button type="button" onClick={() => onEdit(view.key)}>
+              <button type="button" onClick={() => onEdit(view.id)}>
                 直す
               </button>
             )}
           </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }

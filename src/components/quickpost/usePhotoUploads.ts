@@ -32,6 +32,8 @@ type Task = {
   mediaId: number | null
   removed: boolean
   abort: () => void
+  /** 送り具合を知りたい相手（送信待ちに引き渡したあと、帯に進み具合を出すため） */
+  listeners: Set<(fraction: number) => void>
 }
 
 /** 送信待ちから画面に戻すときの写真 */
@@ -80,7 +82,10 @@ export function usePhotoUploads(opts: { maxBytes: number; onAuthLost: () => void
       enqueue(uploadChain, async () => {
         if (task.removed) throw new ApiError(0, 'aborted')
         patch(task.id, { status: 'uploading', progress: 0 })
-        const up = uploadPhoto(blob, (f) => patch(task.id, { progress: f }))
+        const up = uploadPhoto(blob, (f) => {
+          patch(task.id, { progress: f })
+          for (const cb of task.listeners) cb(f)
+        })
         task.abort = up.abort
         try {
           const mediaId = await up.promise
@@ -119,6 +124,7 @@ export function usePhotoUploads(opts: { maxBytes: number; onAuthLost: () => void
           mediaId: null,
           removed: false,
           abort: () => {},
+          listeners: new Set(),
         }
         task.prepared = enqueue(prepareChain, async () => {
           if (task.removed) throw new ApiError(0, 'aborted')
@@ -196,7 +202,15 @@ export function usePhotoUploads(opts: { maxBytes: number; onAuthLost: () => void
       photos: kept.map(({ t, blob }) => ({
         id: t.id,
         blob,
-        ...(t.mediaId ? {} : { upload: t.uploaded }),
+        ...(t.mediaId
+          ? {}
+          : {
+              upload: t.uploaded,
+              onProgress: (cb: (fraction: number) => void) => {
+                t.listeners.add(cb)
+                return () => t.listeners.delete(cb)
+              },
+            }),
       })),
       prints: kept.map((r) => r.print),
       mediaIds: kept.map((r) => r.t.mediaId),
@@ -218,6 +232,7 @@ export function usePhotoUploads(opts: { maxBytes: number; onAuthLost: () => void
           mediaId: r.mediaId,
           removed: false,
           abort: () => {},
+          listeners: new Set(),
         }
         if (!r.mediaId) {
           task.uploaded = startUpload(task, r.blob)

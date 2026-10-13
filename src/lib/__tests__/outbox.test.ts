@@ -3,7 +3,9 @@ import {
   asNewPost,
   backoffMs,
   classify,
+  isExpired,
   markFailed,
+  MAX_AGE_MS,
   nextToSend,
   nextWakeAt,
   parseOutboxItem,
@@ -16,11 +18,14 @@ import {
 } from '../quickpost/outbox'
 import { isDiscardablePhoto } from '../quickpost/policy'
 
+const ID_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+const ID_B = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+const ID_C = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
 const KEY_A = '11111111-1111-4111-8111-111111111111'
 const KEY_B = '22222222-2222-4222-8222-222222222222'
-const KEY_C = '33333333-3333-4333-8333-333333333333'
 
 const item = (over: Partial<OutboxItem> = {}): OutboxItem => ({
+  id: ID_A,
   key: KEY_A,
   text: '夕方の散歩',
   postType: 'diary',
@@ -66,23 +71,34 @@ describe('次に送るもの', () => {
   const now = 10_000
   it('押した順に送り、直してもらう必要があるものは飛ばす', () => {
     const items = [
-      item({ key: KEY_B, createdAt: 3000 }),
-      item({ key: KEY_A, createdAt: 2000, problem: 'invalid' }),
-      item({ key: KEY_C, createdAt: 4000 }),
+      item({ id: ID_B, createdAt: 3000 }),
+      item({ id: ID_A, createdAt: 2000, problem: 'invalid' }),
+      item({ id: ID_C, createdAt: 4000 }),
     ]
-    expect(nextToSend(items, now)?.key).toBe(KEY_B)
+    expect(nextToSend(items, now)?.id).toBe(ID_B)
   })
   it('自動で送り直すものは、時刻になってから', () => {
     const waiting = item({ problem: 'network', nextAt: now + 1 })
     expect(nextToSend([waiting], now)).toBeNull()
-    expect(nextToSend([{ ...waiting, nextAt: now }], now)?.key).toBe(KEY_A)
+    expect(nextToSend([{ ...waiting, nextAt: now }], now)?.id).toBe(ID_A)
     expect(nextWakeAt([waiting], now)).toBe(now + 1)
   })
-  it('ログイン切れ・受付番号の重なりは自動では送らない', () => {
+  it('ログイン切れ・受付番号の重なり・古すぎるものは自動では送らない', () => {
     expect(
-      nextToSend([item({ problem: 'auth' }), item({ key: KEY_B, problem: 'conflict' })], now),
+      nextToSend(
+        [
+          item({ problem: 'auth' }),
+          item({ id: ID_B, problem: 'conflict' }),
+          item({ id: ID_C, problem: 'expired' }),
+        ],
+        now,
+      ),
     ).toBeNull()
     expect(nextWakeAt([item({ problem: 'auth', nextAt: now + 5 })], now)).toBeNull()
+  })
+  it('サーバーの受付票が消える前（25日）までしか自動では送らない', () => {
+    expect(isExpired(item({ createdAt: 0 }), MAX_AGE_MS)).toBe(false)
+    expect(isExpired(item({ createdAt: 0 }), MAX_AGE_MS + 1)).toBe(true)
   })
 })
 
@@ -98,73 +114,85 @@ describe('失敗の記録と送り直し', () => {
       nextAt: 0,
     })
   })
-  it('電波が戻ったら、自動で送り直すものだけ待たずに送る', () => {
-    const [x, y] = wakeAll([
+  it('電波が戻ったら、自動で送り直すものだけ待たずに送る（送りすぎは待つ）', () => {
+    const [x, y, z] = wakeAll([
       item({ problem: 'network', nextAt: 99 }),
-      item({ problem: 'invalid', nextAt: 0 }),
+      item({ id: ID_B, problem: 'invalid', nextAt: 0 }),
+      item({ id: ID_C, problem: 'rate', nextAt: 99 }),
     ])
     expect(x.nextAt).toBe(0)
     expect(y.problem).toBe('invalid')
+    expect(z.nextAt).toBe(99)
   })
   it('ログインし直したら、ログイン切れで止まったものを送る', () => {
     const [x, y] = resumeAuth([item({ problem: 'auth' }), item({ problem: 'invalid' })])
     expect(x.problem).toBeNull()
     expect(y.problem).toBe('invalid')
   })
-  it('「もう一度」と「別の投稿として送る」', () => {
+  it('「もう一度」と「別の投稿として送る」（送信待ちの中での ID はそのまま、受付番号だけ変える）', () => {
     expect(retryNow(item({ problem: 'forbidden', nextAt: 5 }))).toMatchObject({
       problem: null,
       nextAt: 0,
     })
     const fresh = asNewPost(item({ problem: 'conflict', attempts: 3 }), KEY_B)
-    expect(fresh).toMatchObject({ key: KEY_B, problem: null, attempts: 0 })
+    expect(fresh).toMatchObject({ id: ID_A, key: KEY_B, problem: null, attempts: 0 })
   })
 })
 
 describe('帯に出すもの', () => {
-  const base = { progress: null, resumed: false, loggedOut: false, done: null, now: 5000 }
+  const base = { progress: null, resumedIds: new Set<string>(), paused: null, done: null }
+  const sendingA = { id: ID_A, phase: 'post' as const, done: 0, total: 0, fraction: 0 }
   it('何も無ければ出さない', () => {
     expect(stripView({ ...base, items: [] })).toEqual({ kind: 'none' })
   })
   it('写真を送っている途中は、何枚目かと進み具合', () => {
     const v = stripView({
       ...base,
-      items: [item(), item({ key: KEY_B, createdAt: 2000 })],
-      progress: { key: KEY_A, phase: 'photos', done: 1, total: 2, fraction: 0.5 },
+      items: [item(), item({ id: ID_B, createdAt: 2000 })],
+      progress: { id: ID_A, phase: 'photos', done: 1, total: 2, fraction: 0.5 },
     })
     expect(v).toEqual({ kind: 'sending', label: '写真を送っています（2 / 2）', more: 1, pct: 50 })
   })
   it('投稿を作っているところ・開き直して続きを送っているところ', () => {
-    const progress = { key: KEY_A, phase: 'post' as const, done: 0, total: 0, fraction: 0 }
-    expect(stripView({ ...base, items: [item()], progress })).toMatchObject({
+    expect(stripView({ ...base, items: [item()], progress: sendingA })).toMatchObject({
       label: '投稿しています…',
       pct: 92,
     })
-    expect(stripView({ ...base, items: [item()], progress, resumed: true })).toMatchObject({
-      label: '前回の続きを送っています',
-    })
+    expect(
+      stripView({ ...base, items: [item()], progress: sendingA, resumedIds: new Set([ID_A]) }),
+    ).toMatchObject({ label: '前回の続きを送っています' })
+    // 前回の続きでないものは、ふつうに出す
+    expect(
+      stripView({ ...base, items: [item()], progress: sendingA, resumedIds: new Set([ID_B]) }),
+    ).toMatchObject({ label: '投稿しています…' })
   })
-  it('送れなかったものがあれば先に出す（送っている最中のものは送信中として扱う）', () => {
+  it('送っている間は、ほかに送れなかったものがあっても送信中を出す', () => {
     const v = stripView({
       ...base,
-      items: [item({ problem: 'network' }), item({ key: KEY_B, createdAt: 2000 })],
+      items: [item({ id: ID_B, createdAt: 500, problem: 'invalid' }), item()],
+      progress: sendingA,
     })
-    expect(v).toMatchObject({
+    expect(v).toMatchObject({ kind: 'sending', more: 1 })
+  })
+  it('送り終えた直後は「投稿しました」、そのあと送れなかったものを出す', () => {
+    const stuck = [item({ problem: 'conflict' })]
+    expect(stripView({ ...base, items: stuck, done: { postId: 7 } })).toEqual({
+      kind: 'done',
+      postId: 7,
+    })
+    expect(stripView({ ...base, items: stuck })).toMatchObject({ kind: 'failed', id: ID_A })
+    expect(stripView({ ...base, items: [], done: { postId: 7 } })).toEqual({
+      kind: 'done',
+      postId: 7,
+    })
+  })
+  it('送れなかったもの: 「もう一度」は送り直せるものだけ、重なりには「別の投稿として送る」', () => {
+    expect(stripView({ ...base, items: [item({ problem: 'network' })] })).toMatchObject({
       kind: 'failed',
-      key: KEY_A,
       retry: true,
       resend: false,
       edit: true,
-      more: 1,
     })
-    const sendingNow = stripView({
-      ...base,
-      items: [item({ problem: 'network' })],
-      progress: { key: KEY_A, phase: 'post', done: 0, total: 0, fraction: 0 },
-    })
-    expect(sendingNow.kind).toBe('sending')
-  })
-  it('直してもらうものに「もう一度」は出さず、重なりには「別の投稿として送る」', () => {
     expect(
       stripView({ ...base, items: [item({ problem: 'invalid', code: 'text_too_long' })] }),
     ).toMatchObject({
@@ -176,10 +204,23 @@ describe('帯に出すもの', () => {
       retry: false,
       resend: true,
     })
+    expect(stripView({ ...base, items: [item({ problem: 'expired' })] })).toMatchObject({
+      retry: false,
+      resend: false,
+      edit: true,
+    })
   })
-  it('ログインしていなければ、ログインを促す（ボタンなし）', () => {
+  it('受付中（409）は送れなかった扱いにしない（送るのを待っている）', () => {
+    expect(stripView({ ...base, items: [item({ problem: 'busy' })] })).toEqual({
+      kind: 'sending',
+      label: '送っています…',
+      more: 0,
+      pct: 4,
+    })
+  })
+  it('止まっている間は理由を出す（ボタンなし）', () => {
     expect(
-      stripView({ ...base, loggedOut: true, items: [item({ problem: 'auth' })] }),
+      stripView({ ...base, paused: 'loggedOut', items: [item({ problem: 'auth' })] }),
     ).toMatchObject({
       kind: 'failed',
       message: problemMessage({ problem: 'auth' }),
@@ -188,19 +229,13 @@ describe('帯に出すもの', () => {
       edit: false,
     })
     // 自分でログアウトしたときは「切れました」と言わない
-    expect(stripView({ ...base, loggedOut: true, items: [item()] })).toMatchObject({
-      kind: 'failed',
+    expect(stripView({ ...base, paused: 'loggedOut', items: [item()] })).toMatchObject({
       message: 'ログインすると、送りかけの投稿を続きから送ります。',
       edit: false,
     })
-  })
-  it('送り終えた直後は「投稿しました」、時間が過ぎたら消す', () => {
-    expect(stripView({ ...base, items: [], done: { postId: 7, until: 6000 } })).toEqual({
-      kind: 'done',
-      postId: 7,
-    })
-    expect(stripView({ ...base, items: [], done: { postId: 7, until: 4000 } })).toEqual({
-      kind: 'none',
+    expect(stripView({ ...base, paused: 'offline', items: [item()] })).toMatchObject({
+      message: 'つながっていません。電波が戻ったら続きから送ります。',
+      edit: false,
     })
   })
 })
@@ -218,6 +253,8 @@ describe('端末に保存した送信待ちの読み直し', () => {
   })
   it('壊れたもの・知らない形は捨てる', () => {
     expect(parseOutboxItem(null)).toBeNull()
+    expect(parseOutboxItem({ ...item(), id: 'nope' })).toBeNull()
+    expect(parseOutboxItem({ ...item(), id: undefined })).toBeNull()
     expect(parseOutboxItem({ ...item(), key: 'nope' })).toBeNull()
     expect(parseOutboxItem({ ...item(), text: '  ' })).toBeNull()
     expect(parseOutboxItem({ ...item(), postType: 'other' })).toBeNull()

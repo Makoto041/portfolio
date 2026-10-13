@@ -236,6 +236,20 @@ export default function QuickPostApp() {
     }
   }, [])
 
+  // 「つながりませんでした」の画面: 電波が戻った・画面に戻ったら確かめ直す（ログインしていれば送りかけも続きから送る）
+  useEffect(() => {
+    if (view !== 'offline') return
+    const retry = () => {
+      if (document.visibilityState === 'visible') void refresh()
+    }
+    window.addEventListener('online', retry)
+    document.addEventListener('visibilitychange', retry)
+    return () => {
+      window.removeEventListener('online', retry)
+      document.removeEventListener('visibilitychange', retry)
+    }
+  }, [view, refresh])
+
   useEffect(() => {
     setWebauthn(browserSupportsWebAuthn())
     const opened = openTab(draftStores())
@@ -378,6 +392,7 @@ export default function QuickPostApp() {
         JSON.stringify([text, title ?? '', draft.postType, handed.prints]),
       )
       const item: OutboxItem = {
+        id: crypto.randomUUID(),
         key: draft.key,
         text,
         ...(title !== undefined ? { title } : {}),
@@ -408,14 +423,14 @@ export default function QuickPostApp() {
   }
 
   /** 「直す」: 送れなかった投稿を入力欄に戻す（いま書いている内容があるときは戻さない） */
-  async function edit(key: string) {
+  async function edit(id: string) {
     if (!draft) return
     if (!isBlankDraft(draft) || photos.length > 0) {
       setView('compose')
       setError('いま書いている内容を送るか消してから「直す」を押してください。')
       return
     }
-    const back = await outbox.takeBack(key)
+    const back = await outbox.takeBack(id)
     if (back.status === 'busy') {
       setView('compose')
       setError(
@@ -433,7 +448,13 @@ export default function QuickPostApp() {
       key: item.key,
     })
     uploads.restore(back.photos)
-    setError('')
+    const lost = item.photos.length - back.photos.length
+    // 端末に残っていなかった写真は戻せない（選び直してもらう）
+    setError(
+      lost > 0
+        ? `写真${lost}枚はこの端末に残っていなかったため戻せませんでした。選び直してください。`
+        : '',
+    )
     setView('compose')
   }
 
@@ -444,11 +465,11 @@ export default function QuickPostApp() {
   const strip = stripView({
     items: outbox.items,
     progress: outbox.progress,
-    resumed: outbox.resumed,
-    // 確かめている間は「ログインが切れました」を出さない
-    loggedOut: !loggedIn && view !== 'loading',
+    resumedIds: outbox.resumedIds,
+    // 送信が止まっている理由（確かめている間は出さない）
+    paused:
+      view === 'offline' ? 'offline' : view === 'login' || view === 'register' ? 'loggedOut' : null,
     done: outbox.done,
-    now: Date.now(),
   })
   const stripText =
     strip.kind === 'sending'
@@ -592,6 +613,11 @@ export default function QuickPostApp() {
         onSubmit={(ev) => {
           ev.preventDefault()
           void submit()
+        }}
+        // 書いている間は「投稿しました」の帯を下げない（帯が消えて、書いている入力欄がずれないように）
+        onFocus={() => outbox.holdDone(true)}
+        onBlur={(ev) => {
+          if (!ev.currentTarget.contains(ev.relatedTarget as Node | null)) outbox.holdDone(false)
         }}
         aria-labelledby="qp-h"
       >
@@ -849,9 +875,9 @@ export default function QuickPostApp() {
       </header>
       <SendStrip
         view={strip}
-        onRetry={(key) => void outbox.retry(key)}
-        onResend={(key) => void outbox.resend(key)}
-        onEdit={(key) => void edit(key)}
+        onRetry={(id) => void outbox.retry(id)}
+        onResend={(id) => void outbox.resend(id)}
+        onEdit={(id) => void edit(id)}
       />
       <main
         id="main"

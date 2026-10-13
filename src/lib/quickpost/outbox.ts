@@ -7,6 +7,8 @@
 //   - 端末に保存した中身が正しい形か
 import { LIMITS, POST_TYPES } from './input'
 
+const DAY = 24 * 60 * 60 * 1000
+
 /** 送信待ちの写真1枚（写真のデータは別に保存する。キーは id） */
 export type OutboxPhoto = {
   id: string
@@ -27,6 +29,7 @@ export type Problem =
   | 'invalid' // 入力の誤り（400。直さないと送れない）
   | 'photo' // 写真が使えない（読めない・大きすぎる・端末にもサーバーにも残っていない）
   | 'conflict' // この受付番号では、すでに別の内容が投稿されていた
+  | 'expired' // 古すぎる（サーバーの受付票が消えていて、二重投稿を防げない）
 
 const PROBLEMS: ReadonlySet<string> = new Set<Problem>([
   'network',
@@ -38,10 +41,16 @@ const PROBLEMS: ReadonlySet<string> = new Set<Problem>([
   'invalid',
   'photo',
   'conflict',
+  'expired',
 ])
 
 export type OutboxItem = {
-  /** 受付番号（下書きのキー）。同じ番号で送り直しても、投稿は1件 */
+  /** 送信待ちの中での ID（端末に保存するキー。送信待ちに入れたときに作る） */
+  id: string
+  /**
+   * 受付番号（下書きのキー）。同じ番号で送り直しても、投稿は1件。
+   * 新しいタブは下書きを番号ごと引き継ぐので、ほかの送信待ちと同じ番号のこともある（内容が違えば conflict）
+   */
   key: string
   text: string
   title?: string
@@ -61,6 +70,15 @@ export type OutboxItem = {
   /** 写真が見つからず、端末に残した写真から上げ直したか（2回目は止めて、直してもらう） */
   reuploaded?: boolean
 }
+
+/**
+ * 送信待ちに入れてからこれより古いものは、自動では送らない。サーバーの受付票は 30 日で消えるので、
+ * それより前に（応答が届かないまま）投稿できていた場合に、二重に投稿してしまうため
+ */
+export const MAX_AGE_MS = 25 * DAY
+
+export const isExpired = (item: Pick<OutboxItem, 'createdAt'>, now: number): boolean =>
+  now - item.createdAt > MAX_AGE_MS
 
 /** 自動で送り直す理由（それ以外は、直すか「もう一度」を押すか、ログインし直すまで待つ） */
 const AUTO_RETRY: ReadonlySet<Problem> = new Set(['network', 'server', 'busy', 'rate'])
@@ -102,7 +120,7 @@ export const byCreated = (a: OutboxItem, b: OutboxItem) => a.createdAt - b.creat
 
 /**
  * 次に送るもの。押した順に、まだ送れていない（理由なし）か、自動で送り直す時刻になったもの。
- * 直してもらう必要があるものは飛ばす（後ろの投稿を止めない）
+ * 直してもらう必要があるもの・送り直しを待っているものは飛ばす（後ろの投稿を止めない）
  */
 export function nextToSend(items: readonly OutboxItem[], now: number): OutboxItem | null {
   return (
@@ -135,9 +153,14 @@ export function markFailed(
   }
 }
 
-/** 電波が戻った・画面に戻ったとき: 自動で送り直すものを、待たずにすぐ送る */
+/**
+ * 電波が戻った・画面に戻ったとき: 自動で送り直すものを、待たずにすぐ送る。
+ * 送りすぎ（429）は待つ（枠が空く前に送っても断られるだけ）
+ */
 export function wakeAll(items: readonly OutboxItem[]): OutboxItem[] {
-  return items.map((i) => (isAutoRetry(i.problem) ? { ...i, nextAt: 0 } : i))
+  return items.map((i) =>
+    isAutoRetry(i.problem) && i.problem !== 'rate' ? { ...i, nextAt: 0 } : i,
+  )
 }
 
 /** ログインし直したとき: ログインが切れて止まっていたものを送り直す */
@@ -150,7 +173,7 @@ export function retryNow(item: OutboxItem): OutboxItem {
   return { ...item, problem: null, code: undefined, nextAt: 0 }
 }
 
-/** 受付番号が重なっていたものを、別の投稿として送り直す（新しい受付番号） */
+/** 受付番号が重なっていたものを、別の投稿として送り直す（新しい受付番号。送信待ちの中での ID はそのまま） */
 export function asNewPost(item: OutboxItem, key: string): OutboxItem {
   return { ...item, key, problem: null, code: undefined, nextAt: 0, attempts: 0 }
 }
@@ -174,6 +197,8 @@ export function problemMessage(item: Pick<OutboxItem, 'problem' | 'code'>): stri
       return '写真を送れませんでした。「直す」で写真を選び直してください。'
     case 'conflict':
       return 'この下書きは、前に違う内容で投稿されていました。「別の投稿として送る」か、「直す」で確かめてください。'
+    case 'expired':
+      return '25日より前の送りかけです。タイムラインに出ていないか確かめてから、「直す」で送ってください。'
     case 'invalid':
       if (item.code === 'text_too_long')
         return `本文が${LIMITS.text}文字を超えています。「直す」で短くしてください。`
@@ -187,7 +212,8 @@ export function problemMessage(item: Pick<OutboxItem, 'problem' | 'code'>): stri
 
 /** いま送っている投稿の進み具合（写真を上げている途中か、投稿を作っているところか） */
 export type SendProgress = {
-  key: string
+  /** 送信待ちの中での ID */
+  id: string
   phase: 'photos' | 'post'
   /** 上げ終えた写真の数 */
   done: number
@@ -196,13 +222,17 @@ export type SendProgress = {
   fraction: number
 }
 
+/** 送信が止まっている理由（offline: つながらない / loggedOut: ログインしていない） */
+export type Paused = 'offline' | 'loggedOut' | null
+
 /** 画面の上の帯に出すもの */
 export type StripView =
   | { kind: 'none' }
   | { kind: 'sending'; label: string; more: number; pct: number }
   | {
       kind: 'failed'
-      key: string
+      /** 送信待ちの中での ID（ボタンで使う） */
+      id: string
       message: string
       /** ほかに送信待ちがある数 */
       more: number
@@ -210,61 +240,80 @@ export type StripView =
       retry: boolean
       /** 「別の投稿として送る」を出すか（受付番号の重なり） */
       resend: boolean
-      /** 「直す」を出すか（ログインしていない間は出さない） */
+      /** 「直す」を出すか（送信が止まっている間は出さない） */
       edit: boolean
     }
   | { kind: 'done'; postId: number }
 
-/** 帯の中身を決める。送れなかったものがあればそれを先に、無ければ送信中、送り終えた直後は「投稿しました」 */
+/**
+ * 帯の中身を決める。優先する順に:
+ *   1. いま送っている（進み具合。ほかに送れなかったものがあっても、送っている間はこちら）
+ *   2. 送り終えた直後の「投稿しました」
+ *   3. 送信が止まっている（つながらない・ログインしていない）
+ *   4. 送れなかったもの（受付中の 409 は送れなかった扱いにしない）
+ *   5. 送るのを待っている
+ */
 export function stripView(s: {
   items: readonly OutboxItem[]
   progress: SendProgress | null
-  /** 開いたときに前回の送りかけが残っていた（その分を送り終えるまで） */
-  resumed: boolean
-  /** ログインしていない（送信は止まっている） */
-  loggedOut: boolean
-  done: { postId: number; until: number } | null
-  now: number
+  /** 開いたときに残っていた（前回の続きの）送信待ちの ID */
+  resumedIds: ReadonlySet<string>
+  paused: Paused
+  /** 送り終えた直後（消すのは useOutbox） */
+  done: { postId: number } | null
 }): StripView {
   const items = [...s.items].sort(byCreated)
-  const sendingKey = s.progress?.key ?? null
-  const troubled = items.find((i) => i.problem !== null && i.key !== sendingKey)
-  if (troubled || (s.loggedOut && items.length > 0)) {
-    const target = troubled ?? items[0]
-    const problem = s.loggedOut ? 'auth' : target.problem
-    // ログアウトした（切れたのではない）ときは「切れました」とは言わない
+  const more = Math.max(0, items.length - 1)
+  const p = s.progress
+  if (p && items.some((i) => i.id === p.id)) {
+    let label: string
+    let pct: number
+    if (p.phase === 'post' || p.total === 0) {
+      label = '投稿しています…'
+      pct = 92
+    } else {
+      label = `写真を送っています（${Math.min(p.done + 1, p.total)} / ${p.total}）`
+      pct = Math.round(((p.done + p.fraction) / (p.total + 1)) * 100)
+    }
+    if (s.resumedIds.has(p.id)) label = '前回の続きを送っています'
+    return { kind: 'sending', label, more, pct: Math.max(4, Math.min(pct, 96)) }
+  }
+  if (s.done) return { kind: 'done', postId: s.done.postId }
+  if (items.length === 0) return { kind: 'none' }
+  if (s.paused) {
+    const target = items.find((i) => i.problem === 'auth') ?? items[0]
     const message =
-      s.loggedOut && target.problem !== 'auth'
-        ? 'ログインすると、送りかけの投稿を続きから送ります。'
-        : problemMessage({ problem, code: target.code })
+      s.paused === 'offline'
+        ? 'つながっていません。電波が戻ったら続きから送ります。'
+        : target.problem === 'auth'
+          ? problemMessage({ problem: 'auth' })
+          : // ログアウトした（切れたのではない）ときは「切れました」とは言わない
+            'ログインすると、送りかけの投稿を続きから送ります。'
     return {
       kind: 'failed',
-      key: target.key,
+      id: target.id,
       message,
-      more: items.length - 1,
-      retry: !s.loggedOut && problem !== null && MANUAL_RETRY.has(problem),
-      resend: !s.loggedOut && problem === 'conflict',
-      edit: !s.loggedOut,
+      more,
+      retry: false,
+      resend: false,
+      edit: false,
     }
   }
-  if (items.length > 0) {
-    const p = s.progress
-    let label = '送っています…'
-    let pct = 4
-    if (p) {
-      if (p.phase === 'post' || p.total === 0) {
-        label = '投稿しています…'
-        pct = 92
-      } else {
-        label = `写真を送っています（${Math.min(p.done + 1, p.total)} / ${p.total}）`
-        pct = Math.round(((p.done + p.fraction) / (p.total + 1)) * 100)
-      }
+  const troubled = items.find((i) => i.problem !== null && i.problem !== 'busy')
+  if (troubled) {
+    const problem = troubled.problem
+    return {
+      kind: 'failed',
+      id: troubled.id,
+      message: problemMessage(troubled),
+      more,
+      retry: problem !== null && MANUAL_RETRY.has(problem),
+      resend: problem === 'conflict',
+      edit: true,
     }
-    if (s.resumed) label = '前回の続きを送っています'
-    return { kind: 'sending', label, more: items.length - 1, pct: Math.max(4, Math.min(pct, 96)) }
   }
-  if (s.done && s.done.until > s.now) return { kind: 'done', postId: s.done.postId }
-  return { kind: 'none' }
+  const label = s.resumedIds.has(items[0].id) ? '前回の続きを送っています' : '送っています…'
+  return { kind: 'sending', label, more, pct: 4 }
 }
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -275,6 +324,7 @@ const isCount = (v: unknown): v is number => typeof v === 'number' && Number.isF
 export function parseOutboxItem(v: unknown): OutboxItem | null {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return null
   const o = v as Record<string, unknown>
+  if (typeof o.id !== 'string' || !UUID_V4.test(o.id)) return null
   if (typeof o.key !== 'string' || !UUID_V4.test(o.key)) return null
   if (typeof o.text !== 'string' || !o.text.trim()) return null
   if (o.title !== undefined && typeof o.title !== 'string') return null
@@ -298,6 +348,7 @@ export function parseOutboxItem(v: unknown): OutboxItem | null {
     photos.push({ id, mediaId: mediaId as number | null, print })
   }
   return {
+    id: o.id,
     key: o.key,
     text: o.text,
     ...(o.title !== undefined ? { title: o.title as string } : {}),
