@@ -60,6 +60,18 @@ export function isQuickPostPhoto(media: {
   )
 }
 
+/**
+ * 消してよい写真か: さっと投稿で上げて、まだ投稿に使っていないもの（pending）。
+ * 投稿に使うと同じトランザクションで pending が外れるので、投稿済みの写真やギャラリーの写真は消さない
+ */
+export function isDiscardablePhoto(media: {
+  filename?: string | null
+  isTimelineOnly?: boolean | null
+  pending?: boolean | null
+}): boolean {
+  return isQuickPostPhoto(media) && media.pending === true
+}
+
 // ── 送信元 ──
 
 /**

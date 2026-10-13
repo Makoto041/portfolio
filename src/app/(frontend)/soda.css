@@ -1500,7 +1500,8 @@
 /* 帯の中身は本文の1段と同じ幅にそろえる（PC で両端に離れないように） */
 .soda .s-qp-bar-in { display: flex; align-items: center; gap: 10px; width: 100%; max-width: var(--s-qp-w); margin-inline: auto; }
 .soda .s-qp-logo { font-family: var(--s-font-logo); font-size: 24px; line-height: 1; text-decoration: none; }
-.soda .s-qp-ttl { font-size: var(--s-fs-ui); font-weight: 700; letter-spacing: 0.08em; }
+/* 画面の見出しはサイトの英字見出し（Timeline・Photos）と同じロゴの書体で「Post」 */
+.soda .s-qp-ttl { font-family: var(--s-font-logo); font-size: 23px; line-height: 1; letter-spacing: 0; }
 .soda .s-qp-state {
   margin-left: auto;
   display: inline-flex;
@@ -1638,7 +1639,8 @@
   gap: 4px;
   width: 100%;
   height: 100%;
-  padding: 36px 8px 8px;
+  /* 上は外すボタン、下は送り具合の丸の分をあける */
+  padding: 28px 8px 34px;
   font-size: var(--s-fs-cap);
   color: var(--s-sub);
   text-align: center;
@@ -1664,6 +1666,7 @@
 }
 .soda .s-qp-x::after { content: ''; position: absolute; inset: -6px; }
 .soda .s-qp-x .s-ico { width: 16px; height: 16px; }
+.soda .s-qp-x:disabled { opacity: 0.5; cursor: default; }
 .soda .s-qp-add {
   position: relative;
   display: grid;
@@ -1696,8 +1699,7 @@
 .soda .s-qp-chip input:disabled { cursor: default; }
 .soda .s-qp-chip input:checked + span { background: var(--s-ink); color: var(--s-bg); }
 .soda .s-qp-chip input:focus-visible + span { outline: 2px solid var(--s-ink); outline-offset: 3px; }
-.soda .s-qp-paper { display: grid; gap: 10px; padding: 16px; border-radius: var(--s-r-l); background: var(--s-paper); }
-.soda .s-qp-track { height: 8px; overflow: hidden; border: 1px solid var(--s-ink); border-radius: 999px; background: var(--s-bg); }
+.soda .s-qp-track { height: 6px; overflow: hidden; border: 1px solid var(--s-ink); border-radius: 999px; background: var(--s-bg); }
 .soda .s-qp-track i { display: block; height: 100%; background: var(--s-ink); transition: width 0.3s; }
 /* 投稿ボタンは画面の下に貼りつける（長文でもすぐ押せる） */
 .soda .s-qp-dock {
@@ -1711,27 +1713,83 @@
   background: var(--s-bg);
 }
 .soda .s-qp-saved { margin: 0; text-align: center; font-size: var(--s-fs-cap); color: var(--s-faint); }
-/* 完了 */
-.soda .s-qp-done {
-  display: grid;
-  gap: 12px;
-  justify-items: center;
-  padding: 28px 18px;
-  border: 1px solid var(--s-ink);
-  border-radius: var(--s-r-l);
-  background: var(--s-card);
-  text-align: center;
+/* 送信の帯（ヘッダーのすぐ下に貼りつける。キーボードが開いていても見える位置） */
+.soda .s-qp-strip {
+  position: sticky;
+  top: calc(var(--s-header-h) + env(safe-area-inset-top, 0px));
+  z-index: 19;
+  padding: 10px max(var(--s-gut), env(safe-area-inset-right, 0px)) 10px max(var(--s-gut), env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--s-ink);
+  background: var(--s-paper);
 }
-.soda .s-qp-check {
-  width: 56px;
-  height: 56px;
+.soda .s-qp-strip-in {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 10px;
+  max-width: var(--s-qp-w);
+  margin-inline: auto;
+}
+.soda .s-qp-strip .s-ico { width: 18px; height: 18px; }
+.soda .s-qp-strip-txt { margin: 0; min-width: 0; font-size: var(--s-fs-ui); font-weight: 700; line-height: 1.6; }
+.soda .s-qp-strip-more { font-size: var(--s-fs-meta); color: var(--s-sub); white-space: nowrap; }
+.soda .s-qp-strip .s-qp-track { grid-column: 1 / -1; }
+.soda .s-qp-strip.is-done,
+.soda .s-qp-strip.is-failed { background: var(--s-ink); color: var(--s-bg); }
+.soda .s-qp-strip.is-done .s-qp-strip-more,
+.soda .s-qp-strip.is-failed .s-qp-strip-more { color: var(--s-bg); }
+/* 押せる範囲は上下に広げて 44px（帯の高さは変えない） */
+.soda .s-qp-strip-link {
+  padding-block: 12px;
+  margin-block: -12px;
+  color: inherit;
+  font-size: var(--s-fs-meta);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.soda .s-qp-strip-act { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; }
+.soda .s-qp-strip-act button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--s-fs-ui);
+  font-weight: 700;
+  cursor: pointer;
+}
+.soda .s-qp-strip-act button.is-solid { border-color: var(--s-bg); background: var(--s-bg); color: var(--s-ink); }
+.soda .s-qp-strip-act button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.soda .s-qp-spin {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--s-card);
+  border-top-color: var(--s-ink);
+  border-radius: 50%;
+  animation: s-spin 0.9s linear infinite;
+}
+/* 写真の送り具合（左下の丸）: 送っている間は輪が伸び、送り終えたら ✓、送れなかったら ! */
+.soda .s-qp-up {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: var(--s-ink);
-  color: var(--s-card);
+  background: conic-gradient(var(--s-ink) calc(var(--p, 0) * 3.6deg), var(--s-card) 0deg);
+  box-shadow: 0 0 0 2px var(--s-paper);
 }
-.soda .s-qp-check .s-ico { width: 28px; height: 28px; stroke-width: 2.2; }
+.soda .s-qp-up::after { content: ''; width: 16px; height: 16px; border-radius: 50%; background: var(--s-paper); }
+.soda .s-qp-up.is-done,
+.soda .s-qp-up.is-failed { background: var(--s-ink); color: var(--s-paper); }
+.soda .s-qp-up.is-done::after,
+.soda .s-qp-up.is-failed::after { display: none; }
+.soda .s-qp-up .s-ico { width: 16px; height: 16px; stroke-width: 2.2; }
 /* ログイン状態 */
 .soda .s-qp-account { display: grid; gap: 10px; }
 .soda .s-qp-sect { margin: 10px 0 0; font-size: var(--s-fs-cap); font-weight: 700; letter-spacing: 0.1em; color: var(--s-sub); }
@@ -1754,7 +1812,8 @@
   .soda .s-wordmark span,
   .soda .s-like.is-pop .s-ico,
   .soda .s-wx-icon .rays,
-  .soda .imgmodal-spin { animation: none !important; }
+  .soda .imgmodal-spin,
+  .soda .s-qp-spin { animation: none !important; }
   .soda .s-pgrid button,
   .soda .s-masonry .s-tile,
   .soda .s-skel { animation: none !important; background: var(--s-card); }

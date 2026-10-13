@@ -21,6 +21,8 @@ import { COOKIE_BASE, QP } from './config'
 import { isUniqueViolation } from './dbErrors'
 import {
   createIpLimiter,
+  isDiscardablePhoto,
+  QUICKPOST_PHOTO_PREFIX,
   isSameOriginRequest,
   isSessionAlive,
   maxAgeSeconds,
@@ -530,6 +532,50 @@ export async function pruneNonces(payload: Payload): Promise<void> {
       overrideAccess: true,
     })
     .catch((e) => console.error('quickpost: failed to prune nonces', e))
+}
+
+/**
+ * 投稿に使われないまま古くなった写真（さっと投稿で上げて pending のまま QP.stalePhotoMs たったもの）を片付ける。
+ * 写真を選んだ時点で送り始めるので、書きかけで閉じた下書きの写真が残る。写真を上げた・投稿したあとに、1回に QP.cleanupBatch 枚まで。
+ * 写真のファイル（R2）も Media の削除と一緒に消える（削除が DB で確定したあと）。送信待ちがこの写真を使おうとしても、端末に残した写真から上げ直す。
+ * 選んでから消すまでの間に投稿に使われても、投稿の写真は消えない: timeline_images.image_id は NOT NULL（ON DELETE SET NULL）なので、
+ * 投稿に使われた写真の削除は DB で失敗し、ファイルも消えない。この列を空にできるように変えるときは、ここを見直すこと
+ */
+export async function cleanupStalePhotos(
+  payload: Payload,
+  now: number = Date.now(),
+): Promise<number> {
+  const found = await payload.find({
+    collection: 'media',
+    where: {
+      and: [
+        { pending: { equals: true } },
+        { isTimelineOnly: { equals: true } },
+        { filename: { like: QUICKPOST_PHOTO_PREFIX } },
+        { createdAt: { less_than: new Date(now - QP.stalePhotoMs).toISOString() } },
+      ],
+    },
+    sort: 'createdAt',
+    limit: QP.cleanupBatch,
+    depth: 0,
+    pagination: false,
+    overrideAccess: true,
+  })
+  let removed = 0
+  for (const doc of found.docs) {
+    // ギャラリーなどの写真は pending にならないが、念のためファイル名でも確かめる
+    if (!isDiscardablePhoto(doc)) continue
+    try {
+      await payload.delete({ collection: 'media', id: doc.id, depth: 0, overrideAccess: true })
+      removed++
+    } catch (e) {
+      // 同時に走ったほかの片付け・画面からの削除で、もう消えていた（404）なら何もしない
+      if ((e as { status?: number })?.status !== 404) {
+        console.error('quickpost: failed to clean up a photo', e)
+      }
+    }
+  }
+  return removed
 }
 
 /** 管理画面のメールアドレスとパスワードを確かめる（Payload のログインと同じ失敗回数ロックが効く） */
