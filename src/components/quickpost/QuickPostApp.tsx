@@ -162,6 +162,7 @@ function passkeyMessage(e: unknown, mode: 'login' | 'register'): string {
     : '登録できませんでした。もう一度お試しください。'
 }
 
+/** さっと投稿の画面（ログイン・登録・書く・ログイン状態） */
 export default function QuickPostApp() {
   const [view, setView] = useState<View>('loading')
   const [info, setInfo] = useState<SessionInfo | null>(null)

@@ -13,6 +13,7 @@ type Props = {
   onEdit: (id: string) => void
 }
 
+/** 送信の帯（送信中・投稿しました・送れなかった理由とボタン）。何も無ければ出さない */
 export default function SendStrip({ view, onRetry, onResend, onEdit }: Props) {
   if (view.kind === 'none') return null
 

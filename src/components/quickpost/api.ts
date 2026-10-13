@@ -18,6 +18,10 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * API を呼ぶ（body があれば JSON で POST、無ければ GET）。失敗は ApiError（応答が無い・止まったら status 0）。
+ * keepalive を付けると、画面を離れても送信を最後まで届ける
+ */
 export async function call<T>(
   path: string,
   body?: unknown,

@@ -46,6 +46,7 @@ function enqueue<T>(chain: { current: Promise<unknown> }, fn: () => Promise<T>):
   return run
 }
 
+/** 送り直しても直らない写真の誤りか（縮小できない・大きすぎる・読めない） */
 function problemOf(e: unknown): PhotoProblem | undefined {
   if (e instanceof PhotoError) return e.code
   if (e instanceof ApiError && e.status === 413) return 'too_large'
@@ -53,6 +54,7 @@ function problemOf(e: unknown): PhotoProblem | undefined {
   return undefined
 }
 
+/** 選んだ写真を縮小して送り始め、画面の印（送り具合）と「投稿する」での引き渡しを受け持つ */
 export function usePhotoUploads(opts: { maxBytes: number; onAuthLost: () => void }) {
   const [photos, setPhotos] = useState<PhotoView[]>([])
   const photosRef = useRef<PhotoView[]>([])
@@ -66,6 +68,7 @@ export function usePhotoUploads(opts: { maxBytes: number; onAuthLost: () => void
   const onAuthLost = useRef(opts.onAuthLost)
   onAuthLost.current = opts.onAuthLost
 
+  /** 写真1枚の画面の印を書き換える */
   const patch = useCallback((id: string, p: Partial<PhotoView>) => {
     setPhotos((prev) => prev.map((v) => (v.id === id ? { ...v, ...p } : v)))
   }, [])

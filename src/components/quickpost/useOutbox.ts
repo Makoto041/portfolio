@@ -56,6 +56,8 @@ const LOCK = 'mk_post_outbox'
 const CHANNEL = 'mk_post_outbox'
 /** 「投稿しました」を出しておく時間 */
 const DONE_MS = 4000
+/** ほかのタブから知らせが来てから、送信の順番に並ぶまで（知らせたタブが先にロックを取れるように） */
+const FOLLOW_MS = 2000
 
 /** 送信は1つのタブだけで行う（Web Locks が無い環境ではそのまま行う。同じ受付番号なので二重にはならない） */
 async function withLock(fn: () => Promise<void>): Promise<void> {
@@ -67,6 +69,7 @@ async function withLock(fn: () => Promise<void>): Promise<void> {
   await fn()
 }
 
+/** 送信待ち（端末に保存して、押した順に送る投稿）と、帯に出す送信の様子を受け持つ */
 export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
   const [items, setItems] = useState<OutboxItem[]>([])
   const [progress, setProgress] = useState<SendProgress | null>(null)
@@ -88,6 +91,8 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
   const authResumeRef = useRef(false)
   const timerRef = useRef<number | null>(null)
   const doneTimerRef = useRef<number | null>(null)
+  /** ほかのタブの知らせを受けて、送信の順番に並ぶ予約 */
+  const followRef = useRef<number | null>(null)
   /** 入力欄を使っている間は「投稿しました」を下げない（帯が消えて、書いている入力欄がずれないように） */
   const holdDoneRef = useRef(false)
   const channelRef = useRef<BroadcastChannel | null>(null)
@@ -97,6 +102,7 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
   onAuthLostRef.current = opts.onAuthLost
   const runRef = useRef<() => Promise<void>>(async () => {})
 
+  /** 一覧を画面と手元の写しに反映する（押した順に並べる） */
   const publish = useCallback((next: OutboxItem[]) => {
     itemsRef.current = [...next].sort(byCreated)
     setItems(itemsRef.current)
@@ -125,6 +131,7 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     if (!hold && doneTimerRef.current === null) setDone(null)
   }, [])
 
+  /** ほかのタブに、送信待ちが変わったことを知らせる */
   const notifyOthers = useCallback(() => {
     try {
       channelRef.current?.postMessage('changed')
@@ -146,6 +153,7 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     [notifyOthers, publish],
   )
 
+  /** 送信待ちから外し、端末の保存（写真も）から消す */
   const remove = useCallback(
     async (item: OutboxItem) => {
       publish(itemsRef.current.filter((i) => i.id !== item.id))
@@ -297,6 +305,7 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     [clearDone, remove, showDone, update],
   )
 
+  /** 次に自動で送り直す時刻に、送信を起こす予約をする */
   const schedule = useCallback(() => {
     if (timerRef.current !== null) window.clearTimeout(timerRef.current)
     timerRef.current = null
@@ -370,7 +379,16 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     try {
       channel = new BroadcastChannel(CHANNEL)
       channel.onmessage = () => {
-        if (!runningRef.current) void reload()
+        // ほかのタブの変更を画面に反映する（このタブが送っている最中は、送り終えてから読み直す）
+        if (!holdingRef.current) void reload()
+        // 送っているタブが途中で閉じられても続きを送れるように、少し待ってから送信の順番に並ぶ
+        // （送っているタブがあれば、そのタブが送り終えてロックを手放してから。送るものが無ければすぐ終わる）
+        if (followRef.current === null) {
+          followRef.current = window.setTimeout(() => {
+            followRef.current = null
+            void runRef.current()
+          }, FOLLOW_MS)
+        }
       }
     } catch {
       // 対応していなければ、画面に戻ったときに読み直す
@@ -394,6 +412,7 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
       channelRef.current = null
       if (timerRef.current !== null) window.clearTimeout(timerRef.current)
       if (doneTimerRef.current !== null) window.clearTimeout(doneTimerRef.current)
+      if (followRef.current !== null) window.clearTimeout(followRef.current)
     }
   }, [publish, reload])
 

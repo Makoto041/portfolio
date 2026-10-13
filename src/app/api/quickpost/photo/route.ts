@@ -27,6 +27,7 @@ export const maxDuration = 30
 
 const ACCEPT = new Set(PHOTO_TYPES)
 
+/** 写真を1枚受け取り、作り直して「投稿待ち」で保存する。応答のあとに古い投稿待ちの写真を片付ける */
 export async function POST(req: NextRequest) {
   const blocked = rejectCrossSite(req)
   if (blocked) return blocked

@@ -19,6 +19,7 @@ type StoredPhoto = { type: string; data: ArrayBuffer }
 let opening: Promise<IDBDatabase | null> | null = null
 const memPhotos = new Map<string, Blob>()
 
+/** 書き込みが確定する（または失敗する）まで待つ */
 function done(tx: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve()
@@ -27,6 +28,7 @@ function done(tx: IDBTransaction): Promise<void> {
   })
 }
 
+/** 読み出しの結果を待つ */
 function result<T>(req: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
     req.onsuccess = () => resolve(req.result)
@@ -34,6 +36,7 @@ function result<T>(req: IDBRequest<T>): Promise<T> {
   })
 }
 
+/** 保存先を開く（開けなければ null。開いた接続は使い回す） */
 function openDb(): Promise<IDBDatabase | null> {
   if (!opening) {
     opening = new Promise((resolve) => {

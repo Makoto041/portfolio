@@ -77,11 +77,13 @@ export type OutboxItem = {
  */
 export const MAX_AGE_MS = 25 * DAY
 
+/** 自動で送るには古すぎるか（送信待ちに入れてから MAX_AGE_MS を過ぎた） */
 export const isExpired = (item: Pick<OutboxItem, 'createdAt'>, now: number): boolean =>
   now - item.createdAt > MAX_AGE_MS
 
 /** 自動で送り直す理由（それ以外は、直すか「もう一度」を押すか、ログインし直すまで待つ） */
 const AUTO_RETRY: ReadonlySet<Problem> = new Set(['network', 'server', 'busy', 'rate'])
+/** 時間を空けて自動で送り直す理由か */
 export const isAutoRetry = (p: Problem | null): boolean => p !== null && AUTO_RETRY.has(p)
 
 /** 「もう一度」で送り直せる理由（入力・写真の誤りは直さないと同じ結果になる。受付番号の重なりは別の操作） */
@@ -318,6 +320,7 @@ export function stripView(s: {
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const SHA256_HEX = /^[0-9a-f]{64}$/
+/** 0 以上の有限の数か（回数・時刻の形の確かめ） */
 const isCount = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0
 
 /** 端末に保存した送信待ちを読み直すときに、形を確かめる（壊れたもの・古い形のものは捨てる） */

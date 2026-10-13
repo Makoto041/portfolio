@@ -42,6 +42,7 @@ type MediaRow = {
   isTimelineOnly?: boolean | null
 }
 
+/** タイムラインに投稿を作る（受付番号で1件だけ）。応答のあとに古い投稿待ちの写真を片付ける */
 export async function POST(req: NextRequest) {
   const blocked = rejectCrossSite(req)
   if (blocked) return blocked
