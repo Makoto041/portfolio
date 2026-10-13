@@ -319,9 +319,10 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     runningRef.current = true
     try {
       await withLock(async () => {
-        holdingRef.current = true
         try {
           await reload()
+          // 読み直したあとから「このタブが送っている」とする（読み直しの間の「直す」は、ロックが空かないので断る）
+          holdingRef.current = true
           for (;;) {
             if (!loggedInRef.current) break
             const now = Date.now()
@@ -422,7 +423,11 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
       )
       // 保存を待つ間に送り終えていたら（電波が戻った などで先に送った）、保存し直さない
       const latest = itemsRef.current.find((i) => i.id === item.id)
-      if (!latest) return true
+      if (!latest) {
+        // 送り終えたときに消した写真を、遅れて保存していることがあるので、もう一度消す（何度消しても同じ）
+        await deleteItem(item)
+        return true
+      }
       // 保存を待つ間に写真の送信が終わっていれば、その ID も一緒に保存する
       const saved = await saveItem(latest)
       if (saved && photosSaved) unsavedRef.current.delete(item.id)

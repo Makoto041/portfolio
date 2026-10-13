@@ -4,7 +4,8 @@
 //     中身の形は src/lib/quickpost/outbox.ts で確かめて読む）
 //   - photos: 送信待ちの写真（縮小した JPEG。写真の ID がキー）。サーバーで写真が片付けられていても上げ直せるよう、
 //     投稿できるまで残す。Blob をそのまま入れられない環境があるので、ArrayBuffer と形式で持つ
-// IndexedDB が使えない（プライベートモードなど）ときはメモリーだけで続ける（閉じると消える）。
+// IndexedDB が使えない（プライベートモードなど）ときは、送信待ちは画面のメモリーだけで続ける（閉じると消える）。
+// 写真はここのメモリーにも持つ（送り直しのときに読む）。
 import { parseOutboxItem, type OutboxItem } from '@/lib/quickpost/outbox'
 
 const DB_NAME = 'mk_post'
@@ -16,7 +17,6 @@ const PHOTOS = 'photos'
 type StoredPhoto = { type: string; data: ArrayBuffer }
 
 let opening: Promise<IDBDatabase | null> | null = null
-const memItems = new Map<string, OutboxItem>()
 const memPhotos = new Map<string, Blob>()
 
 function done(tx: IDBTransaction): Promise<void> {
@@ -84,12 +84,12 @@ function openDb(): Promise<IDBDatabase | null> {
 }
 
 /**
- * 保存してある送信待ち（壊れたものは捨てる）。IndexedDB が使えない環境ではメモリーの分。
- * 読み出しに失敗したときは null（呼び出し側はいまの一覧をそのまま使う。読めなかった分を消したことにしない）
+ * 保存してある送信待ち（壊れたものは捨てる）。開けない・読み出しに失敗したときは null
+ * （呼び出し側はいまの一覧をそのまま使う。読めなかった分を消したことにしない）
  */
 export async function loadItems(): Promise<OutboxItem[] | null> {
   const db = await openDb()
-  if (!db) return [...memItems.values()]
+  if (!db) return null
   try {
     const tx = db.transaction(ITEMS, 'readonly')
     const rows = await result(tx.objectStore(ITEMS).getAll())
@@ -101,7 +101,6 @@ export async function loadItems(): Promise<OutboxItem[] | null> {
 
 /** 送信待ちを保存する。保存できたら true */
 export async function saveItem(item: OutboxItem): Promise<boolean> {
-  memItems.set(item.id, item)
   const db = await openDb()
   if (!db) return false
   try {
@@ -116,7 +115,6 @@ export async function saveItem(item: OutboxItem): Promise<boolean> {
 
 /** 送信待ちを消す（送れた・画面に戻した）。写真も消す */
 export async function deleteItem(item: Pick<OutboxItem, 'id' | 'photos'>): Promise<void> {
-  memItems.delete(item.id)
   for (const p of item.photos) memPhotos.delete(p.id)
   const db = await openDb()
   if (!db) return

@@ -79,6 +79,10 @@ function draftStores(): DraftStores {
 
 const chars = (s: string) => Array.from(s).length
 
+/** 文字を書いている欄か（本文・タイトル）。見出しや選択肢へのフォーカスは含めない */
+const isTypingField = (el: EventTarget | null) =>
+  el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && el.type === 'text')
+
 const tokyoYear = (d: Date) =>
   new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: 'Asia/Tokyo' }).format(d)
 
@@ -193,6 +197,7 @@ export default function QuickPostApp() {
     onAuthLost: authLost,
   })
   const outbox = useOutbox({ loggedIn: Boolean(info), onAuthLost: authLost })
+  const { holdDone } = outbox
   const photos = uploads.photos
   const { retryFailed } = uploads
 
@@ -235,6 +240,11 @@ export default function QuickPostApp() {
       setView('offline')
     }
   }, [])
+
+  // 書く画面を離れたら、「投稿しました」を下げてよい（入力欄にいたまま画面が替わると blur が来ないため）
+  useEffect(() => {
+    if (view !== 'compose') holdDone(false)
+  }, [view, holdDone])
 
   // 「つながりませんでした」の画面: 電波が戻った・画面に戻ったら確かめ直す（ログインしていれば送りかけも続きから送る）
   useEffect(() => {
@@ -615,9 +625,11 @@ export default function QuickPostApp() {
           void submit()
         }}
         // 書いている間は「投稿しました」の帯を下げない（帯が消えて、書いている入力欄がずれないように）
-        onFocus={() => outbox.holdDone(true)}
+        onFocus={(ev) => {
+          if (isTypingField(ev.target)) holdDone(true)
+        }}
         onBlur={(ev) => {
-          if (!ev.currentTarget.contains(ev.relatedTarget as Node | null)) outbox.holdDone(false)
+          if (!isTypingField(ev.relatedTarget)) holdDone(false)
         }}
         aria-labelledby="qp-h"
       >
