@@ -1,5 +1,5 @@
 import type { GlobalConfig } from 'payload'
-import { anyone, adminOnly } from '@/lib/access'
+import { anyone, adminOnly, notPendingMedia } from '@/lib/access'
 import { revalidateAllPages } from '@/lib/revalidate'
 
 export const SiteSettings: GlobalConfig = {
@@ -66,6 +66,8 @@ export const SiteSettings: GlobalConfig = {
           relationTo: 'media',
           label: 'プロフィール画像',
           required: true,
+          // 投稿待ち（さっと投稿で上げて、まだ投稿に使っていない写真）は選べない（24 時間で片付けられるため）
+          filterOptions: notPendingMedia,
         },
         {
           name: 'socialLinks',

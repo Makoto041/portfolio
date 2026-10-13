@@ -116,6 +116,8 @@ export async function DELETE(req: NextRequest) {
     })
     if (!doc) return json({ ok: true })
     if (!isDiscardablePhoto(doc)) return fail(409, 'in_use')
+    // 確かめてから消すまでの間に投稿に使われても、投稿の写真は消えない（timeline_images.image_id が NOT NULL のため
+    // 削除は DB で失敗し、ファイルも消えない。src/lib/quickpost/server.ts の cleanupStalePhotos を参照）
 
     await payload.delete({ collection: 'media', id, user, overrideAccess: false, depth: 0 })
     return json({ ok: true })

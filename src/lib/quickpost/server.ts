@@ -22,6 +22,7 @@ import { isUniqueViolation } from './dbErrors'
 import {
   createIpLimiter,
   isDiscardablePhoto,
+  QUICKPOST_PHOTO_PREFIX,
   isSameOriginRequest,
   isSessionAlive,
   maxAgeSeconds,
@@ -535,8 +536,10 @@ export async function pruneNonces(payload: Payload): Promise<void> {
 
 /**
  * 投稿に使われないまま古くなった写真（さっと投稿で上げて pending のまま QP.stalePhotoMs たったもの）を片付ける。
- * 写真を選んだ時点で送り始めるので、書きかけで閉じた下書きの写真が残る。写真を上げたときに、1回に QP.cleanupBatch 枚まで。
- * 写真のファイル（R2）も Media の削除と一緒に消える。送信待ちがこの写真を使おうとしても、端末に残した写真から上げ直す
+ * 写真を選んだ時点で送り始めるので、書きかけで閉じた下書きの写真が残る。写真を上げた・投稿したあとに、1回に QP.cleanupBatch 枚まで。
+ * 写真のファイル（R2）も Media の削除と一緒に消える（削除が DB で確定したあと）。送信待ちがこの写真を使おうとしても、端末に残した写真から上げ直す。
+ * 選んでから消すまでの間に投稿に使われても、投稿の写真は消えない: timeline_images.image_id は NOT NULL（ON DELETE SET NULL）なので、
+ * 投稿に使われた写真の削除は DB で失敗し、ファイルも消えない。この列を空にできるように変えるときは、ここを見直すこと
  */
 export async function cleanupStalePhotos(
   payload: Payload,
@@ -547,6 +550,8 @@ export async function cleanupStalePhotos(
     where: {
       and: [
         { pending: { equals: true } },
+        { isTimelineOnly: { equals: true } },
+        { filename: { like: QUICKPOST_PHOTO_PREFIX } },
         { createdAt: { less_than: new Date(now - QP.stalePhotoMs).toISOString() } },
       ],
     },

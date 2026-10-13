@@ -6,7 +6,7 @@
 // - 投稿の保存と「受付票に結果を残す」は1つのトランザクションで確定する（途中で止まっても二重にならない）
 // - 1台ごとの回数制限は SQL で原子的に数える
 // - 投稿は「その端末のユーザー」として作る（Payload のアクセス制御・フックをそのまま通す）
-import type { NextRequest } from 'next/server'
+import { after, type NextRequest } from 'next/server'
 import type { Timeline } from '@/payload-types'
 import { textToLexical } from '@/lib/richtext'
 import { parseQuickPost } from '@/lib/quickpost/input'
@@ -15,6 +15,7 @@ import { revalidate, TIMELINE_PAGES } from '@/lib/revalidate'
 import {
   assertInTransaction,
   claimPostReceipt,
+  cleanupStalePhotos,
   completePostReceipt,
   consumeRate,
   fail,
@@ -144,6 +145,12 @@ export async function POST(req: NextRequest) {
       (e) => console.error('quickpost: failed to record post', e),
     )
     await pruneNonces(payload)
+    // 投稿に使われないまま古くなった写真を、応答を返したあとに片付ける
+    after(() =>
+      cleanupStalePhotos(payload).catch((e) =>
+        console.error('quickpost: failed to clean up photos', e),
+      ),
+    )
 
     // 投稿したので「最後に使った日時」も更新済み。Cookie の期限も延ばす
     const res = json({ id: post.id })

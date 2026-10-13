@@ -416,7 +416,14 @@ export default function QuickPostApp() {
       return
     }
     const back = await outbox.takeBack(key)
-    if (!back) return
+    if (back.status === 'busy') {
+      setView('compose')
+      setError(
+        'いま送っているところです。送り終えるか、送れなかったら、もう一度「直す」を押してください。',
+      )
+      return
+    }
+    if (back.status !== 'ok') return
     const { item } = back
     setDraft({
       text: item.text,

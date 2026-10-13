@@ -1,6 +1,6 @@
 // src/collections/Events.ts
 import type { CollectionConfig } from 'payload'
-import { anyone, adminOnly } from '@/lib/access'
+import { anyone, adminOnly, notPendingMedia } from '@/lib/access'
 import { makeRevalidate } from '@/lib/revalidate'
 
 export const Events: CollectionConfig = {
@@ -55,7 +55,14 @@ export const Events: CollectionConfig = {
         },
       },
     },
-    { name: 'thumbnail', type: 'upload', relationTo: 'media', label: 'サムネ' },
+    // 投稿待ち（さっと投稿で上げて、まだ投稿に使っていない写真）は選べない（24 時間で片付けられるため）
+    {
+      name: 'thumbnail',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'サムネ',
+      filterOptions: notPendingMedia,
+    },
     { name: 'slug', type: 'text', required: true, unique: true },
     { name: 'isPublic', type: 'checkbox', defaultValue: true, label: '公開' },
   ],

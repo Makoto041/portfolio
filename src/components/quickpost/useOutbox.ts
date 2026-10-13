@@ -29,6 +29,16 @@ import { deleteItem, loadItems, loadPhoto, saveItem, savePhoto } from './outboxD
 /** 画面から送信待ちに渡す写真（縮小した写真と、選んだ時点で始めた送信） */
 export type HandoffPhoto = { id: string; blob: Blob; upload?: Promise<number> }
 
+/** 「直す」の結果（ok: 画面に戻す / busy: いま送っている最中 / gone: もう送信待ちに無い） */
+export type TakeBack =
+  | {
+      status: 'ok'
+      item: OutboxItem
+      photos: { id: string; blob: Blob; print: string; mediaId: number | null }[]
+    }
+  | { status: 'busy' }
+  | { status: 'gone' }
+
 type Created = { id: number; duplicate?: boolean; digest?: string | null }
 
 const LOCK = 'mk_post_outbox'
@@ -59,6 +69,8 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
   const unsavedRef = useRef(new Set<string>())
   const sendingKeyRef = useRef<string | null>(null)
   const runningRef = useRef(false)
+  /** このタブが送信のロックを持っている間 */
+  const holdingRef = useRef(false)
   const againRef = useRef(false)
   const wakeRef = useRef(false)
   const authResumeRef = useRef(false)
@@ -275,12 +287,17 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
     runningRef.current = true
     try {
       await withLock(async () => {
-        await reload()
-        for (;;) {
-          if (!loggedInRef.current) break
-          const next = nextToSend(itemsRef.current, Date.now())
-          if (!next) break
-          if ((await sendOne(next)) === 'stop') break
+        holdingRef.current = true
+        try {
+          await reload()
+          for (;;) {
+            if (!loggedInRef.current) break
+            const next = nextToSend(itemsRef.current, Date.now())
+            if (!next) break
+            if ((await sendOne(next)) === 'stop') break
+          }
+        } finally {
+          holdingRef.current = false
         }
       })
     } catch (e) {
@@ -397,25 +414,40 @@ export function useOutbox(opts: { loggedIn: boolean; onAuthLost: () => void }) {
   )
 
   /**
-   * 「直す」: 送信待ちから外して、画面に戻す（写真も一緒に）。送っている最中のものは戻さない。
+   * 「直す」: 送信待ちから外して、画面に戻す（写真も一緒に）。送っている最中のものは戻さない
+   * （ほかのタブが送っている最中も戻さない。そのタブが送り終えたあとに保存し直してしまうため）。
    * 受付番号が重なっていたものは、新しい受付番号で戻す（直して送ったら別の投稿になる）
    */
   const takeBack = useCallback(
-    async (key: string) => {
-      if (sendingKeyRef.current === key) return null
-      const item = itemsRef.current.find((i) => i.key === key)
-      if (!item) return null
-      const photos: { id: string; blob: Blob; print: string; mediaId: number | null }[] = []
-      for (const p of item.photos) {
-        const blob = await loadPhoto(p.id)
-        if (blob) photos.push({ id: p.id, blob, print: p.print, mediaId: p.mediaId })
+    async (key: string): Promise<TakeBack> => {
+      if (sendingKeyRef.current === key) return { status: 'busy' }
+      const work = async (): Promise<TakeBack> => {
+        const item = itemsRef.current.find((i) => i.key === key)
+        if (!item) return { status: 'gone' }
+        // 先に送信待ちから外す（写真を読み出している間に送り始めないように）
+        publish(itemsRef.current.filter((i) => i.key !== key))
+        const photos: { id: string; blob: Blob; print: string; mediaId: number | null }[] = []
+        for (const p of item.photos) {
+          const blob = await loadPhoto(p.id)
+          if (blob) photos.push({ id: p.id, blob, print: p.print, mediaId: p.mediaId })
+        }
+        await remove(item)
+        clearDone()
+        const fresh = item.problem === 'conflict' ? crypto.randomUUID() : item.key
+        return { status: 'ok', item: { ...item, key: fresh }, photos }
       }
-      await remove(item)
-      clearDone()
-      const fresh = item.problem === 'conflict' ? crypto.randomUUID() : item.key
-      return { item: { ...item, key: fresh }, photos }
+      // このタブが送っている最中なら、送っていない投稿はそのまま戻せる
+      if (holdingRef.current) return work()
+      const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined
+      if (!locks?.request) return work()
+      return locks.request(LOCK, { ifAvailable: true }, async (lock): Promise<TakeBack> => {
+        if (!lock) return { status: 'busy' }
+        // ほかのタブが送った・直した分を反映してから
+        await reload()
+        return work()
+      })
     },
-    [clearDone, remove],
+    [clearDone, publish, reload, remove],
   )
 
   return { items, progress, resumed, done, enqueue, retry, resend, takeBack }
