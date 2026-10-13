@@ -50,9 +50,10 @@ function openDb(): Promise<IDBDatabase | null> {
         req.onupgradeneeded = () => {
           const db = req.result
           const tx = req.transaction
-          // 版 1（受付番号がキー）の送信待ちは作り直す
+          // 版 1（受付番号がキー）の送信待ちは作り直す。その写真も、持ち主がいなくなるので消す
           if (db.objectStoreNames.contains(ITEMS) && tx?.objectStore(ITEMS).keyPath !== 'id') {
             db.deleteObjectStore(ITEMS)
+            if (db.objectStoreNames.contains(PHOTOS)) tx?.objectStore(PHOTOS).clear()
           }
           if (!db.objectStoreNames.contains(ITEMS)) db.createObjectStore(ITEMS, { keyPath: 'id' })
           if (!db.objectStoreNames.contains(PHOTOS)) db.createObjectStore(PHOTOS)
