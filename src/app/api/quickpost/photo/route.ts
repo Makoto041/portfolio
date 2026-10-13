@@ -1,14 +1,17 @@
 // src/app/api/quickpost/photo/route.ts
-// 写真を1枚受け取り、サーバーで作り直して（向きを反映・位置情報などの撮影データを削除・長辺を縮小）保存する。
-// 本文は画像のバイト列そのもの（Content-Type: image/*）。スマホ側で先に縮小してから送る。
-// 保存した写真は「タイムライン専用」にしておき、投稿に使われなくてもギャラリーには出さない。
+// POST: 写真を1枚受け取り、サーバーで作り直して（向きを反映・位置情報などの撮影データを削除・長辺を縮小）保存する。
+//   本文は画像のバイト列そのもの（Content-Type: image/*）。スマホ側で写真を選んだ時点で縮小して送ってくる。
+//   保存した写真は「タイムライン専用」「投稿待ち（pending）」にしておき、投稿に使われるまで公開しない。
+//   送ったあとに、投稿に使われないまま古くなった写真を片付ける（書きかけで閉じた下書きの写真）。
+// DELETE ?id=: 画面で外した写真を消す（さっと投稿で上げて、まだ投稿に使っていない写真だけ）。
 import { randomUUID } from 'node:crypto'
-import type { NextRequest } from 'next/server'
+import { after, type NextRequest } from 'next/server'
 import { QP } from '@/lib/quickpost/config'
 import { reencodePhoto, UnsupportedImageError } from '@/lib/quickpost/image'
 import { PHOTO_TYPES } from '@/lib/quickpost/input'
-import { QUICKPOST_PHOTO_PREFIX } from '@/lib/quickpost/policy'
+import { isDiscardablePhoto, QUICKPOST_PHOTO_PREFIX } from '@/lib/quickpost/policy'
 import {
+  cleanupStalePhotos,
   consumeRate,
   fail,
   getSession,
@@ -72,11 +75,52 @@ export async function POST(req: NextRequest) {
       depth: 0,
     })
 
+    // 応答を返したあとに片付ける（写真を送る時間を延ばさない）
+    after(() =>
+      cleanupStalePhotos(payload).catch((e) =>
+        console.error('quickpost: failed to clean up photos', e),
+      ),
+    )
+
     const res = json({ id: media.id })
     if (await touchSession(active)) refreshSessionCookies(req, res, session)
     return res
   } catch (e) {
     console.error('quickpost: photo upload failed', e)
+    return fail(500, 'server_error')
+  }
+}
+
+/**
+ * 画面で外した写真を消す。さっと投稿で上げて、まだ投稿に使っていない写真（pending）だけを消す
+ * （投稿に使った写真・ギャラリーの写真は消さない）。もう無ければ、消えた結果は同じなので成功として返す
+ */
+export async function DELETE(req: NextRequest) {
+  const blocked = rejectCrossSite(req)
+  if (blocked) return blocked
+
+  const id = Number(req.nextUrl.searchParams.get('id'))
+  if (!Number.isSafeInteger(id) || id <= 0) return fail(400, 'invalid_id')
+
+  try {
+    const active = await getSession(req)
+    if (!active) return fail(401, 'unauthorized')
+    const { payload, user } = active
+
+    const doc = await payload.findByID({
+      collection: 'media',
+      id,
+      depth: 0,
+      overrideAccess: true,
+      disableErrors: true,
+    })
+    if (!doc) return json({ ok: true })
+    if (!isDiscardablePhoto(doc)) return fail(409, 'in_use')
+
+    await payload.delete({ collection: 'media', id, user, overrideAccess: false, depth: 0 })
+    return json({ ok: true })
+  } catch (e) {
+    console.error('quickpost: photo discard failed', e)
     return fail(500, 'server_error')
   }
 }

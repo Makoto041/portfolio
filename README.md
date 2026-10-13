@@ -55,7 +55,7 @@ src/
 ├── features/                  # ページのデータ取得・集計・表示モデル（home / site）
 ├── components/soda/           # Soda Press コンポーネント群（シェル・題字・タイムライン・カード）
 ├── components/gallery/        # 写真ビューア（<dialog>）とギャラリー
-├── components/quickpost/      # さっと投稿の画面（パスキー・写真の縮小・下書き）
+├── components/quickpost/      # さっと投稿の画面（パスキー・写真の縮小と先送り・送信待ち・下書き）
 ├── lib/quickpost/             # さっと投稿のログイン・回数制限・入力チェック・写真の作り直し
 ├── middleware.ts              # /post だけに nonce つき CSP
 └── lib/                       # date / palette / phrase / richtext / social / cfUrl / netguard などの純関数
@@ -210,11 +210,20 @@ pnpm payload migrate:create <name>   # 生成してコミットするだけ
 - **写真**: スマホで縮小してから送り、サーバーで作り直す（形式を中身で判定・向きを反映・位置情報など撮影データを削除・ランダムなファイル名）。
   投稿に使うまでは「投稿待ち」（`media.pending`）の印を付け、ログインしていない人には `/api/media` や投稿の中の画像として出さない
   （印は投稿の保存と同じトランザクションで外す）
-- **二重投稿**: 下書きごとの UUID で受付票（`quickpost-nonces`・一意）を取り、再送・二度押しでも1件
+  写真は選んだ時点で縮小して送り始める（本文を書いている間に送り終える）。外した写真は
+  `DELETE /api/quickpost/photo?id=` で消し（投稿待ちのさっと投稿の写真だけ）、投稿に使われないまま 24 時間たった写真は
+  写真を送ったあとに片付ける（`cleanupStalePhotos`）
+- **送信待ち（バックグラウンド送信）**: 「投稿する」を押したら端末の IndexedDB（`mk_post`）に本文と縮小した写真を保存し、
+  すぐ次を書ける。送信は押した順に1件ずつで、様子はヘッダーの下の帯に出す（`useOutbox`・決まりごとは `src/lib/quickpost/outbox.ts`）。
+  通信の失敗などは 5秒〜5分の間隔で自動で送り直し、電波が戻った・画面に戻ったときはすぐ送る。ログインが切れたら止め、ログインし直すと続きから。
+  内容の誤りは「直す」で入力欄に戻す。iPhone の Safari は閉じたあとに送り続ける仕組み（Background Sync）に対応していないため、
+  閉じている間は止まり、次に開いたときに続きから送る。複数のタブでは Web Locks で送るのを1つのタブにする
+- **二重投稿**: 下書きごとの UUID で受付票（`quickpost-nonces`・一意）を取り、再送・二度押し・送り直しでも1件。
+  同じ受付番号で内容がちがっていたら（応答が届かないまま直した など）、送らずに「別の投稿として送る」かを確かめる
 - **画面**: `noindex`・`no-store`・nonce つき CSP（`src/middleware.ts`）・埋め込み禁止
 
 API: `GET /api/quickpost/session` / `POST /api/quickpost/{login,register}/{options,verify}` /
-`POST /api/quickpost/photo` / `POST /api/quickpost/posts` / `POST /api/quickpost/logout`
+`POST /api/quickpost/photo` / `DELETE /api/quickpost/photo?id=` / `POST /api/quickpost/posts` / `POST /api/quickpost/logout`
 
 ## 実装上の工夫
 

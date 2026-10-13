@@ -32,6 +32,10 @@ export const QP = {
   /** パスキーの確認値（チャレンジ）の有効期限 */
   challengeTtlMs: 5 * MINUTE,
 
+  /** 投稿に使われないまま、これだけたった写真（pending）は片付ける（送信待ちが端末に残した写真から上げ直せる） */
+  stalePhotoMs: DAY,
+  /** 片付けは写真を上げたときに、1回にこの枚数まで */
+  cleanupBatch: 20,
   /** 1台あたりの回数制限（1時間ごとの枠） */
   rate: { windowMs: HOUR, posts: 30, photos: 60 },
   /** ログイン前の API（パスキー・パスワード確認）の IP ごとの回数制限（インスタンス内・ベストエフォート） */

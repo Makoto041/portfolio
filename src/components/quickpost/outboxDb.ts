@@ -1,0 +1,151 @@
+// src/components/quickpost/outboxDb.ts
+// さっと投稿（/post）の送信待ちを端末に保存する（IndexedDB）。途中で画面を閉じても、次に開いたときに続きから送るため。
+//   - outbox: 送信待ちの投稿（受付番号がキー。中身の形は src/lib/quickpost/outbox.ts で確かめて読む）
+//   - photos: 送信待ちの写真（縮小した JPEG。写真の ID がキー）。サーバーで写真が片付けられていても上げ直せるよう、
+//     投稿できるまで残す。Blob をそのまま入れられない環境があるので、ArrayBuffer と形式で持つ
+// IndexedDB が使えない（プライベートモードなど）ときはメモリーだけで続ける（閉じると消える）。
+import { parseOutboxItem, type OutboxItem } from '@/lib/quickpost/outbox'
+
+const DB_NAME = 'mk_post'
+const DB_VERSION = 1
+const ITEMS = 'outbox'
+const PHOTOS = 'photos'
+
+type StoredPhoto = { type: string; data: ArrayBuffer }
+
+let opening: Promise<IDBDatabase | null> | null = null
+const memItems = new Map<string, OutboxItem>()
+const memPhotos = new Map<string, Blob>()
+
+function done(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve()
+    tx.onabort = () => reject(tx.error ?? new Error('aborted'))
+    tx.onerror = () => reject(tx.error ?? new Error('failed'))
+  })
+}
+
+function result<T>(req: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error ?? new Error('failed'))
+  })
+}
+
+function openDb(): Promise<IDBDatabase | null> {
+  if (!opening) {
+    opening = new Promise((resolve) => {
+      try {
+        if (typeof indexedDB === 'undefined') return resolve(null)
+        const req = indexedDB.open(DB_NAME, DB_VERSION)
+        req.onupgradeneeded = () => {
+          const db = req.result
+          if (!db.objectStoreNames.contains(ITEMS)) db.createObjectStore(ITEMS, { keyPath: 'key' })
+          if (!db.objectStoreNames.contains(PHOTOS)) db.createObjectStore(PHOTOS)
+        }
+        req.onsuccess = () => {
+          const db = req.result
+          // ほかのタブが新しい版で開こうとしたら閉じる（古い版のまま握り続けて邪魔をしない）。次に使うときに開き直す
+          db.onversionchange = () => {
+            db.close()
+            opening = null
+          }
+          // ブラウザに接続を切られたとき（iOS で長く裏にあったあと など）も、次に使うときに開き直す
+          db.onclose = () => {
+            opening = null
+          }
+          resolve(db)
+        }
+        req.onerror = () => resolve(null)
+        req.onblocked = () => resolve(null)
+      } catch {
+        resolve(null)
+      }
+    })
+  }
+  return opening
+}
+
+/** 端末に保存できるか（できないときは、閉じると送信待ちが消える） */
+export async function canPersist(): Promise<boolean> {
+  return (await openDb()) !== null
+}
+
+/** 保存してある送信待ち（壊れたものは捨てる） */
+export async function loadItems(): Promise<OutboxItem[]> {
+  const db = await openDb()
+  if (!db) return [...memItems.values()]
+  try {
+    const tx = db.transaction(ITEMS, 'readonly')
+    const rows = await result(tx.objectStore(ITEMS).getAll())
+    return rows.map(parseOutboxItem).filter((i): i is OutboxItem => i !== null)
+  } catch {
+    return [...memItems.values()]
+  }
+}
+
+/** 送信待ちを保存する（受付番号が変わったときは、前の番号の分を消して入れ替える）。保存できたら true */
+export async function saveItem(item: OutboxItem, previousKey?: string): Promise<boolean> {
+  if (previousKey && previousKey !== item.key) memItems.delete(previousKey)
+  memItems.set(item.key, item)
+  const db = await openDb()
+  if (!db) return false
+  try {
+    const tx = db.transaction(ITEMS, 'readwrite')
+    const store = tx.objectStore(ITEMS)
+    if (previousKey && previousKey !== item.key) store.delete(previousKey)
+    store.put(item)
+    await done(tx)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** 送信待ちを消す（送れた・画面に戻した）。写真も消す */
+export async function deleteItem(item: Pick<OutboxItem, 'key' | 'photos'>): Promise<void> {
+  memItems.delete(item.key)
+  for (const p of item.photos) memPhotos.delete(p.id)
+  const db = await openDb()
+  if (!db) return
+  try {
+    const tx = db.transaction([ITEMS, PHOTOS], 'readwrite')
+    tx.objectStore(ITEMS).delete(item.key)
+    for (const p of item.photos) tx.objectStore(PHOTOS).delete(p.id)
+    await done(tx)
+  } catch {
+    // 消せなくても、次に開いたときに送ろうとして「すでに投稿済み」で片付く
+  }
+}
+
+/** 写真を保存する。保存できたら true */
+export async function savePhoto(id: string, blob: Blob): Promise<boolean> {
+  memPhotos.set(id, blob)
+  const db = await openDb()
+  if (!db) return false
+  try {
+    const value: StoredPhoto = { type: blob.type || 'image/jpeg', data: await blob.arrayBuffer() }
+    const tx = db.transaction(PHOTOS, 'readwrite')
+    tx.objectStore(PHOTOS).put(value, id)
+    await done(tx)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** 保存した写真（無ければ null） */
+export async function loadPhoto(id: string): Promise<Blob | null> {
+  const mem = memPhotos.get(id)
+  if (mem) return mem
+  const db = await openDb()
+  if (!db) return null
+  try {
+    const tx = db.transaction(PHOTOS, 'readonly')
+    const v = (await result(tx.objectStore(PHOTOS).get(id))) as StoredPhoto | undefined
+    if (!v || !(v.data instanceof ArrayBuffer)) return null
+    return new Blob([v.data], { type: v.type || 'image/jpeg' })
+  } catch {
+    return null
+  }
+}

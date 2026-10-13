@@ -1,9 +1,11 @@
 // src/components/quickpost/QuickPostApp.tsx
 // さっと投稿（/post）の画面。スマホから本文・写真（3枚まで）・種類だけで投稿する。
-//   ログイン（Face ID / Touch ID のパスキー）→ 投稿 → 送信中 → 完了、ログイン状態の確認・ログアウト。
+//   ログイン（Face ID / Touch ID のパスキー）→ 投稿、ログイン状態の確認・ログアウト。
 //   新しい端末の登録は、管理画面のメールアドレスとパスワードを確かめてからパスキーを作る。
+// 写真は選んだらすぐ送り始め（usePhotoUploads）、「投稿する」を押したら送信待ちに入れて、すぐ次を書ける（useOutbox）。
+//   送信の様子は画面の上の帯（SendStrip）に出す。送りかけは端末に保存し、閉じても次に開いたときに続きから送る。
 // ログイン状態は /api/quickpost/session で確かめる（Cookie は HttpOnly なので画面からは読めない）。
-// 下書き（本文・タイトル・種類）はこの端末にだけ保存し、投稿できたら消す（src/lib/quickpost/drafts.ts）。
+// 下書き（本文・タイトル・種類）はこの端末にだけ保存し、送信待ちに入れたら消す（src/lib/quickpost/drafts.ts）。
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -17,6 +19,7 @@ import SodaIcon from '@/components/soda/SodaIcon'
 import {
   clearDraft,
   freshDraft,
+  isBlankDraft,
   openTab,
   rememberTab,
   saveDraft,
@@ -24,9 +27,14 @@ import {
   type DraftStores,
 } from '@/lib/quickpost/drafts'
 import { LIMITS, photoTypeOf, POST_TYPES } from '@/lib/quickpost/input'
+import { stripView, type OutboxItem } from '@/lib/quickpost/outbox'
 import { TYPE_LABELS } from '@/lib/timeline'
+import { ApiError, call } from './api'
 import { contentDigest } from './digest'
-import { PhotoError, photoPrint, prepareForUpload } from './photo'
+import { PhotoError } from './photo'
+import SendStrip from './SendStrip'
+import { usePhotoUploads, type PhotoView } from './usePhotoUploads'
+import { useOutbox } from './useOutbox'
 
 type Limits = { text: number; title: number; images: number; photoBytes: number }
 
@@ -44,19 +52,10 @@ type SessionInfo = {
   limits: Limits
 }
 
-type View = 'loading' | 'login' | 'register' | 'compose' | 'done' | 'account' | 'offline'
+type View = 'loading' | 'login' | 'register' | 'compose' | 'account' | 'offline'
 
-type Photo = {
-  id: string
-  file: File
-  url: string
-  mediaId?: number
-  /** 写真の中身の指紋（最初に送るときに1回だけ取る） */
-  print?: string
-  noPreview?: boolean
-}
-
-type Sending = { step: 'photos'; done: number; total: number } | { step: 'post' }
+/** ログインが切れたときの知らせ（送信待ちがあるときは画面の上の帯が同じことを伝えるので出さない） */
+const AUTH_LOST = 'ログインが切れました。もう一度ログインしてください。書いた内容は残っています。'
 
 /** 写真1枚の送信上限（サーバーの上限から少し余裕を取る） */
 const PHOTO_MARGIN = 64 * 1024
@@ -76,29 +75,6 @@ function draftStores(): DraftStores {
     // 同上
   }
   return { local, session }
-}
-
-class ApiError extends Error {
-  constructor(
-    public status: number,
-    public code?: string,
-  ) {
-    super(code ?? String(status))
-    this.name = 'ApiError'
-  }
-}
-
-async function call<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(path, {
-    method: body === undefined ? 'GET' : 'POST',
-    headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    credentials: 'same-origin',
-    cache: 'no-store',
-  })
-  const data = (await res.json().catch(() => null)) as (T & { error?: string }) | null
-  if (!res.ok) throw new ApiError(res.status, data?.error)
-  return data as T
 }
 
 const chars = (s: string) => Array.from(s).length
@@ -186,19 +162,16 @@ export default function QuickPostApp() {
   const [view, setView] = useState<View>('loading')
   const [info, setInfo] = useState<SessionInfo | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
-  const [photos, setPhotos] = useState<Photo[]>([])
-  const [sending, setSending] = useState<Sending | null>(null)
+  /** 「投稿する」で写真の縮小を待っている間（たいてい一瞬） */
+  const [preparing, setPreparing] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [doneId, setDoneId] = useState<number | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [webauthn, setWebauthn] = useState(true)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
-  const photosRef = useRef<Photo[]>([])
-  photosRef.current = photos
   /** このタブの ID（下書きはタブごとに保存する。src/lib/quickpost/drafts.ts） */
   const tabRef = useRef('')
   /** 予約中の下書きの自動保存 */
@@ -207,6 +180,21 @@ export default function QuickPostApp() {
   const openedDraftRef = useRef<Draft | null>(null)
 
   const limits: Limits = info?.limits ?? { ...LIMITS, photoBytes: 4 * 1024 * 1024 }
+
+  /** ログインが切れた（写真や投稿の送信で 401）: ログイン画面へ。書いた内容と送りかけは残り、ログインし直すと続きから送る */
+  const authLost = useCallback(() => {
+    setInfo(null)
+    setView('login')
+    setError(AUTH_LOST)
+  }, [])
+
+  const uploads = usePhotoUploads({
+    maxBytes: limits.photoBytes - PHOTO_MARGIN,
+    onAuthLost: authLost,
+  })
+  const outbox = useOutbox({ loggedIn: Boolean(info), onAuthLost: authLost })
+  const photos = uploads.photos
+  const { retryFailed } = uploads
 
   // 画面が変わったら見出しにフォーカスを移す（読み上げで今いる画面が分かるように）
   useEffect(() => {
@@ -220,8 +208,17 @@ export default function QuickPostApp() {
     return () => document.removeEventListener('touchstart', noop)
   }, [])
 
-  // 離れるときに写真のプレビュー用 URL を手放す
-  useEffect(() => () => photosRef.current.forEach((p) => URL.revokeObjectURL(p.url)), [])
+  // 電波が戻ったら、送れなかった写真を送り直す（送信待ちの分は useOutbox が受け持つ）
+  useEffect(() => {
+    window.addEventListener('online', retryFailed)
+    return () => window.removeEventListener('online', retryFailed)
+  }, [retryFailed])
+
+  // ログインし直したら、ログイン切れで送れなかった写真を送り直す
+  const loggedInNow = Boolean(info)
+  useEffect(() => {
+    if (loggedInNow) retryFailed()
+  }, [loggedInNow, retryFailed])
 
   const refresh = useCallback(async (next?: View) => {
     try {
@@ -337,27 +334,15 @@ export default function QuickPostApp() {
       // 形式が空で渡される写真（HEIC・AVIF など）は拡張子から形式を補って判定する
       .filter((f) => photoTypeOf(f.type, f.name).startsWith('image/'))
       .slice(0, Math.max(0, room))
-      .map((file) => ({ id: crypto.randomUUID(), file, url: URL.createObjectURL(file) }))
-    if (picked.length) setPhotos((prev) => [...prev, ...picked])
+    // 選んだらすぐ縮小して送り始める（本文を書いている間に送り終える）
+    if (picked.length) uploads.add(picked)
     if (files.length > room) setError(`写真は${limits.images}枚までです。`)
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  /** この端末で描けない写真（HEIC など）は、壊れた画像の代わりに目印を出す。送ればサーバーが中身で判断する */
-  function markNoPreview(id: string) {
-    setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, noPreview: true } : p)))
-  }
-
-  function removePhoto(id: string) {
-    setPhotos((prev) => {
-      const target = prev.find((p) => p.id === id)
-      if (target) URL.revokeObjectURL(target.url)
-      return prev.filter((p) => p.id !== id)
-    })
-  }
-
+  /** 「投稿する」: 送信待ちに入れて、すぐ次を書けるようにする（送信は画面の上の帯で進む） */
   async function submit() {
-    if (!draft || sending) return
+    if (!draft || preparing) return
     const text = draft.text.trim()
     if (!text) {
       setError('本文を書いてください。')
@@ -367,114 +352,111 @@ export default function QuickPostApp() {
       setError(`本文は${limits.text}文字までです。`)
       return
     }
+    const broken = photos.find((p) => p.problem)
+    if (broken) {
+      setError(
+        broken.problem === 'too_large'
+          ? '写真が大きすぎて縮められませんでした。外して別の写真を選んでください。'
+          : 'この写真は読み込めませんでした。外して別の写真を選んでください。',
+      )
+      return
+    }
     setError('')
-    // 送る前に、このタブの下書きをすぐ保存する（予約中の自動保存は止める。送っている間・片付けたあとに古い内容を書き戻さない）。
-    // 応答が届かないまま読み込み直しても、同じキーで送り直せるように
+    // 予約中の自動保存は止める（送信待ちに入れたあとに、送った下書きを書き戻さない）
     if (autosaveRef.current !== null) {
       window.clearTimeout(autosaveRef.current)
       autosaveRef.current = null
     }
-    const stores = draftStores()
-    saveDraft(stores, tabRef.current, draft)
-    const queue = [...photos]
+    setPreparing(true)
     try {
-      const ids: number[] = []
-      const prints: string[] = []
-      for (let i = 0; i < queue.length; i++) {
-        const photo = queue[i]
-        setSending({ step: 'photos', done: i, total: queue.length })
-        // 指紋は1回だけ取って覚えておく（送り直しでファイルを読み直さない。iOS では時間が経つと読めなくなることがある）
-        const print = photo.print ?? (await photoPrint(photo.file))
-        prints.push(print)
-        if (!photo.print) {
-          queue[i] = { ...photo, print }
-          setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, print } : p)))
-        }
-        if (photo.mediaId) {
-          ids.push(photo.mediaId)
-          continue
-        }
-        const blob = await prepareForUpload(photo.file, limits.photoBytes - PHOTO_MARGIN)
-        const res = await fetch('/api/quickpost/photo', {
-          method: 'POST',
-          headers: { 'content-type': blob.type || 'image/jpeg' },
-          body: blob,
-          credentials: 'same-origin',
-          cache: 'no-store',
-        })
-        const data = (await res.json().catch(() => null)) as { id?: number; error?: string } | null
-        if (!res.ok || typeof data?.id !== 'number') throw new ApiError(res.status, data?.error)
-        const mediaId = data.id
-        // 送れた写真は覚えておき、送り直しのときにもう一度送らない
-        queue[i] = { ...queue[i], mediaId }
-        setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, mediaId } : p)))
-        ids.push(mediaId)
-      }
-
-      setSending({ step: 'post' })
+      // 写真の縮小と指紋がそろうまで待つ（たいてい選んだ時点で終わっている）
+      const handed = await uploads.handoff()
       const title = draft.showTitle ? draft.title : undefined
-      // 送る内容の指紋。サーバーの受付票に残り、同じキーの送り直しで「すでに投稿済み」と返るときに一緒に返ってくる。
-      // それと比べて、応答が届かなかったあとに直して送り直したか（別のタブで違う内容を送ったか）を見分ける。
-      // 写真は ID ではなく中身の指紋で比べる（読み込み直すと選び直しになって ID は変わるが、同じファイルなら指紋は同じ。
-      // 端末が選び直しのたびに写真を変換し直して中身が変わる場合は、直したとみなして下書きを残す側に倒れる）
+      // 送る内容の指紋。受付番号ですでに投稿済みだったとき、同じ内容かを見分ける
+      // （写真は ID ではなく中身の指紋で比べる。直すで戻した写真も同じ指紋のまま）
       const digest = await contentDigest(
-        JSON.stringify([text, title ?? '', draft.postType, prints]),
+        JSON.stringify([text, title ?? '', draft.postType, handed.prints]),
       )
-      const body = { text, title, postType: draft.postType, images: ids, key: draft.key, digest }
-      // 同じ下書きをまだ送っている途中（409）なら、少し待って送り直す（2回目以降は最初の投稿が返る）
-      type Created = { id: number; duplicate?: boolean; digest?: string | null }
-      let created: Created | null = null
-      for (let attempt = 0; !created; attempt++) {
-        try {
-          created = await call<Created>('/api/quickpost/posts', body)
-        } catch (e) {
-          if (!(e instanceof ApiError && e.status === 409) || attempt >= 4) throw e
-          await new Promise((r) => window.setTimeout(r, 1500))
-        }
+      const item: OutboxItem = {
+        key: draft.key,
+        text,
+        ...(title !== undefined ? { title } : {}),
+        postType: draft.postType,
+        photos: handed.photos.map((p, i) => ({
+          id: p.id,
+          mediaId: handed.mediaIds[i],
+          print: handed.prints[i],
+        })),
+        digest,
+        createdAt: Date.now(),
+        attempts: 0,
+        nextAt: 0,
+        problem: null,
       }
-
-      if (created.duplicate && created.digest !== digest) {
-        // このキーではすでに別の内容が投稿されていた（応答だけが届かずに直して送り直した、または別のタブが先に送った）。
-        // 今の内容は消さずに残し、別の投稿として送れるようキーを新しくする
-        const next = { ...draft, key: crypto.randomUUID() }
-        saveDraft(stores, tabRef.current, next)
-        setDraft(next)
-        setError(
-          '前に送った内容はすでに投稿されていました。直した内容も投稿するなら、もう一度「投稿する」を押してください。',
-        )
-        return
-      }
-
-      queue.forEach((p) => URL.revokeObjectURL(p.url))
-      setPhotos([])
-      clearDraft(stores, tabRef.current, draft)
+      const kept = await outbox.enqueue(item, handed.photos)
+      // 送信待ちに入れたら、下書きは片付けて次を書けるようにする
+      clearDraft(draftStores(), tabRef.current, draft)
       setDraft(freshDraft())
-      setDoneId(created.id)
-      go('done')
+      if (!kept) {
+        setError('この端末に保存できないため、送り終えるまでこの画面を閉じないでください。')
+      }
     } catch (e) {
       setError(messageFor(e, limits))
-      if (e instanceof ApiError && e.status === 401) {
-        setInfo(null)
-        setView('login')
-      }
     } finally {
-      setSending(null)
+      setPreparing(false)
     }
+  }
+
+  /** 「直す」: 送れなかった投稿を入力欄に戻す（いま書いている内容があるときは戻さない） */
+  async function edit(key: string) {
+    if (!draft) return
+    if (!isBlankDraft(draft) || photos.length > 0) {
+      setView('compose')
+      setError('いま書いている内容を送るか消してから「直す」を押してください。')
+      return
+    }
+    const back = await outbox.takeBack(key)
+    if (!back) return
+    const { item } = back
+    setDraft({
+      text: item.text,
+      title: item.title ?? '',
+      showTitle: Boolean(item.title),
+      postType: item.postType,
+      key: item.key,
+    })
+    uploads.restore(back.photos)
+    setError('')
+    setView('compose')
   }
 
   // ── 描画 ──
 
   const loggedIn = Boolean(info)
   const textCount = draft ? chars(draft.text) : 0
-  const sendingText = sending
-    ? sending.step === 'photos'
-      ? `写真を送っています（${sending.done + 1} / ${sending.total}）`
-      : '投稿しています…'
-    : ''
+  const strip = stripView({
+    items: outbox.items,
+    progress: outbox.progress,
+    resumed: outbox.resumed,
+    // 確かめている間は「ログインが切れました」を出さない
+    loggedOut: !loggedIn && view !== 'loading',
+    done: outbox.done,
+    now: Date.now(),
+  })
+  const stripText =
+    strip.kind === 'sending'
+      ? strip.label
+      : strip.kind === 'failed'
+        ? strip.message
+        : strip.kind === 'done'
+          ? '投稿しました'
+          : ''
 
-  const errorBox = error ? (
+  // 送信待ちの帯がログインを促しているときは、同じ知らせを重ねて出さない
+  const shownError = error === AUTH_LOST && strip.kind === 'failed' ? '' : error
+  const errorBox = shownError ? (
     <p className="s-qp-error" role="alert">
-      {error}
+      {shownError}
     </p>
   ) : null
 
@@ -596,6 +578,7 @@ export default function QuickPostApp() {
     )
   } else if (view === 'compose') {
     const full = photos.length >= limits.images
+    const broken = photos.find((p) => p.problem)
     body = (
       <form
         className="s-qp-compose"
@@ -617,9 +600,9 @@ export default function QuickPostApp() {
           placeholder="いまどうしてる？"
           value={draft.text}
           onChange={(e) => setDraft({ ...draft, text: e.target.value })}
-          // 送っている間は書き換えない（送った内容と下書きを食い違わせない）
-          readOnly={Boolean(sending)}
           rows={6}
+          // 「投稿する」で写真の縮小を待つ間（たいてい一瞬）は書き換えない（送る内容と画面をそろえる）
+          readOnly={preparing}
         />
         <p className="s-qp-meta">
           <span>写真の位置情報は消して送ります</span>
@@ -643,21 +626,26 @@ export default function QuickPostApp() {
               ) : (
                 // プレビューは端末の中の画像（blob:）なので最適化は通さない
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.url} alt={`${i + 1}枚目の写真`} onError={() => markNoPreview(p.id)} />
+                <img
+                  src={p.url}
+                  alt={`${i + 1}枚目の写真`}
+                  onError={() => uploads.markNoPreview(p.id)}
+                />
               )}
+              <PhotoBadge photo={p} n={i + 1} />
               <button
                 type="button"
                 className="s-qp-x"
                 aria-label={`${i + 1}枚目の写真を外す`}
-                onClick={() => removePhoto(p.id)}
-                disabled={Boolean(sending)}
+                onClick={() => uploads.remove(p.id)}
+                disabled={preparing}
               >
                 <SodaIcon name="close" />
               </button>
             </div>
           ))}
           {!full && (
-            <label className={`s-qp-add${sending ? ' is-disabled' : ''}`}>
+            <label className={`s-qp-add${preparing ? ' is-disabled' : ''}`}>
               <input
                 ref={fileRef}
                 type="file"
@@ -665,15 +653,23 @@ export default function QuickPostApp() {
                 multiple
                 className="sr-only"
                 onChange={(e) => addPhotos(e.target.files)}
-                disabled={Boolean(sending)}
+                disabled={preparing}
               />
               <SodaIcon name="camera" />
               写真
             </label>
           )}
         </div>
+        {broken && (
+          <p className="s-qp-note" role="alert">
+            {broken.problem === 'too_large'
+              ? '大きすぎて縮められない写真があります。'
+              : '読み込めない写真があります。'}
+            外して、別の写真を選んでください。
+          </p>
+        )}
 
-        <fieldset className="s-qp-chips" disabled={Boolean(sending)}>
+        <fieldset className="s-qp-chips">
           <legend className="sr-only">種類</legend>
           {POST_TYPES.map((t) => (
             <label key={t} className="s-qp-chip">
@@ -683,6 +679,7 @@ export default function QuickPostApp() {
                 value={t}
                 checked={draft.postType === t}
                 onChange={() => setDraft({ ...draft, postType: t })}
+                disabled={preparing}
               />
               <span>{TYPE_LABELS[t]}</span>
             </label>
@@ -694,7 +691,7 @@ export default function QuickPostApp() {
           className="s-qp-link"
           aria-expanded={draft.showTitle}
           aria-controls="qp-title"
-          disabled={Boolean(sending)}
+          disabled={preparing}
           onClick={() => {
             const open = !draft.showTitle
             setDraft({ ...draft, showTitle: open })
@@ -716,9 +713,9 @@ export default function QuickPostApp() {
             placeholder="タイトル（なくても投稿できます）"
             maxLength={limits.title}
             enterKeyHint="done"
+            readOnly={preparing}
             value={draft.title}
             onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-            readOnly={Boolean(sending)}
             // タイトル欄の Enter で投稿まで送らない
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
@@ -729,57 +726,16 @@ export default function QuickPostApp() {
           />
         </div>
 
-        {/* 送信中の様子とエラーは、押したボタンのすぐ上（画面の下）に出す */}
+        {/* エラーは押したボタンのすぐ上（画面の下）に出す。送信の様子は画面の上の帯 */}
         <div className="s-qp-dock">
-          {sending && (
-            <div className="s-qp-paper">
-              <p className="s-qp-strong" aria-hidden="true">
-                {sendingText}
-              </p>
-              <div className="s-qp-track" aria-hidden="true">
-                <i
-                  style={{
-                    width:
-                      sending.step === 'photos'
-                        ? `${Math.round((sending.done / (sending.total + 1)) * 100)}%`
-                        : '92%',
-                  }}
-                />
-              </div>
-              <p className="s-qp-note">
-                サーバーで写真を作り直し、位置情報などの撮影データを消してから保存します。
-              </p>
-            </div>
-          )}
           {errorBox}
-          <button type="submit" className="s-pill is-solid s-qp-wide" disabled={Boolean(sending)}>
+          <button type="submit" className="s-pill is-solid s-qp-wide" disabled={preparing}>
             <SodaIcon name="pencil" />
-            {sending ? '送っています…' : '投稿する'}
+            {preparing ? '写真を準備しています…' : '投稿する'}
           </button>
-          <p className="s-qp-saved">下書きはこの端末に自動で保存</p>
+          <p className="s-qp-saved">下書きと送りかけはこの端末に自動で保存</p>
         </div>
       </form>
-    )
-  } else if (view === 'done') {
-    body = (
-      <section className="s-qp-done" aria-labelledby="qp-h">
-        <span className="s-qp-check" aria-hidden="true">
-          <SodaIcon name="check" />
-        </span>
-        <h1 id="qp-h" ref={headingRef} tabIndex={-1} className="s-qp-h">
-          投稿しました
-        </h1>
-        <p className="s-qp-note">数秒でタイムラインに出ます。</p>
-        <a
-          className="s-pill is-solid s-qp-wide"
-          href={doneId ? `/timeline#post-${doneId}` : '/timeline'}
-        >
-          タイムラインで見る
-        </a>
-        <button type="button" className="s-pill s-qp-wide" onClick={() => go('compose')}>
-          続けて投稿する
-        </button>
-      </section>
     )
   } else if (view === 'account' && info) {
     body = (
@@ -866,7 +822,9 @@ export default function QuickPostApp() {
               MAKOTO
             </Link>
           )}
-          <span className="s-qp-ttl">投稿</span>
+          <span className="s-qp-ttl" lang="en">
+            Post
+          </span>
           {loggedIn && (
             <button
               type="button"
@@ -882,16 +840,61 @@ export default function QuickPostApp() {
           )}
         </div>
       </header>
+      <SendStrip
+        view={strip}
+        onRetry={(key) => void outbox.retry(key)}
+        onResend={(key) => void outbox.resend(key)}
+        onEdit={(key) => void edit(key)}
+      />
       <main
         id="main"
         className={`s-qp-main${view === 'login' || view === 'offline' ? ' is-center' : ''}`}
       >
-        {/* 送信の進み具合を読み上げる（領域は常に置いておく） */}
+        {/* 送信の様子を読み上げる（領域は常に置いておく） */}
         <p className="sr-only" role="status" aria-live="polite">
-          {sendingText}
+          {stripText}
         </p>
         {body}
       </main>
     </div>
+  )
+}
+
+/** 写真の送り具合（左下の丸）: 送っている間は輪が伸び、送り終えたら ✓、送れなかったら ! */
+function PhotoBadge({ photo, n }: { photo: PhotoView; n: number }) {
+  if (photo.status === 'done') {
+    return (
+      <span className="s-qp-up is-done" role="img" aria-label={`${n}枚目は送信済み`}>
+        <SodaIcon name="check" />
+      </span>
+    )
+  }
+  if (photo.status === 'failed') {
+    return (
+      <span
+        className="s-qp-up is-failed"
+        role="img"
+        aria-label={
+          photo.problem
+            ? `${n}枚目は使えない写真です`
+            : `${n}枚目は送れませんでした。投稿するときにもう一度送ります`
+        }
+      >
+        <SodaIcon name="alert" />
+      </span>
+    )
+  }
+  const pct = Math.round(photo.progress * 100)
+  return (
+    <span
+      className="s-qp-up"
+      role="img"
+      aria-label={
+        photo.status === 'preparing'
+          ? `${n}枚目を準備しています`
+          : `${n}枚目を送っています（${pct}%）`
+      }
+      style={{ '--p': pct } as React.CSSProperties}
+    />
   )
 }
