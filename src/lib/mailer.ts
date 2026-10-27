@@ -23,6 +23,9 @@ if (fromEnv && !fromEnvIsValid) {
   console.warn('SMTP_FROM がメールアドレスの形ではないため無視します（SMTP_USER を送信元にします）')
 }
 
+/** SMTP のユーザー名（お問い合わせ通知の宛先の既定値。送信元とは別なので SMTP_FROM の影響を受けない。未設定なら空） */
+export const smtpUser = user ?? ''
+
 /** 送信元アドレス（SMTP_FROM、無ければ SMTP のユーザー名。どちらも無ければ空） */
 export const smtpFromAddress = fromEnvIsValid ? (fromEnv as string) : (user ?? '')
 

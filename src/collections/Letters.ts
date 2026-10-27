@@ -1,7 +1,7 @@
 // src/collections/Letter.ts
 import { CollectionConfig } from 'payload'
 import { anyone, adminOnly } from '@/lib/access'
-import { smtpFromAddress, smtpTransport } from '@/lib/mailer'
+import { smtpFromAddress, smtpTransport, smtpUser } from '@/lib/mailer'
 
 // 利用者入力を通知メールのHTMLへ埋め込む前にエスケープする
 const escapeHtml = (value: string): string =>
@@ -27,7 +27,8 @@ const Letter: CollectionConfig = {
         if (operation === 'create') {
           const { name, message } = doc
           // 通知先は環境変数から取得（アドレスをソースにハードコードしない）
-          const to = process.env.CONTACT_NOTIFY_TO || smtpFromAddress
+          // 既定の宛先は SMTP_USER（SMTP_FROM は送信元だけに使う。分けた送信元に通知が届かなくならないように）
+          const to = process.env.CONTACT_NOTIFY_TO || smtpUser
 
           if (!smtpTransport || !to) {
             console.error('Letter 通知: SMTP または CONTACT_NOTIFY_TO / SMTP_USER が未設定のため送信をスキップします')
