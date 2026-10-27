@@ -33,12 +33,14 @@ import { QuickpostNonces } from './collections/QuickpostNonces'
 // Globals
 import { SiteSettings } from './globals/SiteSettings'
 import { SITE_URL } from './lib/siteUrl'
+import { adminLoginSlug } from './lib/adminGate'
 import { smtpEmailAdapter } from './lib/mailer'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // 自サイトのオリジン（CORS / CSRF 制限用。src/lib/siteUrl.ts でさっと投稿の送信元チェックと共有）
 const siteURL = SITE_URL
+const loginSlug = adminLoginSlug()
 
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET!,
@@ -52,6 +54,9 @@ export default buildConfig({
   // 管理画面の設定
   admin: {
     user: Users.slug,
+    // ログイン画面の URL は /admin/<ADMIN_LOGIN_SLUG>（狙われやすい /admin/login を使わない）。
+    // 門番は src/middleware.ts。未設定・使えない値のときは既定の /admin/login のまま（本番ではどのみち門番が閉じる）
+    routes: { login: loginSlug ? `/${loginSlug}` : '/login' },
     importMap: {
       baseDir: path.resolve(__dirname),
     },

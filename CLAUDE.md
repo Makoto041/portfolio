@@ -142,6 +142,9 @@ src/
 - `POST /api/quickpost/posts` - タイムラインに投稿（二重投稿防止キーつき）
 - `POST /api/quickpost/logout` - この端末 / すべての端末からログアウト
 
+### 認証（管理画面）
+- `/admin/*` と `/api/users/*`（`/api/users/me` 以外。`.` / `..` / %エンコードを挟んだ形も同じ）は middleware の門番を通る（matcher は `/api` 全体を受けて、対象外は素通り）。通行証（Payload のログイン Cookie か、秘密のログイン画面で付く窓の Cookie）がなければ 418。パスワード再設定のメールのリンクも通行証が要る（窓の Cookie は SameSite=Lax で、同じブラウザで押せば通る。「トークンの形なら通す」例外は作らない: Payload の管理画面はログイン画面の URL を埋め込むので、秘密が漏れる）
+
 ### その他のAPI
 - `/api/products` - 製品管理
 - `/api/letter` - コンタクトフォーム処理
@@ -167,6 +170,7 @@ src/
 POSTGRES_URL=              # Neon 接続（手元と Preview は開発用の dev ブランチ。本番の接続文字列は Vercel の Production だけ）
 PAYLOAD_DEV_PUSH=          # true のときだけ pnpm dev が DB の表を変える（開発用の DB でだけ）
 PAYLOAD_SECRET=           # PayloadCMSシークレットキー（手元と Preview は本番と別の値）
+ADMIN_LOGIN_SLUG=         # 管理画面のログイン画面の URL（/admin/<この値>）。本番は未設定だと誰も入れない（README の「管理画面の入口」）
 S3_ENDPOINT=              # Cloudflare R2エンドポイント
 S3_ACCESS_KEY_ID=         # Cloudflareアクセスキー
 S3_SECRET_ACCESS_KEY=     # Cloudflareシークレットキー
@@ -238,6 +242,7 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
+- `/admin` を隠した（`src/middleware.ts` + `src/lib/adminGate.ts`）。通行証のない `/admin/*` はログイン画面に飛ばさずネタページ（`/nope`。ステータスは 418 を指定しているが環境で 200 になることがある）に差し替え、`/api/users/*`（`/me` 以外）も 418。ログイン画面は `/admin/<ADMIN_LOGIN_SLUG>`（Payload の `admin.routes.login`）で、開くと30分のログインの窓 Cookie が付く（`/admin/login` は誰にも見せない。ログアウト後はネタページに戻る）。本番は `ADMIN_LOGIN_SLUG` 未設定だと誰も入れないので、**マージ前に Vercel に設定する**
 - Payload の「No email adapter provided」警告を止めた（`email` に SMTP のアダプタを設定。お問い合わせ通知と同じ送信口 `src/lib/mailer.ts` を共有。管理画面のパスワード再設定メールも実際に届く。再設定リンクは Host ヘッダーでなく `SITE_URL` で固定。SMTP 未設定の環境では初期化では何も出さず、送ろうとした時だけ警告）
 - さっと投稿をバックグラウンド送信に（写真は選んだ時点で送り始め、「投稿する」で端末の送信待ちに入れてすぐ次を書ける。送信の様子はヘッダーの下の帯。失敗は自動で送り直し・閉じても次に開いたときに続きから。外した写真と、投稿に使われないまま 24 時間たった写真は消す）
 - 設計/コードレビューの担当を Fable 5 から Opus エージェントに変更（開発フローの手順3・コード規約）

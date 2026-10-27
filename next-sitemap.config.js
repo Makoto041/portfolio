@@ -2,7 +2,7 @@
 export default {
   siteUrl: 'https://iwabuchi-makoto.com',
   generateRobotsTxt: true,
-  exclude: ['/admin/*', '/api/*', '/og'],
+  exclude: ['/admin/*', '/api/*', '/og', '/nope'],
   robotsTxtOptions: {
     policies: [
       {

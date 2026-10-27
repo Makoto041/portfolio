@@ -1461,6 +1461,29 @@
 .soda .s-oops p { font-size: var(--s-fs-body); color: var(--s-sub); }
 .soda .s-oops-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* /admin に通行証なしで来た人へのネタページ（/nope） */
+.soda .s-nope { display: grid; gap: 16px; margin-bottom: 28px; }
+@media (min-width: 761px) {
+  .soda .s-nope { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+.soda .s-nope-h { font-size: var(--s-fs-h3); font-weight: 500; line-height: 1.4; letter-spacing: 0.04em; }
+.soda .s-nope-form { display: grid; gap: 18px; }
+.soda .s-nope-log {
+  min-width: 0;
+  padding: 26px 22px;
+  border-radius: var(--s-r-xl);
+  background: var(--s-ink);
+  color: var(--s-bg);
+}
+.soda .s-nope-cap { margin-bottom: 14px; font-size: var(--s-fs-meta); }
+.soda .s-nope-log ol { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: var(--s-fs-ui); line-height: 1.6; }
+.soda .s-nope-log li { display: grid; overflow-wrap: anywhere; }
+.soda .s-nope-log b,
+.soda .s-nope-log em { padding-left: 1.6em; font-family: var(--s-font); font-style: normal; }
+.soda .s-nope-log em { opacity: 0.85; }
+.soda .s-nope-caret { display: inline-block; width: 0.55em; height: 1.05em; margin-left: 4px; vertical-align: -0.18em; background: var(--s-bg); animation: s-blink 1.1s steps(1) infinite; }
+@keyframes s-blink { 50% { opacity: 0; } }
+
 /* 管理者リンク */
 .soda .s-admin { display: inline-flex; flex-wrap: wrap; gap: 8px; animation: s-fadein 0.3s ease; }
 .soda .s-admin .s-pill { height: 34px; padding: 0 14px; font-size: 13px; }
@@ -1813,7 +1836,8 @@
   .soda .s-like.is-pop .s-ico,
   .soda .s-wx-icon .rays,
   .soda .imgmodal-spin,
-  .soda .s-qp-spin { animation: none !important; }
+  .soda .s-qp-spin,
+  .soda .s-nope-caret { animation: none !important; }
   .soda .s-pgrid button,
   .soda .s-masonry .s-tile,
   .soda .s-skel { animation: none !important; background: var(--s-card); }
