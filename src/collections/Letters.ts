@@ -1,25 +1,7 @@
 // src/collections/Letter.ts
 import { CollectionConfig } from 'payload'
-import nodemailer from 'nodemailer'
 import { anyone, adminOnly } from '@/lib/access'
-
-// SMTP 各段階のタイムアウトはサーバーレス関数のデッドラインより十分短くする
-// （Nodemailer 既定は分単位で、応答しないSMTPサーバーに掴まると
-//   リクエスト全体がタイムアウトし、利用者の再送 → 重複投稿につながる）。
-// 期限超過時は Nodemailer 自身が下層ソケットを閉じてエラーを返すため、
-// 外側で Promise.race 等により打ち切ると接続だけが放置される。行わないこと。
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST!,
-  port: Number(process.env.SMTP_PORT!),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER!,
-    pass: process.env.SMTP_PASS!,
-  },
-  connectionTimeout: 5_000,
-  greetingTimeout: 5_000,
-  socketTimeout: 8_000,
-})
+import { smtpFromAddress, smtpTransport } from '@/lib/mailer'
 
 // 利用者入力を通知メールのHTMLへ埋め込む前にエスケープする
 const escapeHtml = (value: string): string =>
@@ -45,16 +27,16 @@ const Letter: CollectionConfig = {
         if (operation === 'create') {
           const { name, message } = doc
           // 通知先は環境変数から取得（アドレスをソースにハードコードしない）
-          const to = process.env.CONTACT_NOTIFY_TO || process.env.SMTP_USER
+          const to = process.env.CONTACT_NOTIFY_TO || smtpFromAddress
 
-          if (!to) {
-            console.error('Letter 通知: CONTACT_NOTIFY_TO / SMTP_USER が未設定のため送信をスキップします')
+          if (!smtpTransport || !to) {
+            console.error('Letter 通知: SMTP または CONTACT_NOTIFY_TO / SMTP_USER が未設定のため送信をスキップします')
             return doc
           }
 
           try {
-            await transporter.sendMail({
-              from: `"お問い合わせ通知" <${process.env.SMTP_USER!}>`,
+            await smtpTransport.sendMail({
+              from: `"お問い合わせ通知" <${smtpFromAddress}>`,
               to,
               subject: '新しいお問い合わせが届きました',
               text: `
