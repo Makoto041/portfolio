@@ -14,8 +14,17 @@ const pass = process.env.SMTP_PASS
 /** SMTP の接続情報が揃っているか（手元や Preview で未設定のときは送らずにログだけ出す） */
 export const isSmtpConfigured = Boolean(host && Number.isInteger(port) && port > 0 && port <= 65535 && user && pass)
 
-/** 送信元アドレス（SMTP のユーザー名と同じ。未設定なら空） */
-export const smtpFromAddress = user ?? ''
+// 送信元は SMTP_FROM で分けられる（SendGrid の "apikey" や SES のアクセスキーのように、
+// SMTP のユーザー名がメールアドレスでないプロバイダ向け）。未設定なら SMTP_USER のまま
+const FROM_ADDRESS_PATTERN = /^[^\s<>"@]+@[^\s<>"@]+$/
+const fromEnv = process.env.SMTP_FROM?.trim()
+const fromEnvIsValid = Boolean(fromEnv && FROM_ADDRESS_PATTERN.test(fromEnv))
+if (fromEnv && !fromEnvIsValid) {
+  console.warn('SMTP_FROM がメールアドレスの形ではないため無視します（SMTP_USER を送信元にします）')
+}
+
+/** 送信元アドレス（SMTP_FROM、無ければ SMTP のユーザー名。どちらも無ければ空） */
+export const smtpFromAddress = fromEnvIsValid ? (fromEnv as string) : (user ?? '')
 
 // SMTP 各段階のタイムアウトはサーバーレス関数のデッドラインより十分短くする
 // （Nodemailer 既定は分単位で、応答しないSMTPサーバーに掴まると
@@ -26,7 +35,10 @@ export const smtpTransport = isSmtpConfigured
   ? nodemailer.createTransport({
       host,
       port,
-      secure: false,
+      // 465 は接続した時点から TLS（暗黙的 TLS）。それ以外は STARTTLS を必須にして、
+      // 認証情報やメール本文を平文で送る接続にフォールバックさせない
+      secure: port === 465,
+      requireTLS: port !== 465,
       auth: { user, pass },
       connectionTimeout: 5_000,
       greetingTimeout: 5_000,

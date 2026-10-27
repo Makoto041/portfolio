@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const SMTP_KEYS = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS'] as const
+const SMTP_KEYS = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS', 'SMTP_FROM'] as const
+
+// nodemailer のトランスポートが保持している接続オプション（TLS の設定を確かめる用）
+const optionsOf = (transport: unknown) =>
+  (transport as { transporter: { options: { secure?: boolean; requireTLS?: boolean } } }).transporter.options
 
 // mailer.ts は読み込み時に環境変数を見るので、ケースごとにモジュールを読み直す
 const load = async () => {
@@ -75,6 +79,47 @@ describe('smtpEmailAdapter', () => {
     expect(isSmtpConfigured).toBe(true)
     expect(smtpFromAddress).toBe('me@example.com')
   })
+
+  it('465 番は暗黙的 TLS、それ以外は STARTTLS を必須にする', async () => {
+    const base = { SMTP_HOST: 'smtp.example.com', SMTP_USER: 'me@example.com', SMTP_PASS: 'pw' }
+
+    Object.assign(process.env, base, { SMTP_PORT: '465' })
+    const implicit = optionsOf((await load()).smtpTransport)
+    expect(implicit.secure).toBe(true)
+    expect(implicit.requireTLS).toBe(false)
+
+    for (const port of ['587', '25']) {
+      Object.assign(process.env, base, { SMTP_PORT: port })
+      const starttls = optionsOf((await load()).smtpTransport)
+      expect(starttls.secure).toBe(false)
+      expect(starttls.requireTLS).toBe(true)
+    }
+  })
+
+  it('SMTP_FROM があれば送信元に使い、無ければ SMTP_USER', async () => {
+    Object.assign(process.env, { SMTP_HOST: 'smtp.example.com', SMTP_PORT: '587', SMTP_USER: 'apikey', SMTP_PASS: 'pw' })
+    expect((await load()).smtpFromAddress).toBe('apikey')
+
+    process.env.SMTP_FROM = ' no-reply@example.com\n'
+    expect((await load()).smtpFromAddress).toBe('no-reply@example.com')
+  })
+
+  it.each(['not-an-address', 'a@b>', '"x"@example.com', 'a b@example.com', '@example.com'])(
+    'SMTP_FROM が %j: 無視して SMTP_USER を送信元にする',
+    async (from) => {
+      Object.assign(process.env, {
+        SMTP_HOST: 'smtp.example.com',
+        SMTP_PORT: '587',
+        SMTP_USER: 'me@example.com',
+        SMTP_PASS: 'pw',
+        SMTP_FROM: from,
+      })
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      expect((await load()).smtpFromAddress).toBe('me@example.com')
+      expect(warn).toHaveBeenCalledTimes(1)
+      warn.mockRestore()
+    },
+  )
 
   it('SMTP 設定済み: 送信元を補ってトランスポートへ渡し、指定された from は上書きしない', async () => {
     Object.assign(process.env, { SMTP_HOST: 'smtp.example.com', SMTP_PORT: '587', SMTP_USER: 'me@example.com', SMTP_PASS: 'pw' })
