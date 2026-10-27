@@ -26,11 +26,12 @@ describe('src/migrations/index.ts', () => {
 
   // 本番の DB には dev mode の記録（batch -1）があるので、さっと投稿のマイグレーションは
   // 「足すだけで、二度目も通る」形でないと本番デプロイで当てられない（src/lib/deployMigrate.ts の planMigrations）
-  it('さっと投稿のマイグレーションは足すだけで、二度目も通る形', () => {
+  it('さっと投稿・Payload 更新のマイグレーションは足すだけで、二度目も通る形', () => {
     for (const name of [
       '20261011_091225_quickpost',
       '20261011_234215_quickpost_receipt_digest',
       '20261012_000445_quickpost_pending_media',
+      '20261027_144526_payload_3_92_upgrade',
     ]) {
       expect(isAdditiveMigration(readFileSync(join(dir, `${name}.ts`), 'utf8')), name).toBe(true)
     }
