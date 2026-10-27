@@ -1,8 +1,10 @@
 // src/app/(frontend)/(site)/nope/NopeForm.tsx
-// にせのログインフォーム。押すたびに返事が変わるだけで、通信はしない（入力値は読みもしない）。
+// にせのログイン。押すたびに返事が変わるだけで、通信はしない（入力値は読みもしない）。
+// <form> にしないのは、JavaScript が動く前・無効のときに、ブラウザの既定の送信（GET）で
+// 入力内容が URL のクエリに載らないようにするため。
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 
 const REPLIES = [
   '惜しい。惜しくないけど。',
@@ -16,27 +18,40 @@ const REPLIES = [
 export default function NopeForm() {
   const [count, setCount] = useState(0)
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setCount((n) => n + 1)
+  const reply = () => setCount((n) => n + 1)
+  const replyOnEnter = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') reply()
   }
 
   return (
-    <form onSubmit={handleSubmit} autoComplete="off" noValidate className="s-nope-form">
+    <div role="group" aria-label="ログイン（にせもの）" className="s-nope-form">
       <label htmlFor="nope-id">
         メールアドレス
-        <input id="nope-id" name="nope-id" type="text" inputMode="email" placeholder="admin@example.com" />
+        <input
+          id="nope-id"
+          type="text"
+          inputMode="email"
+          autoComplete="off"
+          placeholder="admin@example.com"
+          onKeyDown={replyOnEnter}
+        />
       </label>
       <label htmlFor="nope-pw">
         パスワード
-        <input id="nope-pw" name="nope-pw" type="password" placeholder="password123" />
+        <input
+          id="nope-pw"
+          type="password"
+          autoComplete="off"
+          placeholder="password123"
+          onKeyDown={replyOnEnter}
+        />
       </label>
-      <button type="submit" className="s-pill is-solid">
+      <button type="button" className="s-pill is-solid" onClick={reply}>
         ログイン
       </button>
       <p className="s-formnote" role="status" aria-live="polite">
         {count === 0 ? '押してみてください。' : REPLIES[(count - 1) % REPLIES.length]}
       </p>
-    </form>
+    </div>
   )
 }

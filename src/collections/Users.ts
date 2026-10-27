@@ -1,5 +1,6 @@
 import type { CollectionBeforeDeleteHook, CollectionConfig } from 'payload'
 import { adminOnly } from '@/lib/access'
+import { SITE_URL, adminResetUrl } from '@/lib/siteUrl'
 
 /** ユーザーを消すときは、そのユーザーのパスキーと投稿ページのログインも消す（参照が残らないように） */
 const removeQuickPostAccess: CollectionBeforeDeleteHook = async ({ req, id }) => {
@@ -23,6 +24,18 @@ export const Users: CollectionConfig = {
     // ブルートフォース対策：5回失敗で10分間ロック
     maxLoginAttempts: 5,
     lockTime: 10 * 60 * 1000,
+    forgotPassword: {
+      // 本文の文言は Payload 既定のまま、リンクだけ自サイトの URL に固定する
+      // （serverURL を設定していないので、既定だと Host ヘッダー由来のリンクになる）
+      generateEmailHTML: (args) => {
+        const { req, token } = args ?? {}
+        if (!req || !token) throw new Error('forgotPassword: req / token がありません')
+        const url = adminResetUrl(SITE_URL, req.payload.config.routes.admin, req.payload.config.admin.routes.reset, token)
+        return `${req.t('authentication:youAreReceivingResetPassword')}
+    <a href="${url}">${url}</a>
+    ${req.t('authentication:youDidNotRequestPassword')}`
+      },
+    },
     cookies: {
       sameSite: 'Lax',
       secure: process.env.NODE_ENV === 'production',

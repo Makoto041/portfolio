@@ -143,7 +143,7 @@ src/
 - `POST /api/quickpost/logout` - この端末 / すべての端末からログアウト
 
 ### 認証（管理画面）
-- `/admin/*` と `/api/users/*`（`/api/users/me` 以外。`.` / `..` / %エンコードを挟んだ形も同じ）は middleware の門番を通る（matcher は `/api` 全体を受けて、対象外は素通り）。通行証（Payload のログイン Cookie か、秘密のログイン画面で付く窓の Cookie）がなければ 418
+- `/admin/*` と `/api/users/*`（`/api/users/me` と `/api/users/reset-password` 以外。`.` / `..` / %エンコードを挟んだ形も同じ）は middleware の門番を通る（matcher は `/api` 全体を受けて、対象外は素通り）。通行証（Payload のログイン Cookie か、秘密のログイン画面で付く窓の Cookie）がなければ 418。パスワード再設定のメールのリンク（`/admin/reset/<40 桁の16進>`）と送信先（`/api/users/reset-password`）だけは通行証なしで通す
 
 ### その他のAPI
 - `/api/products` - 製品管理
@@ -243,6 +243,7 @@ S3_REGION=                # Cloudflareリージョン
 ## 最近の更新
 
 - `/admin` を隠した（`src/middleware.ts` + `src/lib/adminGate.ts`）。通行証のない `/admin/*` はログイン画面に飛ばさずネタページ（`/nope`。ステータスは 418 を指定しているが環境で 200 になることがある）に差し替え、`/api/users/*`（`/me` 以外）も 418。ログイン画面は `/admin/<ADMIN_LOGIN_SLUG>`（Payload の `admin.routes.login`）で、開くと30分のログインの窓 Cookie が付く（`/admin/login` は誰にも見せない。ログアウト後はネタページに戻る）。本番は `ADMIN_LOGIN_SLUG` 未設定だと誰も入れないので、**マージ前に Vercel に設定する**
+- Payload の「No email adapter provided」警告を止めた（`email` に SMTP のアダプタを設定。お問い合わせ通知と同じ送信口 `src/lib/mailer.ts` を共有。管理画面のパスワード再設定メールも実際に届く。再設定リンクは Host ヘッダーでなく `SITE_URL` で固定。SMTP 未設定の環境では初期化では何も出さず、送ろうとした時だけ警告）
 - さっと投稿をバックグラウンド送信に（写真は選んだ時点で送り始め、「投稿する」で端末の送信待ちに入れてすぐ次を書ける。送信の様子はヘッダーの下の帯。失敗は自動で送り直し・閉じても次に開いたときに続きから。外した写真と、投稿に使われないまま 24 時間たった写真は消す）
 - 設計/コードレビューの担当を Fable 5 から Opus エージェントに変更（開発フローの手順3・コード規約）
 - 開発用の DB を本番と分けられるようにした（手順は README の「開発用の DB」。手元と Preview は Neon の `dev` ブランチ。`pnpm dev` は `PAYLOAD_DEV_PUSH=true` のときだけ DB の表を変える）。レビューの残りの指摘を修正（ログに確認値や投稿データを出さない・パスキーの名前変更で使用回数を戻さない・maskable アイコン など）

@@ -34,6 +34,7 @@ import { QuickpostNonces } from './collections/QuickpostNonces'
 import { SiteSettings } from './globals/SiteSettings'
 import { SITE_URL } from './lib/siteUrl'
 import { adminLoginSlug } from './lib/adminGate'
+import { smtpEmailAdapter } from './lib/mailer'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -92,6 +93,9 @@ export default buildConfig({
       connectionTimeoutMillis: 2000,
     },
   }),
+
+  // メール（管理画面のパスワード再設定など）。未設定だと初期化のたびに警告が出て、実際には送られない
+  email: smtpEmailAdapter,
 
   // リッチテキストエディタ
   editor: lexicalEditor(),
