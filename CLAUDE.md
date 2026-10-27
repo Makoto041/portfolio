@@ -2,7 +2,7 @@
 
 ## プロジェクト概要
 
-Next.js 15とPayloadCMS 3.38.0で構築された現代的なポートフォリオサイトです。タイムライン、ブログ投稿、ギャラリー、イベント、制作物紹介機能を備えています。
+Next.js 15とPayloadCMS 3.92.0で構築された現代的なポートフォリオサイトです。タイムライン、ブログ投稿、ギャラリー、イベント、制作物紹介機能を備えています。
 
 ## 開発フロー（毎回この手順で進める。ユーザーの再指示は不要）
 
@@ -49,8 +49,8 @@ pnpm dev -H "$TS_IP"               # 既定 3000 番
 
 ## 技術スタック
 
-- **フレームワーク**: Next.js 15.3.2 with React 19.1.0
-- **CMS**: PayloadCMS 3.38.0 with Neon DB
+- **フレームワーク**: Next.js 15.5.28 with React 19.1.10（Next は 15.5 系。Payload の peer 範囲の外なので、更新したら管理画面を実際に開いて確かめる）
+- **CMS**: PayloadCMS 3.92.0 with Neon DB
 - **スタイリング**: TailwindCSS 4.1.7
 - **UIライブラリ**: Framer Motion, React Icons, Lucide React
 - **クラウドストレージ**: Cloudflare with S3 integration
@@ -201,6 +201,7 @@ S3_REGION=                # Cloudflareリージョン
 ### PayloadCMS
 - 管理画面は`/admin`で利用可能
 - スキーマ変更後は型生成：`pnpm generate:types`
+- Payload を更新したら `pnpm generate:importmap` で管理画面の import map（`src/app/(payload)/admin/importMap.js`）も作り直してコミットする。古いままだと、新しい版が足した部品（ダッシュボードのコレクション一覧など）が黙って空白になる（build・typecheck・test では気づけない）
 - データベース操作にはPayloadCMSクライアントを使用
 
 ### 画像処理
@@ -242,6 +243,7 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
+- Next.js 15.3.6 → 15.5.28、Payload と @payloadcms/* 3.38.0 → 3.92.0 に更新（`pnpm audit --prod` の 170 件のうち、next / payload / @payloadcms/* は全件解消）。Payload 3.92 でログイン中のセッション（`users.sessions`）が入ったため、更新前に発行されたログイン（JWT）は無効になり、管理者は一度ログインし直す。ログインすると保存済みのパスワードのハッシュも新しい形式に書き換わるので、更新後に古い版へ戻すと、そのユーザーはログインできなくなる（パスワード再設定が要る）
 - `/admin` を隠した（`src/middleware.ts` + `src/lib/adminGate.ts`）。通行証のない `/admin/*` はログイン画面に飛ばさずネタページ（`/nope`。ステータスは 418 を指定しているが環境で 200 になることがある）に差し替え、`/api/users/*`（`/me` 以外）も 418。ログイン画面は `/admin/<ADMIN_LOGIN_SLUG>`（Payload の `admin.routes.login`）で、開くと30分のログインの窓 Cookie が付く（`/admin/login` は誰にも見せない。ログアウト後はネタページに戻る）。本番は `ADMIN_LOGIN_SLUG` 未設定だと誰も入れないので、**マージ前に Vercel に設定する**
 - Payload の「No email adapter provided」警告を止めた（`email` に SMTP のアダプタを設定。お問い合わせ通知と同じ送信口 `src/lib/mailer.ts` を共有。管理画面のパスワード再設定メールも実際に届く。再設定リンクは Host ヘッダーでなく `SITE_URL` で固定。SMTP 未設定の環境では初期化では何も出さず、送ろうとした時だけ警告）
 - さっと投稿をバックグラウンド送信に（写真は選んだ時点で送り始め、「投稿する」で端末の送信待ちに入れてすぐ次を書ける。送信の様子はヘッダーの下の帯。失敗は自動で送り直し・閉じても次に開いたときに続きから。外した写真と、投稿に使われないまま 24 時間たった写真は消す）
