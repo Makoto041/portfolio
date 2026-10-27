@@ -7,6 +7,7 @@ import * as migration_20260705_031719_spotify_playlist from './20260705_031719_s
 import * as migration_20261011_091225_quickpost from './20261011_091225_quickpost';
 import * as migration_20261011_234215_quickpost_receipt_digest from './20261011_234215_quickpost_receipt_digest';
 import * as migration_20261012_000445_quickpost_pending_media from './20261012_000445_quickpost_pending_media';
+import * as migration_20261027_144526_payload_3_92_upgrade from './20261027_144526_payload_3_92_upgrade';
 
 export const migrations = [
   {
@@ -52,6 +53,11 @@ export const migrations = [
   {
     up: migration_20261012_000445_quickpost_pending_media.up,
     down: migration_20261012_000445_quickpost_pending_media.down,
-    name: '20261012_000445_quickpost_pending_media'
+    name: '20261012_000445_quickpost_pending_media',
+  },
+  {
+    up: migration_20261027_144526_payload_3_92_upgrade.up,
+    down: migration_20261027_144526_payload_3_92_upgrade.down,
+    name: '20261027_144526_payload_3_92_upgrade'
   },
 ];

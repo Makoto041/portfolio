@@ -39,7 +39,9 @@ export async function fetchLatest({
       payload.find({
         collection: 'media',
         limit: mediaLimit,
-        sort: '-publishedAt',
+        // Media に publishedAt は無い（ホームの getHomePageData と同じ作成日の新しい順）。
+        // 存在しない列の並び替えは 3.38 では黙って捨てられ、3.92 では作成日の新しい順に補われるので、明示しておく
+        sort: '-createdAt',
         where: mediaWhere,
       }),
     ])

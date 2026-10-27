@@ -24,13 +24,28 @@ describe('src/migrations/index.ts', () => {
     expect(listed).toEqual([...listed].sort())
   })
 
+  // 本番デプロイの「足すだけか」の判定は <name>.ts を読むが、実際に動くのは index.ts の up / down。
+  // 項目の import 元と name がずれると、判定したファイルと動くファイルが別物になる
+  it('一覧の各項目は、読み込むファイルと name が同じ', () => {
+    const index = readFileSync(join(dir, 'index.ts'), 'utf8')
+    const imports = new Map([...index.matchAll(/import \* as (\w+) from '\.\/([^']+)'/g)].map((m) => [m[1], m[2]]))
+    const entries = [...index.matchAll(/up: (\w+)\.up,\s*down: (\w+)\.down,\s*name: '([^']+)'/g)]
+    expect(entries.length).toBeGreaterThan(0)
+    expect(entries.length).toBe(imports.size)
+    for (const [, up, down, name] of entries) {
+      expect(up, name).toBe(down)
+      expect(imports.get(up as string), name).toBe(name)
+    }
+  })
+
   // 本番の DB には dev mode の記録（batch -1）があるので、さっと投稿のマイグレーションは
   // 「足すだけで、二度目も通る」形でないと本番デプロイで当てられない（src/lib/deployMigrate.ts の planMigrations）
-  it('さっと投稿のマイグレーションは足すだけで、二度目も通る形', () => {
+  it('さっと投稿・Payload 更新のマイグレーションは足すだけで、二度目も通る形', () => {
     for (const name of [
       '20261011_091225_quickpost',
       '20261011_234215_quickpost_receipt_digest',
       '20261012_000445_quickpost_pending_media',
+      '20261027_144526_payload_3_92_upgrade',
     ]) {
       expect(isAdditiveMigration(readFileSync(join(dir, `${name}.ts`), 'utf8')), name).toBe(true)
     }
