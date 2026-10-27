@@ -10,6 +10,7 @@ import {
   isLoginPath,
   issueGateCookie,
   normalizePath,
+  resolveDotSegments,
   verifyAdminToken,
   verifyGateCookie,
 } from '@/lib/adminGate'
@@ -79,6 +80,17 @@ describe('normalizePath / gateSurface', () => {
     ['/api/users/', 'api'],
     ['/api/%75sers/login', 'api'],
     ['/api/Users/login', 'api'],
+    // `.` / `..` / %2e の区切り（Payload のルーターは解決してから振り分ける）
+    ['/api/./users/login', 'api'],
+    ['/api/%2e/users/login', 'api'],
+    ['/api/x/../users/login', 'api'],
+    ['/api/x/%2e%2e/users/login', 'api'],
+    ['/api/x/%2E%2E/users/forgot-password', 'api'],
+    ['/api/users/./login', 'api'],
+    ['/api/users/me/../login', 'api'],
+    ['/./admin', 'admin'],
+    ['/x/../admin/login', 'admin'],
+    ['/admin/x/../login', 'admin'],
   ])('%s は %s', (path, surface) => {
     expect(gateSurface(path)).toBe(surface)
   })
@@ -90,16 +102,44 @@ describe('normalizePath / gateSurface', () => {
     },
   )
 
-  it('/api/users/me は対象外（公開ページの管理者リンクが読むだけ）', () => {
+  it('/api/users/me は、そのままの形のときだけ対象外（公開ページの管理者リンクが読むだけ）', () => {
     expect(gateSurface('/api/users/me')).toBeNull()
     expect(gateSurface('/api/users/me/')).toBeNull()
     expect(gateSurface('/api/users/%6de')).toBeNull()
     expect(gateSurface('/api/users/me/x')).toBe('api')
+    // 回りくどい形は対象にする（取りこぼさない側に倒す）
+    expect(gateSurface('/api/./users/me')).toBe('api')
+    expect(gateSurface('/api/users/./me')).toBe('api')
+  })
+
+  it('対象外のパスは、`..` で解決しても対象外のまま', () => {
+    expect(gateSurface('/timeline/../post')).toBeNull()
+    expect(gateSurface('/api/x/../timeline')).toBeNull()
+    expect(gateSurface('/api/quickpost/../quickpost/session')).toBeNull()
   })
 
   it('壊れた %エンコードでも落ちない', () => {
     expect(normalizePath('/admin/%E0%A4%A')).toBe('/admin/%E0%A4%A')
     expect(gateSurface('/admin/%E0%A4%A')).toBe('admin')
+  })
+})
+
+describe('resolveDotSegments', () => {
+  it.each([
+    ['/api/./users/login', '/api/users/login'],
+    ['/api/x/../users/login', '/api/users/login'],
+    ['/a/b/../../c', '/c'],
+    ['/../../admin', '/admin'],
+    ['/admin', '/admin'],
+    ['/', '/'],
+  ])('%s → %s', (input, expected) => {
+    expect(resolveDotSegments(input)).toBe(expected)
+  })
+
+  it('URL が解決した形と同じになる', () => {
+    for (const raw of ['/api/./users/login', '/api/%2e/users/login', '/api/x/../users/login', '/api/x/%2e%2e/users/login']) {
+      expect(resolveDotSegments(normalizePath(new URL(raw, 'http://localhost').pathname))).toBe('/api/users/login')
+    }
   })
 })
 
@@ -113,6 +153,11 @@ describe('isLoginPath', () => {
     expect(isLoginPath(`/admin/${SLUG}/extra`, SLUG)).toBe(false)
     expect(isLoginPath('/admin/login', SLUG)).toBe(false)
     expect(isLoginPath(`/other/${SLUG}`, SLUG)).toBe(false)
+  })
+
+  it('`..` を挟んだ形は秘密のログイン画面として扱わない', () => {
+    expect(isLoginPath(`/admin/x/../${SLUG}`, SLUG)).toBe(false)
+    expect(isLoginPath(`/admin/./${SLUG}`, SLUG)).toBe(false)
   })
 
   it('合言葉がなければ、どこも秘密のログイン画面にならない', () => {
@@ -203,6 +248,24 @@ describe('decideGate', () => {
   it('秘密のログイン画面だけは窓を開けて通す', async () => {
     expect(await decideGate({ ...base, pathname: `/admin/${SLUG}` })).toBe('open')
     expect(await decideGate({ ...base, pathname: `/admin/${SLUG}/` })).toBe('open')
+  })
+
+  it('/api/users への回りくどいパスも、通行証なしでは通さない', async () => {
+    for (const pathname of ['/api/./users/login', '/api/%2e/users/login', '/api/x/../users/login', '/api/x/%2e%2e/users/login', '/api/users/./login']) {
+      expect(await decideGate({ ...base, pathname })).toBe('deny')
+    }
+    // ログイン済みなら、同じパスでも通す
+    expect(await decideGate({ ...base, pathname: '/api/x/../users/logout', token: await payloadToken() })).toBe('pass')
+  })
+
+  it('Payload が決め打ちで向ける /admin/login は、通行証があっても通さない（ログアウト後はネタページ）', async () => {
+    const token = await payloadToken()
+    const gate = await issueGateCookie(SECRET, NOW)
+    for (const pathname of ['/admin/login', '/admin/Login', '/admin/login/', '/admin/%6cogin']) {
+      expect(await decideGate({ ...base, pathname, token, gate })).toBe('deny')
+    }
+    // ログイン後に飛ぶ先（redirect）は、クエリなので判定に影響しない
+    expect(await decideGate({ ...base, pathname: '/admin', token })).toBe('pass')
   })
 
   it('秘密のログイン画面は /api/users の代わりにはならない', async () => {

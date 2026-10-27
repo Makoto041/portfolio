@@ -39,6 +39,7 @@ const __dirname = path.dirname(__filename)
 
 // 自サイトのオリジン（CORS / CSRF 制限用。src/lib/siteUrl.ts でさっと投稿の送信元チェックと共有）
 const siteURL = SITE_URL
+const loginSlug = adminLoginSlug()
 
 export default buildConfig({
   secret: process.env.PAYLOAD_SECRET!,
@@ -54,7 +55,7 @@ export default buildConfig({
     user: Users.slug,
     // ログイン画面の URL は /admin/<ADMIN_LOGIN_SLUG>（狙われやすい /admin/login を使わない）。
     // 門番は src/middleware.ts。未設定・使えない値のときは既定の /admin/login のまま（本番ではどのみち門番が閉じる）
-    routes: { login: adminLoginSlug() ? `/${adminLoginSlug()}` : '/login' },
+    routes: { login: loginSlug ? `/${loginSlug}` : '/login' },
     importMap: {
       baseDir: path.resolve(__dirname),
     },

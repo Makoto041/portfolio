@@ -1,6 +1,6 @@
 // src/app/(frontend)/(site)/nope/page.tsx
 // /admin に通行証なしで来た人に見せるネタページ（src/middleware.ts が差し替える。URL は /admin/... のまま）。
-// ログインフォームは見た目だけで、入力はどこにも送らない・記録しない。DB は引かない静的ページなので、ボットが何度来ても軽い。
+// ログインフォームは見た目だけで、入力はどこにも送らない・記録しない。静的ページ（ISR）なので、ボットが何度来てもリクエストごとには DB を引かず軽い。
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import SodaPageHead from '@/components/soda/SodaPageHead'

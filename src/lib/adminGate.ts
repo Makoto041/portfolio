@@ -51,15 +51,33 @@ export function normalizePath(pathname: string): string {
   return path.length > 1 ? path.replace(/\/$/, '') : path
 }
 
+/** `.` と `..` の区切りを解決する（Payload のルーターは URL を解決してから振り分けるので、`/api/x/../users/login` は /api/users/login と同じ） */
+export function resolveDotSegments(path: string): string {
+  const out: string[] = []
+  for (const segment of path.split('/')) {
+    if (segment === '..') out.pop()
+    else if (segment !== '.' && segment !== '') out.push(segment)
+  }
+  return `/${out.join('/')}`
+}
+
 export type GateSurface = 'admin' | 'api'
 
-/** ゲートの対象か。/admin 配下と、/api/users 配下（ログイン・パスワード再設定など）。/api/users/me だけは対象外 */
-export function gateSurface(pathname: string): GateSurface | null {
-  const path = normalizePath(pathname).toLowerCase()
+function surfaceOf(path: string): GateSurface | null {
   if (path === '/admin' || path.startsWith('/admin/')) return 'admin'
-  if (path === '/api/users/me') return null // 公開ページの管理者リンクが、ログイン中かを調べるのに使う（読むだけ）
   if (path === '/api/users' || path.startsWith('/api/users/')) return 'api'
   return null
+}
+
+/**
+ * ゲートの対象か。/admin 配下と、/api/users 配下（ログイン・パスワード再設定など）。
+ * `.` / `..` / %エンコードを解決した形と、しない形の両方を見て、どちらかが対象なら対象にする（取りこぼさない側に倒す）。
+ * /api/users/me だけは、そのままの形のときに限り対象外
+ */
+export function gateSurface(pathname: string): GateSurface | null {
+  const plain = normalizePath(pathname).toLowerCase()
+  if (plain === '/api/users/me') return null // 公開ページの管理者リンクが、ログイン中かを調べるのに使う（読むだけ）
+  return surfaceOf(plain) ?? surfaceOf(resolveDotSegments(plain))
 }
 
 /** 長さが違っても、同じ文字列かどうかを時間差で漏らさずに比べる */
@@ -127,11 +145,17 @@ export async function verifyAdminToken(token: string, secret: string, now: numbe
   }
 }
 
+/** 窓の Cookie の署名鍵。PAYLOAD_SECRET から用途別に導出する（Payload の JWT など他の署名と混ざらないように） */
+async function gateKey(secret: string, usage: 'sign' | 'verify'): Promise<CryptoKey> {
+  const master = await hmacKey(secret, 'sign')
+  const derived = await crypto.subtle.sign('HMAC', master, encoder.encode('admin-gate/v1'))
+  return crypto.subtle.importKey('raw', derived, { name: 'HMAC', hash: 'SHA-256' }, false, [usage])
+}
+
 /** ログインの窓の Cookie 値（`<期限(秒)>.<署名>`）。署名は PAYLOAD_SECRET から作るので、秘密のログイン画面を開かない限り作れない */
 export async function issueGateCookie(secret: string, now: number = Date.now()): Promise<string> {
   const exp = Math.floor(now / 1000) + ADMIN_GATE_TTL_SEC
-  const key = await hmacKey(secret, 'sign')
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(`admin-gate:${exp}`))
+  const signature = await crypto.subtle.sign('HMAC', await gateKey(secret, 'sign'), encoder.encode(String(exp)))
   return `${exp}.${bytesToHex(signature)}`
 }
 
@@ -143,8 +167,7 @@ export async function verifyGateCookie(value: string, secret: string, now: numbe
   const signature = hexToBytes(signatureHex ?? '')
   if (!signature) return false
   try {
-    const key = await hmacKey(secret, 'verify')
-    return await crypto.subtle.verify('HMAC', key, signature, encoder.encode(`admin-gate:${exp}`))
+    return await crypto.subtle.verify('HMAC', await gateKey(secret, 'verify'), signature, encoder.encode(String(exp)))
   } catch {
     return false
   }
@@ -178,6 +201,8 @@ export async function decideGate({ pathname, token, gate, slug, secret, enforced
   if (!surface || !enforced) return 'pass'
   if (!secret) return 'deny' // 鍵がなければ確かめようがない。閉じる側に倒す
   if (surface === 'admin' && isLoginPath(pathname, slug)) return 'open'
+  // Payload が決め打ちで向ける既定のログイン画面（ログアウト後・非アクティブ後）。ここは秘密にした入口とは別で、誰にも見せない
+  if (surface === 'admin' && normalizePath(pathname).toLowerCase() === '/admin/login') return 'deny'
   if (token && (await verifyAdminToken(token, secret, now))) return 'pass'
   if (gate && (await verifyGateCookie(gate, secret, now))) return 'pass'
   return 'deny'

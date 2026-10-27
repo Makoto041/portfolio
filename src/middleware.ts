@@ -1,5 +1,5 @@
 // src/middleware.ts
-// 1) 管理画面（/admin）と認証 API（/api/users）の門番（判定は src/lib/adminGate.ts）。
+// 1) 管理画面（/admin）と認証 API（/api/users）の門番（判定は src/lib/adminGate.ts。ほかの /api は素通り）。
 //    通行証のない人にはログイン画面を見せず、ネタページ（/nope）に差し替える。
 //    秘密のログイン画面（/admin/<ADMIN_LOGIN_SLUG>）だけが入口で、開くとログインの窓の Cookie が付く。
 // 2) さっと投稿（/post）だけに、リクエストごとの nonce を使った厳しい CSP をかける。
@@ -95,10 +95,15 @@ function postCsp(req: NextRequest): NextResponse {
 }
 
 export async function middleware(req: NextRequest) {
-  if (gateSurface(req.nextUrl.pathname)) return adminGate(req)
-  return postCsp(req)
+  const { pathname } = req.nextUrl
+  if (gateSurface(pathname)) return adminGate(req)
+  if (pathname === '/post') return postCsp(req)
+  return NextResponse.next()
 }
 
+// /api は全部通す: `/api/./users/login` や `/api/x/../users/login` のように、matcher には /api/users と見えず、
+// Payload のルーターでは解決されて /api/users/login になるパスを取りこぼさないため（判定は gateSurface が解決した形も見る）。
+// 対象外のパスはここで素通りさせる
 export const config = {
-  matcher: ['/post', '/admin/:path*', '/api/users/:path*'],
+  matcher: ['/post', '/admin/:path*', '/api/:path*'],
 }

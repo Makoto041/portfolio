@@ -61,6 +61,21 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'same-origin' },
         ],
       },
+      // 管理画面とその認証 API（門番の応答も含む）: どこにも保存させず、検索にも出さない（ブランケットの no-cache を上書き）
+      {
+        source: '/admin/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
+      {
+        source: '/api/users/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'private, no-store' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+        ],
+      },
       {
         source: '/api/quickpost/:path*',
         headers: [
