@@ -9,3 +9,13 @@ export const SITE_URL = (
 
 /** `https://iwabuchi-makoto.com` の形（パスなし） */
 export const SITE_ORIGIN = new URL(SITE_URL).origin
+
+/**
+ * 管理画面のパスワード再設定リンク。ホストを Host ヘッダーに任せず、渡された siteUrl に固定する
+ * （Payload は serverURL が無いと Host ヘッダーからリンクを作るため、偽装されたホストへ誘導されうる）。
+ */
+export const adminResetUrl = (siteUrl: string, adminRoute: string, resetRoute: string, token: string): string => {
+  const trim = (s: string) => s.replace(/^\/+|\/+$/g, '')
+  const path = [trim(adminRoute), trim(resetRoute), encodeURIComponent(token)].filter(Boolean).join('/')
+  return `${siteUrl.replace(/\/+$/, '')}/${path}`
+}

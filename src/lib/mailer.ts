@@ -3,13 +3,16 @@
 import nodemailer from 'nodemailer'
 import type { EmailAdapter } from 'payload'
 
-const host = process.env.SMTP_HOST
-const port = Number(process.env.SMTP_PORT)
-const user = process.env.SMTP_USER
+// Vercel の環境変数に貼り付けたときの前後の空白・改行を取り除く（パスワードは変えない）
+const host = process.env.SMTP_HOST?.trim()
+// ポートは 10 進の数字だけ（Number() は 1e3 や 0x24b も通すため、先に形を確かめる）
+const portText = process.env.SMTP_PORT?.trim() ?? ''
+const port = /^\d{1,5}$/.test(portText) ? Number(portText) : NaN
+const user = process.env.SMTP_USER?.trim()
 const pass = process.env.SMTP_PASS
 
 /** SMTP の接続情報が揃っているか（手元や Preview で未設定のときは送らずにログだけ出す） */
-export const isSmtpConfigured = Boolean(host && Number.isFinite(port) && port > 0 && user && pass)
+export const isSmtpConfigured = Boolean(host && Number.isInteger(port) && port > 0 && port <= 65535 && user && pass)
 
 /** 送信元アドレス（SMTP のユーザー名と同じ。未設定なら空） */
 export const smtpFromAddress = user ?? ''
@@ -47,7 +50,7 @@ export const smtpEmailAdapter: EmailAdapter = ({ payload }) => ({
   sendEmail: async (message) => {
     if (!smtpTransport) {
       payload.logger.warn(
-        `SMTP が未設定のためメールを送れませんでした（件名: ${String(message.subject)}）。SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS を確認してください`,
+        `SMTP が未設定のためメールを送れませんでした（件名: ${message.subject || '(なし)'}）。SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS を確認してください`,
       )
       return
     }

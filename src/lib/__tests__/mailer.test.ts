@@ -51,10 +51,29 @@ describe('smtpEmailAdapter', () => {
     expect(smtpTransport).toBeNull()
   })
 
-  it('ポートが数字でない: 未設定扱い', async () => {
-    Object.assign(process.env, { SMTP_HOST: 'smtp.example.com', SMTP_PORT: 'abc', SMTP_USER: 'me@example.com', SMTP_PASS: 'pw' })
+  it('.env.example のまま空文字: 未設定扱い', async () => {
+    Object.assign(process.env, { SMTP_HOST: '', SMTP_PORT: '', SMTP_USER: '', SMTP_PASS: '' })
+    const { isSmtpConfigured, smtpTransport } = await load()
+    expect(isSmtpConfigured).toBe(false)
+    expect(smtpTransport).toBeNull()
+  })
+
+  it.each(['abc', '0', '-1', '587.5', '70000', '1e3', '0x24b', ' '])('ポートが %j: 未設定扱い', async (port) => {
+    Object.assign(process.env, { SMTP_HOST: 'smtp.example.com', SMTP_PORT: port, SMTP_USER: 'me@example.com', SMTP_PASS: 'pw' })
     const { isSmtpConfigured } = await load()
     expect(isSmtpConfigured).toBe(false)
+  })
+
+  it('値の前後の空白・改行は取り除く（パスワードは変えない）', async () => {
+    Object.assign(process.env, {
+      SMTP_HOST: ' smtp.example.com\n',
+      SMTP_PORT: '587\n',
+      SMTP_USER: 'me@example.com\n',
+      SMTP_PASS: 'p w',
+    })
+    const { isSmtpConfigured, smtpFromAddress } = await load()
+    expect(isSmtpConfigured).toBe(true)
+    expect(smtpFromAddress).toBe('me@example.com')
   })
 
   it('SMTP 設定済み: 送信元を補ってトランスポートへ渡し、指定された from は上書きしない', async () => {
