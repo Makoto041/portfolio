@@ -4,7 +4,7 @@
 //   ログイン済み（Payload の JWT が正しい）            → そのまま通す
 //   秘密のログイン画面（/admin/<ADMIN_LOGIN_SLUG>）     → 通す。同時に「ログインの窓」Cookie を30分だけ付ける
 //   窓が開いている（ログイン中の画面から認証 API を叩く） → 通す
-//   それ以外                                            → ネタページ（/nope）/ 418
+//   それ以外                                            → ネタページ（/nope）/ 418 のテキスト
 //
 // middleware（Edge）と payload.config（Node）の両方から読むので、Web Crypto と標準 API だけで書く。
 // JWT の検証は Payload の署名（HS256・鍵は PAYLOAD_SECRET の sha256 の先頭32文字）に合わせている。

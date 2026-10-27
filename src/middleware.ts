@@ -54,7 +54,8 @@ async function adminGate(req: NextRequest): Promise<NextResponse> {
     return res
   }
 
-  // 画面の取得はネタページに差し替える（URL はそのまま）。それ以外（認証 API・POST）は 418 だけ返す
+  // 画面の取得はネタページに差し替える（URL はそのまま。418 を指定するが、Next の動作・ホスティングで 200 になることがある）。
+  // それ以外（認証 API・POST）は本文つきで 418 を返す
   const pageRequest = req.method === 'GET' || req.method === 'HEAD'
   if (pageRequest && gateSurface(req.nextUrl.pathname) === 'admin') {
     const url = req.nextUrl.clone()

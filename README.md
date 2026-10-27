@@ -116,9 +116,10 @@ pnpm dev               # http://localhost:3000（管理画面は /admin。入口
 
 `/admin` は狙われやすい URL なので、ログイン画面（`/admin/login`）を公開していない。判定は `src/middleware.ts`（中身は `src/lib/adminGate.ts`）。
 
-- **通行証のない `/admin/*` は、ログイン画面に飛ばさずネタページ（`/nope`）に差し替える**（URL はそのまま。`next start` では HTTP 418。
-  Vercel 上のステータスは未確認で、200 になっても中身と門番の効果は同じ）。
-  `/api/users/*`（login・forgot-password など。公開ページの管理者リンクが読む `/api/users/me` だけ除く）は 418 のテキストを返す。
+- **通行証のない `/admin/*` は、ログイン画面に飛ばさずネタページ（`/nope`）に差し替える**（URL はそのまま）。
+  ステータスは 418 を指定しているが、Next の動作・ホスティングによっては 200 になる（手元の `next start` でも環境で変わった）。
+  どちらでも中身と門番の効果は同じで、ステータスに頼る処理は作らないこと。
+  `/api/users/*`（login・forgot-password など。公開ページの管理者リンクが読む `/api/users/me` だけ除く）は、本文つきで返すので 418 のテキストになる。
   `/api/./users/login` のような `.` / `..` / `%2e` を挟んだパスも、Payload のルーターが解決する形で判定する
 - **入口は `/admin/<ADMIN_LOGIN_SLUG>`**（Payload の `admin.routes.login`）。これを開くと「ログインの窓」の Cookie
   （HttpOnly・SameSite=Strict・30 分）が付き、ログインできる。ログイン後は Payload のログイン Cookie（JWT）が通行証になる
