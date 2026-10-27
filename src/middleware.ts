@@ -47,7 +47,9 @@ async function adminGate(req: NextRequest): Promise<NextResponse> {
     res.cookies.set(ADMIN_GATE_COOKIE, await issueGateCookie(secret!), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      // Lax: パスワード再設定メールのリンク（別サイトからのトップレベルの GET 遷移）にも付くように。
+      // 別サイトからの POST・fetch・画像などには付かない
+      sameSite: 'lax',
       path: '/',
       maxAge: ADMIN_GATE_TTL_SEC,
     })

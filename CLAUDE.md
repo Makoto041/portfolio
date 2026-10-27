@@ -143,7 +143,7 @@ src/
 - `POST /api/quickpost/logout` - この端末 / すべての端末からログアウト
 
 ### 認証（管理画面）
-- `/admin/*` と `/api/users/*`（`/api/users/me` と `/api/users/reset-password` 以外。`.` / `..` / %エンコードを挟んだ形も同じ）は middleware の門番を通る（matcher は `/api` 全体を受けて、対象外は素通り）。通行証（Payload のログイン Cookie か、秘密のログイン画面で付く窓の Cookie）がなければ 418。パスワード再設定のメールのリンク（`/admin/reset/<40 桁の16進>`）と送信先（`/api/users/reset-password`）だけは通行証なしで通す
+- `/admin/*` と `/api/users/*`（`/api/users/me` 以外。`.` / `..` / %エンコードを挟んだ形も同じ）は middleware の門番を通る（matcher は `/api` 全体を受けて、対象外は素通り）。通行証（Payload のログイン Cookie か、秘密のログイン画面で付く窓の Cookie）がなければ 418。パスワード再設定のメールのリンクも通行証が要る（窓の Cookie は SameSite=Lax で、同じブラウザで押せば通る。「トークンの形なら通す」例外は作らない: Payload の管理画面はログイン画面の URL を埋め込むので、秘密が漏れる）
 
 ### その他のAPI
 - `/api/products` - 製品管理

@@ -8,7 +8,6 @@ import {
   gateSurface,
   isGateEnforced,
   isLoginPath,
-  isResetPath,
   issueGateCookie,
   normalizePath,
   resolveDotSegments,
@@ -113,12 +112,9 @@ describe('normalizePath / gateSurface', () => {
     expect(gateSurface('/api/users/./me')).toBe('api')
   })
 
-  it('/api/users/reset-password は、そのままの形のときだけ対象外（メールのトークンが本物の認証情報）', () => {
-    expect(gateSurface('/api/users/reset-password')).toBeNull()
-    expect(gateSurface('/api/users/reset-password/')).toBeNull()
-    expect(gateSurface('/api/users/reset-password/x')).toBe('api')
-    expect(gateSurface('/api/./users/reset-password')).toBe('api')
-    expect(gateSurface('/api/users/forgot-password')).toBe('api') // 「忘れた」の送信は閉じたまま
+  it('パスワード再設定の API も、ほかの認証 API と同じく対象（メールのリンクは窓の Cookie で通す）', () => {
+    expect(gateSurface('/api/users/reset-password')).toBe('api')
+    expect(gateSurface('/api/users/forgot-password')).toBe('api')
   })
 
   it('対象外のパスは、`..` で解決しても対象外のまま', () => {
@@ -153,31 +149,6 @@ describe('resolveDotSegments', () => {
 })
 
 const RESET_TOKEN = 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678' // Payload の再設定トークンと同じ形（20 バイトの16進）
-
-describe('isResetPath', () => {
-  it('/admin/reset/<40 桁の16進> だけ', () => {
-    expect(RESET_TOKEN).toHaveLength(40)
-    expect(isResetPath(`/admin/reset/${RESET_TOKEN}`)).toBe(true)
-    expect(isResetPath(`/admin/reset/${RESET_TOKEN}/`)).toBe(true)
-    expect(isResetPath(`/admin/reset/${RESET_TOKEN.toUpperCase()}`)).toBe(true)
-  })
-
-  it.each([
-    '/admin/reset',
-    '/admin/reset/',
-    '/admin/reset/x',
-    `/admin/reset/${'a'.repeat(39)}`,
-    `/admin/reset/${'a'.repeat(41)}`,
-    `/admin/reset/${'g'.repeat(40)}`,
-    `/admin/reset/${RESET_TOKEN}/extra`,
-    `/admin/x/reset/${RESET_TOKEN}`,
-    `/admin/x/../reset/${RESET_TOKEN}`,
-    `/admin/reset/../login`,
-    `/api/users/reset/${RESET_TOKEN}`,
-  ])('%s は通さない', (path) => {
-    expect(isResetPath(path)).toBe(false)
-  })
-})
 
 describe('isLoginPath', () => {
   it('合言葉と完全に一致するときだけ', () => {
@@ -304,15 +275,18 @@ describe('decideGate', () => {
     expect(await decideGate({ ...base, pathname: '/admin', token })).toBe('pass')
   })
 
-  it('パスワード再設定: メールのリンクと送信先だけ、通行証なしで通す（ほかの再設定系は閉じたまま）', async () => {
-    expect(await decideGate({ ...base, pathname: `/admin/reset/${RESET_TOKEN}` })).toBe('pass')
-    expect(await decideGate({ ...base, pathname: '/api/users/reset-password' })).toBe('pass')
-    expect(await decideGate({ ...base, pathname: '/admin/reset/x' })).toBe('deny')
+  it('パスワード再設定: トークンの形の URL でも、通行証なしでは通さない（Payload の画面はログイン画面の URL を埋め込む）', async () => {
+    expect(await decideGate({ ...base, pathname: `/admin/reset/${RESET_TOKEN}` })).toBe('deny')
+    expect(await decideGate({ ...base, pathname: '/api/users/reset-password' })).toBe('deny')
     expect(await decideGate({ ...base, pathname: '/admin/forgot' })).toBe('deny')
     expect(await decideGate({ ...base, pathname: '/api/users/forgot-password' })).toBe('deny')
-    // 本番で合言葉が未設定でも、再設定は通る（トークンが本物の認証情報）。ログイン画面は閉じたまま
-    expect(await decideGate({ ...base, slug: undefined, pathname: `/admin/reset/${RESET_TOKEN}` })).toBe('pass')
-    expect(await decideGate({ ...base, slug: undefined, pathname: '/admin/login' })).toBe('deny')
+  })
+
+  it('パスワード再設定: 窓の Cookie があれば（秘密のログイン画面を開いたあと）メールのリンクも送信先も通る', async () => {
+    const gate = await issueGateCookie(SECRET, NOW)
+    expect(await decideGate({ ...base, pathname: `/admin/reset/${RESET_TOKEN}`, gate })).toBe('pass')
+    expect(await decideGate({ ...base, pathname: '/api/users/reset-password', gate })).toBe('pass')
+    expect(await decideGate({ ...base, pathname: '/admin/forgot', gate })).toBe('pass')
   })
 
   it('秘密のログイン画面は /api/users の代わりにはならない', async () => {

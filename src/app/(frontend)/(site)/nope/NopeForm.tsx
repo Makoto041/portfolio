@@ -20,7 +20,8 @@ export default function NopeForm() {
 
   const reply = () => setCount((n) => n + 1)
   const replyOnEnter = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') reply()
+    // 日本語入力の変換を確定する Enter は数えない
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) reply()
   }
 
   return (

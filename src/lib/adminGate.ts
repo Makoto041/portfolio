@@ -72,13 +72,11 @@ function surfaceOf(path: string): GateSurface | null {
 /**
  * ゲートの対象か。/admin 配下と、/api/users 配下（ログイン・パスワード再設定など）。
  * `.` / `..` / %エンコードを解決した形と、しない形の両方を見て、どちらかが対象なら対象にする（取りこぼさない側に倒す）。
- * /api/users/me と /api/users/reset-password だけは、そのままの形のときに限り対象外
+ * /api/users/me だけは、そのままの形のときに限り対象外
  */
 export function gateSurface(pathname: string): GateSurface | null {
   const plain = normalizePath(pathname).toLowerCase()
   if (plain === '/api/users/me') return null // 公開ページの管理者リンクが、ログイン中かを調べるのに使う（読むだけ）
-  // パスワード再設定の送信先。本物の認証情報は、メールで届いた推測できないトークン（本文）なので、窓の Cookie は要らない
-  if (plain === '/api/users/reset-password') return null
   return surfaceOf(plain) ?? surfaceOf(resolveDotSegments(plain))
 }
 
@@ -89,14 +87,6 @@ function timingSafeEqual(a: string, b: string): boolean {
   let diff = x.length ^ y.length
   for (let i = 0; i < x.length; i++) diff |= x[i] ^ (y[i % (y.length || 1)] ?? 0)
   return diff === 0
-}
-
-/**
- * パスワード再設定メールのリンク（/admin/reset/<トークン>）。Payload のトークンは 20 バイトの乱数の16進（40 文字）。
- * メールのリンクは別サイトからの遷移で、SameSite=Strict の窓の Cookie が付かないので、この形のときに限って通す
- */
-export function isResetPath(pathname: string): boolean {
-  return /^\/admin\/reset\/[0-9a-f]{40}$/i.test(normalizePath(pathname))
 }
 
 /** 秘密のログイン画面（/admin/<slug>）か */
@@ -211,7 +201,6 @@ export async function decideGate({ pathname, token, gate, slug, secret, enforced
   if (!surface || !enforced) return 'pass'
   if (!secret) return 'deny' // 鍵がなければ確かめようがない。閉じる側に倒す
   if (surface === 'admin' && isLoginPath(pathname, slug)) return 'open'
-  if (surface === 'admin' && isResetPath(pathname)) return 'pass'
   // Payload が決め打ちで向ける既定のログイン画面（ログアウト後・非アクティブ後）。ここは秘密にした入口とは別で、誰にも見せない
   if (surface === 'admin' && normalizePath(pathname).toLowerCase() === '/admin/login') return 'deny'
   if (token && (await verifyAdminToken(token, secret, now))) return 'pass'

@@ -122,15 +122,16 @@ pnpm dev               # http://localhost:3000（管理画面は /admin。入口
   `/api/users/*`（login・forgot-password など。公開ページの管理者リンクが読む `/api/users/me` だけ除く）は、本文つきで返すので 418 のテキストになる。
   `/api/./users/login` のような `.` / `..` / `%2e` を挟んだパスも、Payload のルーターが解決する形で判定する
 - **入口は `/admin/<ADMIN_LOGIN_SLUG>`**（Payload の `admin.routes.login`）。これを開くと「ログインの窓」の Cookie
-  （HttpOnly・SameSite=Strict・30 分）が付き、ログインできる。ログイン後は Payload のログイン Cookie（JWT）が通行証になる
+  （HttpOnly・SameSite=Lax・30 分）が付き、ログインできる。ログイン後は Payload のログイン Cookie（JWT）が通行証になる
   （有効期限は Payload の既定 2 時間）。切れたら入口の URL を開き直す
 - **ログアウトや非アクティブで切れたあとは、ネタページに戻る**。Payload はログアウト後・「もう一度ログイン」の行き先を
   `/admin/login` に決め打ちしていて、ここは誰にも見せない（秘密の入口は別）。ログインし直すときは入口の URL を開く
-- **パスワードを忘れたとき**: 入口の URL を開く →「パスワードを忘れた」（`/admin/forgot` と `/api/users/forgot-password` は窓の Cookie が必要）→
-  メールのリンク（`/admin/reset/<トークン>`）→ 新しいパスワード。メールのリンクは別サイトからの遷移で窓の Cookie が付かないので、
-  **`/admin/reset/<40 桁の16進>`（Payload の再設定トークンの形）のページと、その送信先 `/api/users/reset-password` だけは通行証なしで通す**
-  （本物の認証情報はメールで届いたトークンで、推測できない）。それ以外の形の `/admin/reset/...` はネタページ。
-  メールの送信は SMTP の設定（`SMTP_*`）が必要
+- **パスワードを忘れたとき**: 入口の URL を開く →「パスワードを忘れた」→ メールのリンク（`/admin/reset/<トークン>`）→ 新しいパスワード。
+  再設定のページ・`/api/users/forgot-password`・`/api/users/reset-password` も、ほかと同じく通行証（窓の Cookie）が必要。
+  窓の Cookie は SameSite=Lax なので、入口を開いた同じブラウザでメールのリンクを押せば（30 分以内）そのまま通る。
+  30 分を過ぎた・別の端末で開いたときは、その端末で入口の URL を開いてから、もう一度メールのリンクを開く（トークンは Payload の既定で 1 時間有効）。
+  **再設定のページを「トークンの形なら通す」例外にはしない**: Payload の管理画面はログイン画面の URL をページに埋め込むので、
+  通行証なしで見せると秘密のログイン URL が漏れる。メールの送信は SMTP の設定（`SMTP_*`）が必要
 - 通行証の確認は画面に出すかどうかの判定だけ。認証そのものと、ログインの試行制限（5 回失敗で 10 分ロック）は今まで通り Payload が行う
 - `ADMIN_LOGIN_SLUG` は `openssl rand -hex 16` などで作る。**本番（Preview 含む）で未設定・使えない値だと誰も入れない**
   （設定し忘れで防御が黙って外れるより、閉じる側に倒している）。復旧は環境変数を設定して再デプロイ。
