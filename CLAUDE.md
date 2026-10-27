@@ -142,6 +142,9 @@ src/
 - `POST /api/quickpost/posts` - タイムラインに投稿（二重投稿防止キーつき）
 - `POST /api/quickpost/logout` - この端末 / すべての端末からログアウト
 
+### 認証（管理画面）
+- `/admin/*` と `/api/users/*`（`/api/users/me` 以外）は middleware の門番を通る。通行証（Payload のログイン Cookie か、秘密のログイン画面で付く窓の Cookie）がなければ 418
+
 ### その他のAPI
 - `/api/products` - 製品管理
 - `/api/letter` - コンタクトフォーム処理
@@ -167,6 +170,7 @@ src/
 POSTGRES_URL=              # Neon 接続（手元と Preview は開発用の dev ブランチ。本番の接続文字列は Vercel の Production だけ）
 PAYLOAD_DEV_PUSH=          # true のときだけ pnpm dev が DB の表を変える（開発用の DB でだけ）
 PAYLOAD_SECRET=           # PayloadCMSシークレットキー（手元と Preview は本番と別の値）
+ADMIN_LOGIN_SLUG=         # 管理画面のログイン画面の URL（/admin/<この値>）。本番は未設定だと誰も入れない（README の「管理画面の入口」）
 S3_ENDPOINT=              # Cloudflare R2エンドポイント
 S3_ACCESS_KEY_ID=         # Cloudflareアクセスキー
 S3_SECRET_ACCESS_KEY=     # Cloudflareシークレットキー
@@ -238,6 +242,7 @@ S3_REGION=                # Cloudflareリージョン
 
 ## 最近の更新
 
+- `/admin` を隠した（`src/middleware.ts` + `src/lib/adminGate.ts`）。通行証のない `/admin/*` はログイン画面に飛ばさずネタページ（`/nope`・418）に差し替え、`/api/users/*`（`/me` 以外）も 418。ログイン画面は `/admin/<ADMIN_LOGIN_SLUG>`（Payload の `admin.routes.login`）で、開くと30分のログインの窓 Cookie が付く。本番は `ADMIN_LOGIN_SLUG` 未設定だと誰も入れないので、**マージ前に Vercel に設定する**
 - さっと投稿をバックグラウンド送信に（写真は選んだ時点で送り始め、「投稿する」で端末の送信待ちに入れてすぐ次を書ける。送信の様子はヘッダーの下の帯。失敗は自動で送り直し・閉じても次に開いたときに続きから。外した写真と、投稿に使われないまま 24 時間たった写真は消す）
 - 設計/コードレビューの担当を Fable 5 から Opus エージェントに変更（開発フローの手順3・コード規約）
 - 開発用の DB を本番と分けられるようにした（手順は README の「開発用の DB」。手元と Preview は Neon の `dev` ブランチ。`pnpm dev` は `PAYLOAD_DEV_PUSH=true` のときだけ DB の表を変える）。レビューの残りの指摘を修正（ログに確認値や投稿データを出さない・パスキーの名前変更で使用回数を戻さない・maskable アイコン など）

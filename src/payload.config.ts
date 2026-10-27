@@ -33,6 +33,7 @@ import { QuickpostNonces } from './collections/QuickpostNonces'
 // Globals
 import { SiteSettings } from './globals/SiteSettings'
 import { SITE_URL } from './lib/siteUrl'
+import { adminLoginSlug } from './lib/adminGate'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
@@ -51,6 +52,9 @@ export default buildConfig({
   // 管理画面の設定
   admin: {
     user: Users.slug,
+    // ログイン画面の URL は /admin/<ADMIN_LOGIN_SLUG>（狙われやすい /admin/login を使わない）。
+    // 門番は src/middleware.ts。未設定・使えない値のときは既定の /admin/login のまま（本番ではどのみち門番が閉じる）
+    routes: { login: adminLoginSlug() ? `/${adminLoginSlug()}` : '/login' },
     importMap: {
       baseDir: path.resolve(__dirname),
     },

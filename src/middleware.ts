@@ -1,11 +1,71 @@
 // src/middleware.ts
-// さっと投稿（/post）だけに、リクエストごとの nonce を使った厳しい CSP をかける。
-// 読み込めるスクリプトは、この nonce を持つ Next.js 自身のスクリプトと、それが読み込むものだけ（strict-dynamic）。
-// 接続先・画像・フォントも自サイトに限り、ほかのサイトへの埋め込み（frame-ancestors）も禁止する。
-// サイト本体は静的配信（ISR）なので nonce は使えず、対象外にしている。
+// 1) 管理画面（/admin）と認証 API（/api/users）の門番（判定は src/lib/adminGate.ts）。
+//    通行証のない人にはログイン画面を見せず、ネタページ（/nope）に差し替える。
+//    秘密のログイン画面（/admin/<ADMIN_LOGIN_SLUG>）だけが入口で、開くとログインの窓の Cookie が付く。
+// 2) さっと投稿（/post）だけに、リクエストごとの nonce を使った厳しい CSP をかける。
+//    読み込めるスクリプトは、この nonce を持つ Next.js 自身のスクリプトと、それが読み込むものだけ（strict-dynamic）。
+//    接続先・画像・フォントも自サイトに限り、ほかのサイトへの埋め込み（frame-ancestors）も禁止する。
+//    サイト本体は静的配信（ISR）なので nonce は使えず、対象外にしている。
 import { NextResponse, type NextRequest } from 'next/server'
+import {
+  ADMIN_GATE_COOKIE,
+  ADMIN_GATE_TTL_SEC,
+  ADMIN_NOPE_PATH,
+  ADMIN_TOKEN_COOKIE,
+  adminLoginSlug,
+  decideGate,
+  gateSurface,
+  isGateEnforced,
+  issueGateCookie,
+} from '@/lib/adminGate'
 
-export function middleware(req: NextRequest) {
+const TEAPOT = 418
+
+/** 門番の応答はキャッシュさせず、検索にも出さない */
+function hardenGateResponse(res: NextResponse): NextResponse {
+  res.headers.set('Cache-Control', 'private, no-store')
+  res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  return res
+}
+
+async function adminGate(req: NextRequest): Promise<NextResponse> {
+  const slug = adminLoginSlug()
+  const secret = process.env.PAYLOAD_SECRET
+  const verdict = await decideGate({
+    pathname: req.nextUrl.pathname,
+    token: req.cookies.get(ADMIN_TOKEN_COOKIE)?.value,
+    gate: req.cookies.get(ADMIN_GATE_COOKIE)?.value,
+    slug,
+    secret,
+    enforced: isGateEnforced(process.env.NODE_ENV, slug),
+  })
+
+  if (verdict === 'pass') return NextResponse.next()
+
+  if (verdict === 'open') {
+    const res = hardenGateResponse(NextResponse.next())
+    res.cookies.set(ADMIN_GATE_COOKIE, await issueGateCookie(secret!), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
+      maxAge: ADMIN_GATE_TTL_SEC,
+    })
+    return res
+  }
+
+  // 画面の取得はネタページに差し替える（URL はそのまま）。それ以外（認証 API・POST）は 418 だけ返す
+  const pageRequest = req.method === 'GET' || req.method === 'HEAD'
+  if (pageRequest && gateSurface(req.nextUrl.pathname) === 'admin') {
+    const url = req.nextUrl.clone()
+    url.pathname = ADMIN_NOPE_PATH
+    url.search = ''
+    return hardenGateResponse(NextResponse.rewrite(url, { status: TEAPOT }))
+  }
+  return hardenGateResponse(new NextResponse("I'm a teapot.\n", { status: TEAPOT, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }))
+}
+
+function postCsp(req: NextRequest): NextResponse {
   const nonce = btoa(crypto.randomUUID())
   const dev = process.env.NODE_ENV !== 'production'
   const csp = [
@@ -34,6 +94,11 @@ export function middleware(req: NextRequest) {
   return res
 }
 
+export async function middleware(req: NextRequest) {
+  if (gateSurface(req.nextUrl.pathname)) return adminGate(req)
+  return postCsp(req)
+}
+
 export const config = {
-  matcher: ['/post'],
+  matcher: ['/post', '/admin/:path*', '/api/users/:path*'],
 }
