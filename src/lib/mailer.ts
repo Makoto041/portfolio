@@ -55,7 +55,8 @@ const DEFAULT_FROM_NAME = 'ポートフォリオ'
  * Payload の `email` に渡すアダプタ。
  * `email` が無いと Payload は初期化のたびに「No email adapter provided」の警告を出し、
  * メール（管理画面のパスワード再設定など）は実際には送られない。
- * 公式の @payloadcms/email-nodemailer は nodemailer 6 系を連れてくるため使わず、同じ送信口を薄く包む。
+ * お問い合わせ通知（Letters）と同じ送信口（smtpTransport。タイムアウトや TLS 必須の設定を共有）を使うため、
+ * 公式の @payloadcms/email-nodemailer は使わず、その送信口を薄く包む。
  * SMTP が未設定の環境では、初期化では何も出さず、送ろうとした時だけ警告する（Payload の標準と同じく送信は成功扱い）。
  */
 export const smtpEmailAdapter: EmailAdapter = ({ payload }) => ({
