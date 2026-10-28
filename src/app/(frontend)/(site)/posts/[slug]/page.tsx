@@ -96,11 +96,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       "alternateName": "いわぶちまこと",
       "url": "https://iwabuchi-makoto.com"
     },
-    "publisher": {
-      "@type": "Person",
-      "name": "岩渕誠",
-      "alternateName": "いわぶちまこと"
-    },
+    "publisher": { "@id": "https://iwabuchi-makoto.com/#person" },
+    "isPartOf": { "@id": "https://iwabuchi-makoto.com/#website" },
     "datePublished": post.publishedAt || post.createdAt,
     "dateModified": post.updatedAt || post.publishedAt || post.createdAt,
     "mainEntityOfPage": {
@@ -111,12 +108,23 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     "inLanguage": "ja-JP"
   }
 
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://iwabuchi-makoto.com" },
+      { "@type": "ListItem", "position": 2, "name": "ブログ", "item": "https://iwabuchi-makoto.com/posts" },
+      { "@type": "ListItem", "position": 3, "name": post.title, "item": `https://iwabuchi-makoto.com/posts/${slug}` },
+    ],
+  }
+
   const date = post.publishedAt ?? post.createdAt
   const nodes = ((post.body as { root?: { children?: LexicalNode[] } } | undefined)?.root?.children ?? [])
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbLd) }} />
       <div className="s-wrap">
         <article className="s-article s-pbody">
           <header className="s-ahead">
@@ -135,7 +143,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <div className="s-cover">
               <Image
                 src={toCFUrl(post.coverImage.url)}
-                alt=""
+                alt={post.title}
                 fill
                 priority
                 sizes="(max-width: 760px) 100vw, 700px"

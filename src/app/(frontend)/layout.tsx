@@ -138,6 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "@type": "WebSite",
               "name": "岩渕誠（いわぶちまこと） | ライフログ",
               "alternateName": ["いわぶちまこと ライフログ", "Makoto Iwabuchi"],
+              "@id": "https://iwabuchi-makoto.com/#website",
               "url": "https://iwabuchi-makoto.com",
               "description": "岩渕誠（いわぶちまこと）の個人サイト。日記、写真、制作ログ、イベント記録など日々の記録を公開しています。",
               "inLanguage": "ja-JP",
