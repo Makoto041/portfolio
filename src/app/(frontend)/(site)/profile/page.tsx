@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
 import SodaPageHead from '@/components/soda/SodaPageHead'
 import SodaIcon, { socialIcon } from '@/components/soda/SodaIcon'
 import { toCFUrl } from '@/lib/cfUrl'
-import { OG_IMAGE, OG_IMAGE_URL } from '@/lib/seo'
+import { OG_IMAGE, OG_IMAGE_URL, toJsonLd } from '@/lib/seo'
 import { getPayloadClient } from '@/lib/payloadClient'
 import { socialLabel, type ProfileData, type SocialLink } from '@/lib/social'
 import { spotifyEmbedUrl } from '@/lib/spotify'
@@ -109,8 +109,21 @@ export default async function ProfilePage() {
   const profileImageUrl = profile.imageUrl ? toCFUrl(profile.imageUrl) : toCFUrl('/profile.jpg')
   const spotifyEmbed = spotifyEmbedUrl(spotifyUrl)
 
+  // 「このページの主役はこの人」をサイト全体の Person（layout の @id）と結びつける
+  const profileLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "@id": "https://iwabuchi-makoto.com/profile#page",
+    "url": "https://iwabuchi-makoto.com/profile",
+    "name": `${profile.nameJapanese}（${profile.name}）のプロフィール`,
+    "inLanguage": "ja-JP",
+    "isPartOf": { "@id": "https://iwabuchi-makoto.com/#website" },
+    "mainEntity": { "@id": "https://iwabuchi-makoto.com/#person" },
+  }
+
   return (
     <div className="s-wrap">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(profileLd) }} />
       <SodaPageHead en="Profile" title="プロフィール" desc="このサイトを書いている人" />
       <div className="s-pbody s-prof">
         <div className="s-prof-ph">

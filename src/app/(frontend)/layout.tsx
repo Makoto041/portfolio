@@ -101,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               "@type": "Person",
               "@id": "https://iwabuchi-makoto.com/#person",
               "name": "岩渕誠",
-              "alternateName": ["いわぶちまこと", "Makoto Iwabuchi", "いわぶち"],
+              "alternateName": ["いわぶちまこと", "Makoto Iwabuchi", "Iwabuchi Makoto", "岩渕 誠", "岩淵誠", "いわぶち"],
               "givenName": "誠",
               "familyName": "岩渕",
               "jobTitle": "ウェブエンジニア",
